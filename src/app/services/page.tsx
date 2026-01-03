@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Services — Obieo | SEO & AEO for Home Service Businesses",
   description:
-    "Fix & Foundation Sprint ($2,500 one-time) or Ongoing Growth Retainer ($1,250/mo). SEO and AEO services designed for home service businesses.",
+    "SEO Launchpad ($2,500 one-time) or Local Dominance Retainer ($2,000/mo). SEO and AEO services designed for home service businesses.",
 };
 
 const CheckIcon = () => (
@@ -59,8 +59,8 @@ export default function ServicesPage() {
           </div>
         </section>
 
-        {/* Sprint Section */}
-        <section id="sprint" className="bg-cream-50 py-16 sm:py-24 scroll-mt-24">
+        {/* Launchpad Section */}
+        <section id="launchpad" className="bg-cream-50 py-16 sm:py-24 scroll-mt-24">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
               <div>
@@ -68,13 +68,13 @@ export default function ServicesPage() {
                   One-Time · $2,500
                 </div>
                 <h2 className="mt-4 font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
-                  Fix & Foundation Sprint
+                  SEO Launchpad
                 </h2>
                 <p className="mt-4 text-slate-600 text-lg leading-relaxed">
-                  A 2–4 week engagement to audit, fix, and set up everything
-                  your site needs to actually generate leads. This is for
-                  businesses that need a solid foundation before committing to
-                  ongoing work.
+                  A 2–4 week engagement to audit, fix, and set up your SEO
+                  foundation. Technical fixes, on-page optimization, and Google
+                  Business Profile setup — everything you need before ongoing
+                  SEO can work.
                 </p>
 
                 <div className="mt-8 space-y-6">
@@ -126,7 +126,7 @@ export default function ServicesPage() {
                 <CalendlyButton
                   className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all cursor-pointer"
                 >
-                  Start Your Sprint
+                  Start Your Launchpad
                   <ArrowIcon />
                 </CalendlyButton>
               </div>
@@ -169,23 +169,23 @@ export default function ServicesPage() {
           </div>
         </section>
 
-        {/* Retainer Section */}
+        {/* Dominance Section */}
         <section
-          id="retainer"
+          id="dominance"
           className="bg-slate-900 text-white py-16 sm:py-24 scroll-mt-24"
         >
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-terracotta-500/20 text-terracotta-300 rounded-full text-xs font-semibold uppercase tracking-wide">
-                  Monthly · $1,250/mo
+                  Monthly · $2,000/mo
                 </div>
                 <h2 className="mt-4 font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
-                  Ongoing Growth Retainer
+                  Local Dominance
                 </h2>
                 <p className="mt-4 text-slate-300 text-lg leading-relaxed">
-                  Continuous improvements that compound month over month. 3-month
-                  minimum to see real results, then month-to-month after that.
+                  Continuous SEO that compounds month over month. 6-month
+                  minimum commitment — because SEO takes time to show real results.
                 </p>
 
                 <div className="mt-8 space-y-6">
@@ -216,8 +216,8 @@ export default function ServicesPage() {
                       Commitment:
                     </h3>
                     <p className="text-slate-300">
-                      3-month minimum. SEO takes time — you need at least 90 days
-                      to see meaningful results. After that, it&apos;s
+                      6-month minimum. SEO takes time — you need at least 6 months
+                      to see meaningful, compounding results. After that, it&apos;s
                       month-to-month.
                     </p>
                   </div>
@@ -227,7 +227,7 @@ export default function ServicesPage() {
                     <p className="text-slate-300">
                       Businesses ready to invest in compounding organic growth.
                       Works best when your site foundation is already solid (or
-                      after completing a Sprint).
+                      after completing a Launchpad).
                     </p>
                   </div>
                 </div>
@@ -285,24 +285,24 @@ export default function ServicesPage() {
               Not Sure Which to Choose?
             </h2>
             <p className="mt-4 text-slate-600 text-center text-lg max-w-2xl mx-auto">
-              Most clients start with the Sprint to fix foundations, then move
-              to the Retainer for ongoing growth. But here&apos;s a quick
+              Most clients start with the Launchpad to fix foundations, then move
+              to Local Dominance for ongoing growth. But here&apos;s a quick
               comparison:
             </p>
 
             <div className="mt-12 grid md:grid-cols-2 gap-8">
               <div className="bg-white rounded-xl border border-slate-200 p-6">
                 <h3 className="font-semibold text-slate-900 text-lg">
-                  Choose the Sprint if...
+                  Choose the Launchpad if...
                 </h3>
                 <ul className="mt-4 space-y-3 text-slate-600">
                   <li className="flex items-start gap-2">
                     <span className="text-terracotta-500">→</span>
-                    Your site is a mess and needs a clean start
+                    Your SEO foundation is broken and needs fixing first
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-terracotta-500">→</span>
-                    You want to test before committing monthly
+                    You want to test before committing to 6 months
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-terracotta-500">→</span>
@@ -310,23 +310,23 @@ export default function ServicesPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-terracotta-500">→</span>
-                    Budget is tight but you need something fixed now
+                    Budget is tight but you need SEO basics fixed now
                   </li>
                 </ul>
               </div>
 
               <div className="bg-white rounded-xl border border-slate-200 p-6">
                 <h3 className="font-semibold text-slate-900 text-lg">
-                  Choose the Retainer if...
+                  Choose Local Dominance if...
                 </h3>
                 <ul className="mt-4 space-y-3 text-slate-600">
                   <li className="flex items-start gap-2">
                     <span className="text-terracotta-500">→</span>
-                    Your foundation is solid (or you just did a Sprint)
+                    Your foundation is solid (or you just did a Launchpad)
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-terracotta-500">→</span>
-                    You want consistent, compounding growth
+                    You want consistent, compounding SEO growth
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-terracotta-500">→</span>
@@ -334,7 +334,7 @@ export default function ServicesPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-terracotta-500">→</span>
-                    You&apos;re ready to invest in long-term organic traffic
+                    You&apos;re ready to dominate your local market
                   </li>
                 </ul>
               </div>

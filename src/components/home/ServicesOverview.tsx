@@ -21,7 +21,7 @@ const services = [
   },
   {
     title: 'Local Dominance',
-    price: '$1,250',
+    price: '$2,000',
     priceNote: '/month',
     description: 'Ongoing SEO that compounds. Monthly content, link building, and ranking improvements you can track.',
     highlights: [
