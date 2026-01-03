@@ -11,18 +11,18 @@ export function QuizCTA() {
         <FadeInSection>
           <div className="bg-gradient-to-br from-[var(--accent)] to-[var(--accent-hover)] rounded-3xl p-8 md:p-12 lg:p-16 text-center">
             <h2 className="text-3xl md:text-4xl font-semibold font-[family-name:var(--font-display)] text-white mb-4">
-              Not sure what you need?
+              How visible are you on Google?
             </h2>
             <p className="text-lg text-white/90 max-w-xl mx-auto mb-8">
-              Take our free 2-minute assessment to get a personalized website score
-              and see exactly what&apos;s holding your business back online.
+              Take our free 2-minute SEO assessment. Find out where you rank,
+              what&apos;s holding you back, and what it would take to dominate your local market.
             </p>
             <Link href="/quiz">
               <Button
                 size="lg"
                 className="!bg-white !text-[var(--accent)] hover:!bg-white/90 hover:!text-[var(--accent-hover)]"
               >
-                Get Your Free Website Score
+                Get Your Free SEO Score
               </Button>
             </Link>
           </div>

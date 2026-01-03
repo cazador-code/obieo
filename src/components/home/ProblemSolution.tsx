@@ -5,31 +5,31 @@ import { FadeInSection } from '@/components/animations'
 
 const problems = [
   {
-    title: 'Invisible online',
-    description: "Your competitors show up on Google. You don't. Every day you're losing potential customers who can't find you.",
+    title: 'Buried on Google',
+    description: "You search for your services and find your competitors on page one. Meanwhile, you're nowhere. Those are your leads calling someone else.",
   },
   {
-    title: 'Outdated website',
-    description: "Your site looks like it was built in 2015. Visitors bounce before they see what you offer.",
+    title: 'Wasted ad spend',
+    description: "You keep paying for ads because organic traffic doesn't exist. But the moment you stop paying, the leads stop too.",
   },
   {
-    title: 'No leads',
-    description: "You're paying for a website that doesn't generate business. It's a digital brochure, not a sales tool.",
+    title: 'No local presence',
+    description: "Customers in your service area don't know you exist. Your Google Business Profile is crickets. Reviews aren't coming in.",
   },
 ]
 
 const solutions = [
   {
-    title: 'Dominate local search',
-    description: "We build sites optimized for the searches your customers are making. Show up where it matters.",
+    title: 'Rank for what matters',
+    description: "We target the exact searches your customers make—'emergency plumber near me,' 'roof repair [your city].' You show up when they're ready to call.",
   },
   {
-    title: 'Built to convert',
-    description: "Every page designed to turn visitors into leads. Clear calls-to-action, trust signals, and mobile-first design.",
+    title: 'Build lasting traffic',
+    description: "SEO compounds over time. Every month your rankings improve, leads increase, and you depend less on paid ads.",
   },
   {
-    title: 'Measurable results',
-    description: "Track your leads, see your rankings improve. We focus on outcomes, not vanity metrics.",
+    title: 'Own your local market',
+    description: "Google Business optimization, local citations, review generation. We make you the obvious choice in your service area.",
   },
 ]
 

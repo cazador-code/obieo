@@ -13,12 +13,12 @@ export function Hero() {
           {/* Headline */}
           <h1 className="text-[2.5rem] sm:text-5xl md:text-6xl lg:text-7xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] leading-[1.1] mb-6 [word-break:keep-all]">
             <TextReveal delay={0.2} stagger={0.03}>
-              Websites that turn
+              Show up on Google.
             </TextReveal>
             <br />
             <span className="text-[var(--accent)]">
               <TextReveal delay={0.6} stagger={0.03}>
-                clicks into customers.
+                Get more calls.
               </TextReveal>
             </span>
           </h1>
@@ -30,7 +30,7 @@ export function Hero() {
             transition={{ delay: 1.2, duration: 0.6 }}
             className="text-lg sm:text-xl md:text-2xl text-[var(--text-secondary)] max-w-2xl mb-10"
           >
-            For home service businesses tired of agencies that overpromise and underdeliver.
+            SEO for home service businesses. Stop watching competitors take leads that should be yours.
           </motion.p>
 
           {/* CTAs */}
@@ -42,12 +42,12 @@ export function Hero() {
           >
             <Link href="/quiz">
               <Button size="lg" className="w-full sm:w-auto">
-                Get Your Free Website Score
+                Get Your Free SEO Score
               </Button>
             </Link>
             <Link href="/work">
               <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                See Our Work
+                See Results
               </Button>
             </Link>
           </motion.div>

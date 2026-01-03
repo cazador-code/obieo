@@ -11,19 +11,19 @@ export function FinalCTA() {
       <Container className="text-center">
         <FadeInSection>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-4">
-            Ready to stop losing leads?
+            Ready to rank higher?
           </h2>
           <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto mb-10">
-            Let&apos;s talk about how we can transform your online presence and start
-            generating the leads your business deserves.
+            Let&apos;s talk about where you stand on Google and what it would take
+            to start showing up for the searches that matter.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <CalendlyButton className="px-8 py-4 bg-[var(--accent)] text-white text-lg font-semibold rounded-lg hover:bg-[var(--accent-hover)] hover:scale-[1.02] transition-all">
-              Book a Free Call
+              Book a Free SEO Call
             </CalendlyButton>
             <Link href="/quiz">
               <Button variant="outline" size="lg">
-                Or take the quiz first
+                Or check your SEO score
               </Button>
             </Link>
           </div>
