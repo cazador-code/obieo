@@ -26,8 +26,8 @@ interface Project {
 
 export default async function WorkPage() {
   const [featuredProject, projects] = await Promise.all([
-    sanityFetch<Project | null>({ query: featuredProjectQuery, tags: ['project'] }),
-    sanityFetch<Project[]>({ query: projectsQuery, tags: ['project'] }),
+    sanityFetch<Project | null>({ query: featuredProjectQuery, tags: ['project'], defaultValue: null }),
+    sanityFetch<Project[]>({ query: projectsQuery, tags: ['project'], defaultValue: [] }),
   ])
 
   const otherProjects = projects.filter((p) => !p.featured)

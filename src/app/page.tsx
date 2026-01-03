@@ -33,8 +33,8 @@ interface FeaturedTestimonial {
 export default async function Home() {
   // Fetch featured project and testimonial in parallel
   const [featuredProject, featuredTestimonial] = await Promise.all([
-    sanityFetch<FeaturedProject | null>({ query: featuredProjectQuery, tags: ['project'] }),
-    sanityFetch<FeaturedTestimonial | null>({ query: featuredTestimonialQuery, tags: ['testimonial'] }),
+    sanityFetch<FeaturedProject | null>({ query: featuredProjectQuery, tags: ['project'], defaultValue: null }),
+    sanityFetch<FeaturedTestimonial | null>({ query: featuredTestimonialQuery, tags: ['testimonial'], defaultValue: null }),
   ])
 
   // Transform metrics from Sanity (string values) to component format (number values)

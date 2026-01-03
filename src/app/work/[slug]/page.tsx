@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import { PortableText } from '@portabletext/react'
+import { PortableText, PortableTextBlock } from '@portabletext/react'
 import { Section, Container, Button } from '@/components/ui'
 import { FadeInSection, Counter } from '@/components/animations'
 import { sanityFetch, urlFor } from '@/sanity/client'
@@ -16,11 +16,11 @@ interface Project {
   tagline: string
   heroImage: unknown
   metrics: { label: string; value: string; prefix?: string; suffix?: string }[]
-  challenge: unknown[]
+  challenge: PortableTextBlock[]
   challengeImage: unknown
-  approach: unknown[]
+  approach: PortableTextBlock[]
   approachImages: unknown[]
-  results: unknown[]
+  results: PortableTextBlock[]
   resultsImage: unknown
 }
 
@@ -40,6 +40,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const project = await sanityFetch<Project | null>({
     query: projectBySlugQuery,
     params: { slug },
+    defaultValue: null,
   })
 
   if (!project) return { title: 'Project Not Found | Obieo' }
@@ -56,6 +57,7 @@ export default async function CaseStudyPage({ params }: PageProps) {
     query: projectBySlugQuery,
     params: { slug },
     tags: ['project'],
+    defaultValue: null,
   })
 
   if (!project) notFound()
