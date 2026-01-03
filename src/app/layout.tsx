@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SmoothScroll } from "@/components/SmoothScroll";
+import { CustomCursor } from "@/components/CustomCursor";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -68,6 +69,7 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <SmoothScroll>
+            <CustomCursor />
             <Header />
             <main className="min-h-screen">{children}</main>
             <Footer />
