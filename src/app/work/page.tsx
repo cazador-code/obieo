@@ -17,7 +17,7 @@ export default function WorkPage() {
             Our Work
           </h1>
           <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-2xl">
-            Results that speak for themselves. See how we've helped home service businesses
+            Results that speak for themselves. See how we&apos;ve helped home service businesses
             grow with websites built to convert.
           </p>
         </Container>
@@ -87,7 +87,7 @@ export default function WorkPage() {
             Ready for results like these?
           </h2>
           <p className="text-lg text-[var(--text-secondary)] mb-8 max-w-2xl mx-auto">
-            Let's talk about how we can transform your online presence.
+            Let&apos;s talk about how we can transform your online presence.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/quiz">

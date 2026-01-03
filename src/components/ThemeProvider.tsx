@@ -64,8 +64,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
 export function useTheme() {
   const context = useContext(ThemeContext)
+  // Return safe defaults when outside provider (e.g., during 404 pre-render)
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider')
+    return { theme: 'light' as const, toggleTheme: () => {} }
   }
   return context
 }

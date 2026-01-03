@@ -160,7 +160,7 @@ export default async function CaseStudyPage({ params }: PageProps) {
             Ready to get results like this?
           </h2>
           <p className="text-lg text-[var(--text-secondary)] mb-8 max-w-2xl mx-auto">
-            Let's talk about transforming your online presence.
+            Let&apos;s talk about transforming your online presence.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/quiz">
