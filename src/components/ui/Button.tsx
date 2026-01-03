@@ -1,13 +1,21 @@
-import { forwardRef, ButtonHTMLAttributes } from 'react'
+'use client'
+
+import { forwardRef, ButtonHTMLAttributes, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost'
   size?: 'sm' | 'md' | 'lg'
+  magnetic?: boolean
   children: React.ReactNode
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', size = 'md', className = '', children, ...props }, ref) => {
+  ({ variant = 'primary', size = 'md', magnetic = true, className = '', children, ...props }, ref) => {
+    const internalRef = useRef<HTMLButtonElement>(null)
+    const buttonRef = (ref as React.RefObject<HTMLButtonElement>) || internalRef
+    const [position, setPosition] = useState({ x: 0, y: 0 })
+
     const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none'
 
     const variants = {
@@ -23,14 +31,52 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       lg: 'px-8 py-4 text-lg',
     }
 
+    const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (!magnetic || !buttonRef.current) return
+
+      const { clientX, clientY } = e
+      const { left, top, width, height } = buttonRef.current.getBoundingClientRect()
+
+      const x = (clientX - (left + width / 2)) * 0.2
+      const y = (clientY - (top + height / 2)) * 0.2
+
+      setPosition({ x, y })
+    }
+
+    const handleMouseLeave = () => {
+      setPosition({ x: 0, y: 0 })
+    }
+
+    // Check for reduced motion preference
+    const isBrowser = typeof window !== 'undefined'
+    const prefersReducedMotion = isBrowser && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (!magnetic || prefersReducedMotion) {
+      return (
+        <button
+          ref={buttonRef}
+          className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
+          data-cursor="button"
+          {...props}
+        >
+          {children}
+        </button>
+      )
+    }
+
     return (
-      <button
-        ref={ref}
+      <motion.button
+        ref={buttonRef}
         className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
-        {...props}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        animate={{ x: position.x, y: position.y }}
+        transition={{ type: 'spring', stiffness: 150, damping: 15, mass: 0.1 }}
+        data-cursor="button"
+        {...(props as React.ComponentProps<typeof motion.button>)}
       >
         {children}
-      </button>
+      </motion.button>
     )
   }
 )
