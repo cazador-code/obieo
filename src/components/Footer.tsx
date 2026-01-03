@@ -49,6 +49,14 @@ export default function Footer() {
               </li>
               <li>
                 <Link
+                  href="/industries"
+                  className="text-sm text-slate-400 hover:text-terracotta-400 transition-colors"
+                >
+                  Industries
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/about"
                   className="text-sm text-slate-400 hover:text-terracotta-400 transition-colors"
                 >
