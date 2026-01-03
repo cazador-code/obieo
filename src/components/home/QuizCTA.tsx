@@ -20,7 +20,7 @@ export function QuizCTA() {
             <Link href="/quiz">
               <Button
                 size="lg"
-                className="bg-white text-[var(--accent)] hover:bg-white/90 hover:text-[var(--accent-hover)]"
+                className="!bg-white !text-[var(--accent)] hover:!bg-white/90 hover:!text-[var(--accent-hover)]"
               >
                 Get Your Free Website Score
               </Button>
