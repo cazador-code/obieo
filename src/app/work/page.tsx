@@ -26,7 +26,10 @@ export default function WorkPage() {
       {/* Featured Project Placeholder */}
       <Section variant="alternate">
         <Container>
-          <div className="bg-[var(--bg-card)] rounded-2xl p-8 md:p-12 border border-[var(--border)]">
+          <div
+            data-cursor="view"
+            className="bg-[var(--bg-card)] rounded-2xl p-8 md:p-12 border border-[var(--border)] cursor-pointer"
+          >
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
                 <p className="text-sm font-medium text-[var(--accent)] mb-2">
@@ -71,7 +74,8 @@ export default function WorkPage() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="aspect-[4/3] bg-[var(--bg-secondary)] rounded-xl flex items-center justify-center border border-[var(--border)]"
+                data-cursor="view"
+                className="aspect-[4/3] bg-[var(--bg-secondary)] rounded-xl flex items-center justify-center border border-[var(--border)] cursor-pointer"
               >
                 <p className="text-[var(--text-muted)]">Coming Soon</p>
               </div>
