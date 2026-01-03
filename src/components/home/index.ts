@@ -1,0 +1,7 @@
+export { Hero } from './Hero'
+export { FeaturedCaseStudy } from './FeaturedCaseStudy'
+export { ProblemSolution } from './ProblemSolution'
+export { ServicesOverview } from './ServicesOverview'
+export { QuizCTA } from './QuizCTA'
+export { Testimonial } from './Testimonial'
+export { FinalCTA } from './FinalCTA'
