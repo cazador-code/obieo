@@ -1,5 +1,3 @@
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import CalendlyButton from "@/components/CalendlyButton";
 import type { Metadata } from "next";
 
@@ -11,9 +9,7 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <>
-      <Header />
-      <main className="pt-16 sm:pt-20">
+    <div className="pt-16 sm:pt-20">
         {/* Hero */}
         <section className="bg-gradient-to-b from-cream-100 to-cream-50 py-16 sm:py-24">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -293,9 +289,7 @@ export default function ContactPage() {
             </form>
           </div>
         </section>
-      </main>
-      <Footer />
-    </>
+    </div>
   );
 }
 

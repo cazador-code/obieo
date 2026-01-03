@@ -1,5 +1,3 @@
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import Link from "next/link";
 import CalendlyButton from "@/components/CalendlyButton";
 import type { Metadata } from "next";
@@ -131,9 +129,7 @@ const ArrowIcon = () => (
 
 export default function IndustriesPage() {
   return (
-    <>
-      <Header />
-      <main className="pt-16 sm:pt-20">
+    <div className="pt-16 sm:pt-20">
         {/* Hero */}
         <section className="bg-gradient-to-b from-cream-100 to-cream-50 py-16 sm:py-24">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -220,9 +216,7 @@ export default function IndustriesPage() {
             </div>
           </div>
         </section>
-      </main>
-      <Footer />
-    </>
+    </div>
   );
 }
 
