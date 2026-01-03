@@ -11,7 +11,7 @@ export function Hero() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="max-w-4xl">
           {/* Headline */}
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] leading-[1.1] mb-6">
+          <h1 className="text-[2.5rem] sm:text-5xl md:text-6xl lg:text-7xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] leading-[1.1] mb-6 [word-break:keep-all]">
             <TextReveal delay={0.2} stagger={0.03}>
               Websites that turn
             </TextReveal>
