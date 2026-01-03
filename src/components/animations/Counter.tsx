@@ -1,11 +1,26 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useSyncExternalStore } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
+}
+
+// Check for reduced motion preference
+function subscribeToReducedMotion(callback: () => void) {
+  const mql = window.matchMedia('(prefers-reduced-motion: reduce)')
+  mql.addEventListener('change', callback)
+  return () => mql.removeEventListener('change', callback)
+}
+
+function getReducedMotionSnapshot() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+function getReducedMotionServerSnapshot() {
+  return false
 }
 
 interface CounterProps {
@@ -24,19 +39,17 @@ export function Counter({
   className = '',
 }: CounterProps) {
   const ref = useRef<HTMLSpanElement>(null)
-  const [displayValue, setDisplayValue] = useState(0)
+  const prefersReducedMotion = useSyncExternalStore(
+    subscribeToReducedMotion,
+    getReducedMotionSnapshot,
+    getReducedMotionServerSnapshot
+  )
+  const [displayValue, setDisplayValue] = useState(prefersReducedMotion ? value : 0)
   const hasAnimated = useRef(false)
 
   useEffect(() => {
     const element = ref.current
-    if (!element || hasAnimated.current) return
-
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-    if (prefersReducedMotion) {
-      setDisplayValue(value)
-      return
-    }
+    if (!element || hasAnimated.current || prefersReducedMotion) return
 
     const trigger = ScrollTrigger.create({
       trigger: element,
@@ -60,11 +73,14 @@ export function Counter({
     return () => {
       trigger.kill()
     }
-  }, [value, duration])
+  }, [value, duration, prefersReducedMotion])
+
+  // For reduced motion, just show the final value
+  const finalDisplayValue = prefersReducedMotion ? value : displayValue
 
   return (
     <span ref={ref} className={className}>
-      {prefix}{displayValue}{suffix}
+      {prefix}{finalDisplayValue}{suffix}
     </span>
   )
 }
