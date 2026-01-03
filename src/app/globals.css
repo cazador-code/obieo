@@ -1,26 +1,101 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Warm, earthy palette - avoids generic agency blues */
+  --slate-950: #0c0f14;
+  --slate-900: #151921;
+  --slate-800: #1e2430;
+  --slate-700: #2d3548;
+  --slate-600: #3f4a60;
+  --slate-500: #5a6680;
+  --slate-400: #8792a8;
+  --slate-300: #b4bbc9;
+  --slate-200: #dfe2e8;
+  --slate-100: #f0f2f5;
+  --slate-50: #f8f9fb;
+  
+  /* Terracotta accent - warm, trustworthy, unique */
+  --terracotta-600: #c4613c;
+  --terracotta-500: #d97650;
+  --terracotta-400: #e8916b;
+  --terracotta-300: #f2b094;
+  
+  /* Cream tones */
+  --cream-50: #fdfcfa;
+  --cream-100: #f9f7f3;
+  --cream-200: #f0ece4;
+  
+  /* Success/info */
+  --green-500: #22c55e;
+  --green-600: #16a34a;
+  
+  --background: var(--cream-50);
+  --foreground: var(--slate-900);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-slate-950: var(--slate-950);
+  --color-slate-900: var(--slate-900);
+  --color-slate-800: var(--slate-800);
+  --color-slate-700: var(--slate-700);
+  --color-slate-600: var(--slate-600);
+  --color-slate-500: var(--slate-500);
+  --color-slate-400: var(--slate-400);
+  --color-slate-300: var(--slate-300);
+  --color-slate-200: var(--slate-200);
+  --color-slate-100: var(--slate-100);
+  --color-slate-50: var(--slate-50);
+  --color-terracotta-600: var(--terracotta-600);
+  --color-terracotta-500: var(--terracotta-500);
+  --color-terracotta-400: var(--terracotta-400);
+  --color-terracotta-300: var(--terracotta-300);
+  --color-cream-50: var(--cream-50);
+  --color-cream-100: var(--cream-100);
+  --color-cream-200: var(--cream-200);
+  --color-green-500: var(--green-500);
+  --color-green-600: var(--green-600);
+  --font-display: var(--font-outfit);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cream-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--slate-300);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--slate-400);
+}
+
+/* Focus styles */
+*:focus-visible {
+  outline: 2px solid var(--terracotta-500);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: var(--terracotta-300);
+  color: var(--slate-900);
 }

@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Obieo — SEO & AEO for Home Service Businesses
+
+A Next.js website for Obieo, a solo SEO/AEO agency targeting home service business owners.
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router)
+- **Styling:** Tailwind CSS v4
+- **Fonts:** DM Sans (body) + Outfit (headings) via next/font
+- **Deployment:** Vercel-ready
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the site.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── layout.tsx        # Root layout with fonts & metadata
+│   ├── page.tsx          # Homepage (main conversion page)
+│   ├── globals.css       # Global styles & Tailwind config
+│   ├── services/
+│   │   └── page.tsx      # Services page (Sprint & Retainer)
+│   ├── about/
+│   │   └── page.tsx      # About page (Hunter's story)
+│   └── contact/
+│       └── page.tsx      # Contact page (Calendly + form)
+├── components/
+│   ├── Header.tsx        # Navigation header
+│   └── Footer.tsx        # Site footer
+```
 
-## Learn More
+## Placeholders to Replace
 
-To learn more about Next.js, take a look at the following resources:
+Before going live, replace these placeholders:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [ ] **Calendly URL** — In `/contact/page.tsx`, replace the Calendly placeholder with your actual embed code
+- [ ] **Phone Number** — Search for `555-123-4567` and replace with your real number
+- [ ] **Email** — Search for `hunter@obieo.com` and replace if needed
+- [ ] **Contact Form** — Connect the form in `/contact/page.tsx` to Formspree, Netlify Forms, or similar
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Design System
 
-## Deploy on Vercel
+### Colors
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Cream** (backgrounds): `#fdfcfa`, `#f9f7f3`, `#f0ece4`
+- **Slate** (text/dark sections): `#151921` through `#f8f9fb`
+- **Terracotta** (accent): `#d97650` (primary), `#c4613c` (hover)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Typography
+
+- **Headings:** Outfit (variable weight)
+- **Body:** DM Sans
+
+## Deployment
+
+This site is ready for Vercel deployment:
+
+```bash
+# Via Vercel CLI
+vercel
+
+# Or connect your GitHub repo to Vercel for automatic deployments
+```
+
+## Future Enhancements
+
+- [ ] Dark mode toggle
+- [ ] Form submission integration (Formspree)
+- [ ] Case study/testimonials section
+- [ ] Blog functionality
+- [ ] Subtle scroll animations (Framer Motion)
+
+---
+
+Built by [Hunter Lapeyre](https://obieo.com)
