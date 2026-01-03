@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import CalendlyButton from "@/components/CalendlyButton";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -126,13 +127,12 @@ export default function ServicesPage() {
                   </div>
                 </div>
 
-                <Link
-                  href="/contact"
-                  className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all"
+                <CalendlyButton
+                  className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all cursor-pointer"
                 >
                   Start Your Sprint
                   <ArrowIcon />
-                </Link>
+                </CalendlyButton>
               </div>
 
               <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
@@ -236,13 +236,12 @@ export default function ServicesPage() {
                   </div>
                 </div>
 
-                <Link
-                  href="/contact"
-                  className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all"
+                <CalendlyButton
+                  className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all cursor-pointer"
                 >
                   Start Growing
                   <ArrowIcon />
-                </Link>
+                </CalendlyButton>
               </div>
 
               <div className="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-8">
@@ -350,13 +349,12 @@ export default function ServicesPage() {
                 Still not sure? Let&apos;s talk. I&apos;ll give you my honest
                 recommendation.
               </p>
-              <Link
-                href="/contact"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all"
+              <CalendlyButton
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all cursor-pointer"
               >
                 Book a Free Call
                 <ArrowIcon />
-              </Link>
+              </CalendlyButton>
             </div>
           </div>
         </section>

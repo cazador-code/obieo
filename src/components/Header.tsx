@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import CalendlyButton from "./CalendlyButton";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -44,12 +45,9 @@ export default function Header() {
             >
               Contact
             </Link>
-            <Link
-              href="/contact"
-              className="inline-flex items-center justify-center px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white text-sm font-semibold rounded-lg transition-colors"
-            >
+            <CalendlyButton className="inline-flex items-center justify-center px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer">
               Book a Call
-            </Link>
+            </CalendlyButton>
           </div>
 
           {/* Mobile menu button */}
@@ -123,13 +121,9 @@ export default function Header() {
               >
                 Contact
               </Link>
-              <Link
-                href="/contact"
-                className="mt-2 inline-flex items-center justify-center px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white text-sm font-semibold rounded-lg transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
+              <CalendlyButton className="mt-2 inline-flex items-center justify-center px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer">
                 Book a Call
-              </Link>
+              </CalendlyButton>
             </div>
           </div>
         )}
@@ -137,4 +131,3 @@ export default function Header() {
     </header>
   );
 }
-

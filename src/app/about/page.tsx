@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import CalendlyButton from "@/components/CalendlyButton";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -187,13 +188,12 @@ export default function AboutPage() {
             </div>
 
             <div className="mt-12 flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/contact"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all"
+              <CalendlyButton
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all cursor-pointer"
               >
                 Book a Free Call
                 <ArrowIcon />
-              </Link>
+              </CalendlyButton>
               <a
                 href="mailto:hunter@obieo.com"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-lg border border-slate-200 transition-all"

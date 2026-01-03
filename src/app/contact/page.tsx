@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import CalendlyButton from "@/components/CalendlyButton";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -42,28 +43,16 @@ export default function ContactPage() {
                   Pick a time that works for you. 20 minutes, no obligation.
                 </p>
 
-                {/* Calendly Embed Placeholder */}
-                <div className="mt-6 bg-slate-100 rounded-lg border-2 border-dashed border-slate-300 p-12 text-center">
-                  <p className="text-slate-500 text-sm">
-                    [Calendly Embed Goes Here]
-                  </p>
-                  <p className="text-slate-400 text-xs mt-2">
-                    Replace with: &lt;div
-                    className=&quot;calendly-inline-widget&quot;
-                    data-url=&quot;https://calendly.com/YOUR_LINK&quot;&gt;
-                  </p>
-                </div>
-
-                {/* Temporary CTA until Calendly is set up */}
+                {/* Calendly Popup Button */}
                 <div className="mt-6">
-                  <a
-                    href="https://calendly.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center w-full px-6 py-3.5 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all"
+                  <CalendlyButton
+                    className="inline-flex items-center justify-center w-full px-6 py-3.5 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all cursor-pointer text-lg"
                   >
-                    Open Scheduling Page
-                  </a>
+                    Schedule Your Free Call
+                  </CalendlyButton>
+                  <p className="text-slate-400 text-xs mt-3 text-center">
+                    Click to open the scheduling popup
+                  </p>
                 </div>
               </div>
 

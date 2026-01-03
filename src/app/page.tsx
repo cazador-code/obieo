@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import CalendlyButton from "@/components/CalendlyButton";
 
 // Icons as inline SVGs to keep it simple
 const CheckIcon = () => (
@@ -74,7 +75,7 @@ export default function Home() {
                   {" "}
                   — From Someone Who Actually Knows Your Trade
                 </span>
-              </h1>
+          </h1>
 
               <p className="mt-6 text-lg sm:text-xl text-slate-600 leading-relaxed max-w-2xl">
                 SEO, AEO, and website optimization for home service businesses.{" "}
@@ -84,13 +85,10 @@ export default function Home() {
               </p>
 
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                <Link
-                  href="/contact"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all hover:shadow-lg hover:shadow-terracotta-500/20"
-                >
+                <CalendlyButton className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all hover:shadow-lg hover:shadow-terracotta-500/20 cursor-pointer">
                   Book a Free Audit Call
                   <ArrowIcon />
-                </Link>
+                </CalendlyButton>
                 <a
                   href="tel:5551234567"
                   className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-lg border border-slate-200 transition-all"
@@ -390,8 +388,8 @@ export default function Home() {
                     </h3>
                     <p className="mt-2 text-slate-400 leading-relaxed">
                       {item.desc}
-                    </p>
-                  </div>
+          </p>
+        </div>
                 </div>
               ))}
             </div>
@@ -465,13 +463,10 @@ export default function Home() {
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/contact"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all hover:shadow-lg hover:shadow-terracotta-500/30 text-lg"
-              >
+              <CalendlyButton className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all hover:shadow-lg hover:shadow-terracotta-500/30 text-lg cursor-pointer">
                 Book Your Free Audit Call
                 <ArrowIcon />
-              </Link>
+              </CalendlyButton>
             </div>
 
             <p className="mt-6 text-slate-400">
@@ -483,7 +478,7 @@ export default function Home() {
                 (555) 123-4567
               </a>
             </p>
-          </div>
+        </div>
         </section>
       </main>
       <Footer />
