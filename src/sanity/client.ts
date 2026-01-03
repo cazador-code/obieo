@@ -9,6 +9,7 @@ export const client = createClient({
 
 const builder = imageUrlBuilder(client)
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function urlFor(source: any) {
   return builder.image(source)
 }
@@ -20,7 +21,7 @@ export async function sanityFetch<T>({
   tags = [],
 }: {
   query: string
-  params?: Record<string, any>
+  params?: Record<string, unknown>
   tags?: string[]
 }): Promise<T> {
   return client.fetch<T>(query, params, {
