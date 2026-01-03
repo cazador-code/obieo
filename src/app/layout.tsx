@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Outfit } from "next/font/google";
 import Script from "next/script";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { SmoothScroll } from "@/components/SmoothScroll";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -54,7 +55,9 @@ export default function RootLayout({
       </head>
       <body className="antialiased font-sans">
         <ThemeProvider>
-          {children}
+          <SmoothScroll>
+            {children}
+          </SmoothScroll>
         </ThemeProvider>
         <Script
           src="https://assets.calendly.com/assets/external/widget.js"
