@@ -1,14 +1,43 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore, useRef } from 'react'
 import { motion, useMotionValue, useSpring } from 'framer-motion'
 
 type CursorState = 'default' | 'hover' | 'button' | 'view' | 'hidden'
 
+// Check if cursor should be disabled (mobile, touch, reduced motion)
+function subscribeToCursorDisabled(callback: () => void) {
+  const mqlMobile = window.matchMedia('(max-width: 768px)')
+  const mqlMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+  mqlMobile.addEventListener('change', callback)
+  mqlMotion.addEventListener('change', callback)
+  return () => {
+    mqlMobile.removeEventListener('change', callback)
+    mqlMotion.removeEventListener('change', callback)
+  }
+}
+
+function getCursorDisabledSnapshot() {
+  const isMobile = window.matchMedia('(max-width: 768px)').matches
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const isTouch = 'ontouchstart' in window
+  return isMobile || prefersReducedMotion || isTouch
+}
+
+function getCursorDisabledServerSnapshot() {
+  return true // Disable on server
+}
+
+
 export function CustomCursor() {
   const [cursorState, setCursorState] = useState<CursorState>('default')
-  const [isVisible, setIsVisible] = useState(true)
-  const [isMounted, setIsMounted] = useState(false)
+  const hasSetupRef = useRef(false)
+
+  const isDisabled = useSyncExternalStore(
+    subscribeToCursorDisabled,
+    getCursorDisabledSnapshot,
+    getCursorDisabledServerSnapshot
+  )
 
   const cursorX = useMotionValue(0)
   const cursorY = useMotionValue(0)
@@ -23,30 +52,21 @@ export function CustomCursor() {
   const outerXSpring = useSpring(cursorX, outerSpringConfig)
   const outerYSpring = useSpring(cursorY, outerSpringConfig)
 
-  // Check for mobile/reduced motion
+  // Setup cursor hiding and mark as mounted
   useEffect(() => {
-    const isMobile = window.matchMedia('(max-width: 768px)').matches
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const isTouch = 'ontouchstart' in window
+    if (isDisabled || hasSetupRef.current) return
 
-    if (isMobile || prefersReducedMotion || isTouch) {
-      setIsVisible(false)
-      return
-    }
-
-    setIsMounted(true)
-
-    // Hide default cursor
+    hasSetupRef.current = true
     document.body.style.cursor = 'none'
 
     return () => {
       document.body.style.cursor = 'auto'
     }
-  }, [])
+  }, [isDisabled])
 
   // Track mouse position
   useEffect(() => {
-    if (!isMounted) return
+    if (isDisabled || !hasSetupRef.current) return
 
     const handleMouseMove = (e: MouseEvent) => {
       cursorX.set(e.clientX)
@@ -65,11 +85,11 @@ export function CustomCursor() {
       document.removeEventListener('mouseleave', handleMouseLeave)
       document.removeEventListener('mouseenter', handleMouseEnter)
     }
-  }, [isMounted, cursorX, cursorY])
+  }, [isDisabled, cursorX, cursorY])
 
   // Detect hoverable elements
   useEffect(() => {
-    if (!isMounted) return
+    if (isDisabled || !hasSetupRef.current) return
 
     const handleMouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement
@@ -101,9 +121,13 @@ export function CustomCursor() {
     return () => {
       document.removeEventListener('mouseover', handleMouseOver)
     }
-  }, [isMounted])
+  }, [isDisabled])
 
-  if (!isVisible || !isMounted) return null
+  // Don't render on server or when disabled
+  if (isDisabled) return null
+
+  // Use a key to force re-render after mount
+  if (typeof window === 'undefined') return null
 
   const cursorVariants = {
     default: {
