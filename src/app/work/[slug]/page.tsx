@@ -1,44 +1,48 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 import { notFound } from 'next/navigation'
+import { PortableText } from '@portabletext/react'
 import { Section, Container, Button } from '@/components/ui'
+import { FadeInSection, Counter } from '@/components/animations'
+import { sanityFetch, urlFor } from '@/sanity/client'
+import { projectBySlugQuery, projectsQuery } from '@/sanity/queries'
 
-// Temporary static data until Sanity is connected
-const projects: Record<string, {
+interface Project {
+  _id: string
   title: string
+  slug: { current: string }
   client: string
   tagline: string
+  heroImage: unknown
   metrics: { label: string; value: string; prefix?: string; suffix?: string }[]
-  challenge: string
-  approach: string
-  results: string
-}> = {
-  'lapeyre-roofing': {
-    title: 'Lapeyre Roofing',
-    client: 'Lapeyre Roofing',
-    tagline: 'From invisible online to the top roofer in Baton Rouge.',
-    metrics: [
-      { label: 'Organic Leads', value: '147', prefix: '+', suffix: '%' },
-      { label: 'Google Ranking', value: '1', prefix: '#' },
-      { label: 'Load Time', value: '1.1', suffix: 's' },
-    ],
-    challenge: `Lapeyre Roofing had been serving the Baton Rouge area for years, but their online presence didn't reflect the quality of their work. Their outdated website was slow, not mobile-friendly, and invisible on Google. They were losing potential customers to competitors with better digital presence.`,
-    approach: `We started with a complete audit of their competitive landscape and identified key opportunities. Then we designed and built a new website focused on conversion: clear calls-to-action, trust signals, and local SEO optimization. Every page was crafted to turn visitors into leads.`,
-    results: `Within 6 months, Lapeyre Roofing went from page 3 to #1 on Google for their key local search terms. Organic leads increased by 147%, and the new site loads in under 1.2 seconds. Most importantly, they're now booking more quality jobs than ever.`,
-  },
+  challenge: unknown[]
+  challengeImage: unknown
+  approach: unknown[]
+  approachImages: unknown[]
+  results: unknown[]
+  resultsImage: unknown
 }
 
 interface PageProps {
   params: Promise<{ slug: string }>
 }
 
+export async function generateStaticParams() {
+  const projects = await sanityFetch<{ slug: { current: string } }[]>({
+    query: projectsQuery,
+  })
+  return projects.map((project) => ({ slug: project.slug.current }))
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
-  const project = projects[slug]
+  const project = await sanityFetch<Project | null>({
+    query: projectBySlugQuery,
+    params: { slug },
+  })
 
-  if (!project) {
-    return { title: 'Project Not Found | Obieo' }
-  }
+  if (!project) return { title: 'Project Not Found | Obieo' }
 
   return {
     title: `${project.title} | Our Work | Obieo`,
@@ -48,11 +52,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function CaseStudyPage({ params }: PageProps) {
   const { slug } = await params
-  const project = projects[slug]
+  const project = await sanityFetch<Project | null>({
+    query: projectBySlugQuery,
+    params: { slug },
+    tags: ['project'],
+  })
 
-  if (!project) {
-    notFound()
-  }
+  if (!project) notFound()
 
   return (
     <>
@@ -68,90 +74,156 @@ export default async function CaseStudyPage({ params }: PageProps) {
             </svg>
             Back to Work
           </Link>
-
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-4">
             {project.title}
           </h1>
           <p className="text-xl md:text-2xl text-[var(--text-secondary)] mb-12 max-w-3xl">
             {project.tagline}
           </p>
-
-          {/* Metrics */}
           <div className="grid grid-cols-3 gap-4 md:gap-8 max-w-2xl">
-            {project.metrics.map((metric, i) => (
-              <div key={i} className="text-center md:text-left">
-                <p className="text-3xl md:text-4xl font-semibold text-[var(--accent)]">
-                  {metric.prefix}{metric.value}{metric.suffix}
-                </p>
-                <p className="text-sm text-[var(--text-secondary)]">{metric.label}</p>
-              </div>
+            {project.metrics?.map((metric, i) => (
+              <FadeInSection key={i} delay={i * 0.1}>
+                <div className="text-center md:text-left">
+                  <p className="text-3xl md:text-4xl font-semibold text-[var(--accent)]">
+                    <Counter value={parseFloat(metric.value)} prefix={metric.prefix} suffix={metric.suffix} />
+                  </p>
+                  <p className="text-sm text-[var(--text-secondary)]">{metric.label}</p>
+                </div>
+              </FadeInSection>
             ))}
           </div>
         </Container>
       </Section>
 
-      {/* Hero Image Placeholder */}
-      <Section size="sm" className="py-0">
-        <Container size="xl">
-          <div className="aspect-video bg-[var(--bg-secondary)] rounded-2xl flex items-center justify-center border border-[var(--border)]">
-            <p className="text-[var(--text-muted)]">Hero Image</p>
-          </div>
-        </Container>
-      </Section>
+      {/* Hero Image */}
+      {project.heroImage && (
+        <Section size="sm" className="py-0">
+          <Container size="xl">
+            <div className="relative aspect-video rounded-2xl overflow-hidden">
+              <Image
+                src={urlFor(project.heroImage).width(1400).url()}
+                alt={project.title}
+                fill
+                className="object-cover"
+                priority
+              />
+            </div>
+          </Container>
+        </Section>
+      )}
 
-      {/* The Challenge */}
-      <Section>
-        <Container size="md">
-          <h2 className="text-3xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-6">
-            The Challenge
-          </h2>
-          <p className="text-lg text-[var(--text-secondary)] leading-relaxed">
-            {project.challenge}
-          </p>
-        </Container>
-      </Section>
+      {/* Hero Image Placeholder if no image */}
+      {!project.heroImage && (
+        <Section size="sm" className="py-0">
+          <Container size="xl">
+            <div className="aspect-video bg-[var(--bg-secondary)] rounded-2xl flex items-center justify-center border border-[var(--border)]">
+              <p className="text-[var(--text-muted)]">Hero Image</p>
+            </div>
+          </Container>
+        </Section>
+      )}
 
-      {/* Before Image Placeholder */}
-      <Section size="sm" variant="alternate" className="py-12">
-        <Container>
-          <div className="aspect-video bg-[var(--bg-card)] rounded-xl flex items-center justify-center border border-[var(--border)]">
-            <p className="text-[var(--text-muted)]">Before Screenshot</p>
-          </div>
-        </Container>
-      </Section>
+      {/* Challenge */}
+      {project.challenge && project.challenge.length > 0 && (
+        <Section>
+          <Container size="md">
+            <FadeInSection>
+              <h2 className="text-3xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-6">
+                The Challenge
+              </h2>
+              <div className="prose prose-lg max-w-none text-[var(--text-secondary)] prose-p:text-[var(--text-secondary)] prose-headings:text-[var(--text-primary)] prose-strong:text-[var(--text-primary)]">
+                <PortableText value={project.challenge} />
+              </div>
+            </FadeInSection>
+          </Container>
+        </Section>
+      )}
 
-      {/* The Approach */}
-      <Section>
-        <Container size="md">
-          <h2 className="text-3xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-6">
-            The Approach
-          </h2>
-          <p className="text-lg text-[var(--text-secondary)] leading-relaxed">
-            {project.approach}
-          </p>
-        </Container>
-      </Section>
+      {/* Challenge Image */}
+      {project.challengeImage && (
+        <Section size="sm" variant="alternate" className="py-12">
+          <Container>
+            <div className="relative aspect-video rounded-xl overflow-hidden">
+              <Image
+                src={urlFor(project.challengeImage).width(1200).url()}
+                alt="Before"
+                fill
+                className="object-cover"
+              />
+            </div>
+          </Container>
+        </Section>
+      )}
 
-      {/* The Results */}
-      <Section variant="alternate">
-        <Container size="md">
-          <h2 className="text-3xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-6">
-            The Results
-          </h2>
-          <p className="text-lg text-[var(--text-secondary)] leading-relaxed">
-            {project.results}
-          </p>
-        </Container>
-      </Section>
+      {/* Approach */}
+      {project.approach && project.approach.length > 0 && (
+        <Section variant="alternate">
+          <Container size="md">
+            <FadeInSection>
+              <h2 className="text-3xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-6">
+                The Approach
+              </h2>
+              <div className="prose prose-lg max-w-none text-[var(--text-secondary)] prose-p:text-[var(--text-secondary)] prose-headings:text-[var(--text-primary)] prose-strong:text-[var(--text-primary)]">
+                <PortableText value={project.approach} />
+              </div>
+            </FadeInSection>
+          </Container>
+        </Section>
+      )}
 
-      {/* After Image Placeholder */}
-      <Section size="sm" className="py-12">
-        <Container size="xl">
-          <div className="aspect-video bg-[var(--bg-secondary)] rounded-2xl flex items-center justify-center border border-[var(--border)]">
-            <p className="text-[var(--text-muted)]">After Screenshot / Final Design</p>
-          </div>
-        </Container>
-      </Section>
+      {/* Approach Images */}
+      {project.approachImages && project.approachImages.length > 0 && (
+        <Section size="sm" className="py-12">
+          <Container size="xl">
+            <div className="grid md:grid-cols-2 gap-6">
+              {project.approachImages.map((image, i) => (
+                <FadeInSection key={i} delay={i * 0.1}>
+                  <div className="relative aspect-video rounded-xl overflow-hidden">
+                    <Image
+                      src={urlFor(image).width(800).url()}
+                      alt={`Approach ${i + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                </FadeInSection>
+              ))}
+            </div>
+          </Container>
+        </Section>
+      )}
+
+      {/* Results */}
+      {project.results && project.results.length > 0 && (
+        <Section>
+          <Container size="md">
+            <FadeInSection>
+              <h2 className="text-3xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-6">
+                The Results
+              </h2>
+              <div className="prose prose-lg max-w-none text-[var(--text-secondary)] prose-p:text-[var(--text-secondary)] prose-headings:text-[var(--text-primary)] prose-strong:text-[var(--text-primary)]">
+                <PortableText value={project.results} />
+              </div>
+            </FadeInSection>
+          </Container>
+        </Section>
+      )}
+
+      {/* Results Image */}
+      {project.resultsImage && (
+        <Section size="sm" className="py-12">
+          <Container size="xl">
+            <div className="relative aspect-video rounded-2xl overflow-hidden">
+              <Image
+                src={urlFor(project.resultsImage).width(1400).url()}
+                alt="Final Design"
+                fill
+                className="object-cover"
+              />
+            </div>
+          </Container>
+        </Section>
+      )}
 
       {/* CTA */}
       <Section variant="alternate">
