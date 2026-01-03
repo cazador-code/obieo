@@ -1,5 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { client } from '@/sanity/client'
+import { createClient } from '@sanity/client'
+
+// Create client lazily to avoid build-time validation errors
+function getSanityClient() {
+  const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
+  const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
+  const token = process.env.SANITY_API_TOKEN
+
+  if (!projectId) {
+    throw new Error('Sanity project ID not configured')
+  }
+
+  return createClient({
+    projectId,
+    dataset,
+    apiVersion: '2024-01-01',
+    useCdn: false,
+    token,
+  })
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,6 +31,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Get client at runtime
+    const client = getSanityClient()
 
     // Create lead in Sanity
     const lead = await client.create({
