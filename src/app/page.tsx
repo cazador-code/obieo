@@ -61,19 +61,20 @@ export default async function Home() {
           tagline={featuredProject.tagline}
           metrics={transformedMetrics}
           slug={featuredProject.slug.current}
-          image={projectImageUrl}
+          mockupImage={projectImageUrl}
         />
       ) : (
         <FeaturedCaseStudy
           title="Lapeyre Roofing"
           client="Lapeyre Roofing"
-          tagline="From invisible online to the top roofer in Baton Rouge."
+          tagline="From invisible online to dominating local search — in just the first month."
           metrics={[
-            { label: 'Organic Leads', value: 147, prefix: '+', suffix: '%' },
-            { label: 'Google Ranking', value: 1, prefix: '#' },
-            { label: 'Load Time', value: 1, suffix: 's' },
+            { label: 'Search Impressions', value: 66, prefix: '+', suffix: '%' },
+            { label: 'Avg. Ranking Boost', value: 5, prefix: '+', suffix: ' spots' },
           ]}
           slug="lapeyre-roofing"
+          mockupImage="/case-studies/lapeyre-roofing/mockup.svg"
+          logo="/case-studies/lapeyre-roofing/logo.svg"
         />
       )}
 
