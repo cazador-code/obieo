@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Section, Container, Button } from '@/components/ui'
 import { FadeInSection } from '@/components/animations'
+import { WorkCTA } from '@/components/WorkCTA'
 import { sanityFetch, urlFor } from '@/sanity/client'
 import { projectsQuery, featuredProjectQuery } from '@/sanity/queries'
 
@@ -213,24 +214,7 @@ export default async function WorkPage() {
       )}
 
       {/* CTA */}
-      <Section variant="alternate">
-        <Container className="text-center">
-          <h2 className="text-3xl md:text-4xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-4">
-            Ready for results like these?
-          </h2>
-          <p className="text-lg text-[var(--text-secondary)] mb-8 max-w-2xl mx-auto">
-            Let&apos;s talk about how we can transform your online presence.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/quiz">
-              <Button size="lg">Get Your Free Website Score</Button>
-            </Link>
-            <Link href="/contact">
-              <Button variant="outline" size="lg">Book a Call</Button>
-            </Link>
-          </div>
-        </Container>
-      </Section>
+      <WorkCTA />
     </>
   )
 }
