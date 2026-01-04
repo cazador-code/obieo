@@ -24,6 +24,18 @@ interface Project {
   featured: boolean
 }
 
+// Hardcoded featured case study (custom page, not from Sanity)
+const lapeyreRoofingCaseStudy = {
+  title: 'Lapeyre Roofing',
+  slug: 'lapeyre-roofing',
+  tagline: 'How I fired my SEO agency and jumped 5 ranking positions in 30 days.',
+  metrics: [
+    { label: 'Ranking Positions', value: '5', prefix: '+' },
+    { label: 'More Impressions', value: '66', suffix: '%' },
+    { label: 'Days to Results', value: '30' },
+  ],
+}
+
 export default async function WorkPage() {
   const [featuredProject, projects] = await Promise.all([
     sanityFetch<Project | null>({ query: featuredProjectQuery, tags: ['project'], defaultValue: null }),
@@ -46,9 +58,53 @@ export default async function WorkPage() {
         </Container>
       </Section>
 
-      {/* Featured Project */}
-      {featuredProject && (
-        <Section variant="alternate">
+      {/* Featured Case Study: Lapeyre Roofing */}
+      <Section variant="alternate">
+        <Container>
+          <FadeInSection>
+            <Link href={`/work/${lapeyreRoofingCaseStudy.slug}`}>
+              <div className="bg-[var(--bg-card)] rounded-3xl overflow-hidden border border-[var(--border)] hover:shadow-xl transition-shadow" data-cursor="view">
+                <div className="grid lg:grid-cols-2 gap-0">
+                  <div className="p-8 md:p-12 lg:p-16">
+                    <p className="text-sm font-medium text-[var(--accent)] uppercase tracking-wider mb-3">
+                      Featured Case Study
+                    </p>
+                    <h2 className="text-3xl md:text-4xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-4">
+                      {lapeyreRoofingCaseStudy.title}
+                    </h2>
+                    <p className="text-lg text-[var(--text-secondary)] mb-8">
+                      {lapeyreRoofingCaseStudy.tagline}
+                    </p>
+                    <div className="flex flex-wrap gap-8 mb-8">
+                      {lapeyreRoofingCaseStudy.metrics.map((metric, i) => (
+                        <div key={i}>
+                          <p className="text-3xl font-semibold text-[var(--accent)]">
+                            {metric.prefix}{metric.value}{metric.suffix}
+                          </p>
+                          <p className="text-sm text-[var(--text-secondary)]">{metric.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <Button>View Case Study</Button>
+                  </div>
+                  <div className="relative aspect-square lg:aspect-auto bg-[#0c0a09] min-h-[300px]">
+                    <Image
+                      src="/case-studies/lapeyre-roofing/mockup.svg"
+                      alt="Lapeyre Roofing website redesign"
+                      fill
+                      className="object-contain p-8"
+                    />
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </FadeInSection>
+        </Container>
+      </Section>
+
+      {/* Additional Sanity Featured Project (if exists and different) */}
+      {featuredProject && featuredProject.slug.current !== 'lapeyre-roofing' && (
+        <Section>
           <Container>
             <FadeInSection>
               <Link href={`/work/${featuredProject.slug.current}`}>
@@ -56,7 +112,7 @@ export default async function WorkPage() {
                   <div className="grid lg:grid-cols-2 gap-0">
                     <div className="p-8 md:p-12 lg:p-16">
                       <p className="text-sm font-medium text-[var(--accent)] uppercase tracking-wider mb-3">
-                        Featured Case Study
+                        Case Study
                       </p>
                       <h2 className="text-3xl md:text-4xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-4">
                         {featuredProject.title}
@@ -94,19 +150,6 @@ export default async function WorkPage() {
                 </div>
               </Link>
             </FadeInSection>
-          </Container>
-        </Section>
-      )}
-
-      {/* Fallback if no featured project */}
-      {!featuredProject && (
-        <Section variant="alternate">
-          <Container>
-            <div className="bg-[var(--bg-card)] rounded-2xl p-8 md:p-12 border border-[var(--border)] text-center">
-              <p className="text-[var(--text-secondary)]">
-                Featured case study coming soon...
-              </p>
-            </div>
           </Container>
         </Section>
       )}
