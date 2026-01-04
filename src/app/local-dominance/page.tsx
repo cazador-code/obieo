@@ -62,7 +62,7 @@ export default function LocalDominancePage() {
             Stop Guessing. Start Ranking.
           </h1>
           <p className="mt-6 text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto">
-            The Local Dominance Retainer — everything a $1–3M home service company needs to show up on Google, convert more visitors, and grow. No bloat. No BS.
+            The Local Dominance Retainer — everything a home service company needs to show up on Google, convert more visitors, and grow. No bloat. No BS.
           </p>
           <div className="mt-10">
             <CalendlyButton className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all cursor-pointer text-lg">
@@ -152,7 +152,7 @@ export default function LocalDominancePage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
-              $2,000/Month — Here&apos;s Exactly What You Get
+              Here&apos;s Exactly What You Get
             </h2>
           </div>
 
@@ -317,7 +317,7 @@ export default function LocalDominancePage() {
           <div className="grid md:grid-cols-2 gap-6">
             {[
               {
-                title: 'Home service companies doing $1–3M',
+                title: 'Established home service companies',
                 description: 'Roofers, HVAC, plumbers, electricians, pest control, garage doors, landscaping, etc.',
               },
               {
@@ -368,40 +368,26 @@ export default function LocalDominancePage() {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* CTA */}
       <section className="bg-cream-50 py-16 sm:py-24">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 tracking-tight text-center mb-10">
-            Simple Pricing. No Surprises.
-          </h2>
-
           <div className="bg-white rounded-2xl border-2 border-terracotta-500 p-8 sm:p-10 text-center shadow-lg">
             <p className="text-sm font-semibold text-terracotta-600 uppercase tracking-wide">
               Local Dominance Retainer
             </p>
-            <p className="mt-4">
-              <span className="text-5xl sm:text-6xl font-bold text-slate-900">$2,000</span>
-              <span className="text-slate-500">/month</span>
-            </p>
-            <p className="mt-2 text-slate-600">
-              6-month minimum commitment
-            </p>
-            <p className="mt-4 text-sm text-slate-500">
-              Everything listed above. No setup fees. No hidden costs.
+            <h2 className="mt-4 font-[family-name:var(--font-display)] text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              Let&apos;s Talk About Your Market
+            </h2>
+            <p className="mt-4 text-slate-600">
+              Every market is different. Book a discovery call and I&apos;ll give you an honest assessment of what it would take to rank in your area.
             </p>
             <CalendlyButton className="mt-8 inline-flex items-center justify-center gap-2 w-full px-6 py-4 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all cursor-pointer text-lg">
               Book a Discovery Call
               <ArrowIcon />
             </CalendlyButton>
-          </div>
-
-          <div className="mt-8 text-center">
-            <p className="text-sm font-semibold text-slate-700 mb-3">Optional Add-Ons</p>
-            <div className="text-sm text-slate-500 space-y-1">
-              <p>Website Redesign: $5,000–8,000 (or $500–750/mo × 12)</p>
-              <p>Google Ads Management: $750–1,000/mo + ad spend</p>
-              <p>Additional Location Pages: $350/page</p>
-            </div>
+            <p className="mt-4 text-sm text-slate-500">
+              Free 20-minute call. No pitch deck. Just answers.
+            </p>
           </div>
         </div>
       </section>
@@ -415,28 +401,28 @@ export default function LocalDominancePage() {
 
           <div className="bg-cream-50 rounded-xl p-6 sm:p-8">
             <FAQItem
-              question="Why $2,000/month? Other agencies charge $3,500+."
-              answer="Because I'm not running a 30-person agency with an office in Minneapolis. Lower overhead = better pricing for you with the same quality work."
-            />
-            <FAQItem
-              question="What if I need a new website?"
-              answer="We'll quote that separately. A templated site runs $5–8K. If your current site is salvageable, we'll work with it."
-            />
-            <FAQItem
               question="Can you guarantee rankings?"
               answer="No. Anyone who guarantees rankings is lying or using tactics that will get your site penalized. I guarantee consistent, quality work. Rankings follow."
             />
             <FAQItem
-              question="What if it's not working after 3 months?"
+              question="What if I need a new website?"
+              answer="We can discuss that on our call. If your current site is salvageable, we'll work with it. If it needs a rebuild, I'll give you options."
+            />
+            <FAQItem
+              question="What if it's not working after a few months?"
               answer="We'll have an honest conversation. Sometimes markets are tougher than expected. Sometimes the site needs more work. I won't keep taking your money if we're not making progress."
             />
             <FAQItem
               question="Do you do Google Ads?"
-              answer="Yes, as a separate add-on. $750–1,000/month management + your ad spend. We focus on keeping budgets tight and cost-per-lead low."
+              answer="Yes, as a separate add-on. We can discuss that on the discovery call if paid ads make sense for your situation."
             />
             <FAQItem
               question="How is this different from what I tried before?"
               answer="Most agencies sell volume: 10 pages, 25 citations, 10 backlinks. Sounds impressive, delivers garbage. We focus on fewer, higher-quality deliverables that actually rank and convert."
+            />
+            <FAQItem
+              question="How long until I see results?"
+              answer="SEO isn't a light switch. Typically 3-4 months to see movement, 6+ months for significant results. We'll set realistic expectations on our call based on your market."
             />
           </div>
         </div>

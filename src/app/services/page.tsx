@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Services — Obieo | SEO & AEO for Home Service Businesses",
   description:
-    "SEO Launchpad ($2,500 one-time) or Local Dominance Retainer ($2,000/mo). SEO and AEO services designed for home service businesses.",
+    "SEO Launchpad (one-time) or Local Dominance Retainer (monthly). SEO and AEO services designed for home service businesses.",
 };
 
 const CheckIcon = () => (
@@ -65,7 +65,7 @@ export default function ServicesPage() {
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-terracotta-500/10 text-terracotta-600 rounded-full text-xs font-semibold uppercase tracking-wide">
-                  One-Time · $2,500
+                  One-Time Engagement
                 </div>
                 <h2 className="mt-4 font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
                   SEO Launchpad
@@ -178,7 +178,7 @@ export default function ServicesPage() {
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-terracotta-500/20 text-terracotta-300 rounded-full text-xs font-semibold uppercase tracking-wide">
-                  Monthly · $2,000/mo
+                  Monthly Retainer
                 </div>
                 <h2 className="mt-4 font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
                   Local Dominance

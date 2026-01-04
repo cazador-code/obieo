@@ -153,10 +153,10 @@ export default function AboutPage() {
                   </span>
                   <span>
                     <strong className="text-slate-900">
-                      Half the price, better attention.
+                      Better value, better attention.
                     </strong>{" "}
-                    $1,250/month vs $2,500+ at typical agencies. Not because I
-                    cut corners — because I don&apos;t have their overhead.
+                    You get big agency tactics without the big agency price tag.
+                    Not because I cut corners — because I don&apos;t have their overhead.
                   </span>
                 </li>
               </ul>

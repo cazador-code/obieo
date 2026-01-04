@@ -7,8 +7,7 @@ import { FadeInSection } from '@/components/animations'
 const services = [
   {
     title: 'SEO Launchpad',
-    price: '$2,500',
-    priceNote: 'one-time',
+    tag: 'One-Time',
     description: 'Get your SEO foundation right. Technical fixes, on-page optimization, and a website that Google actually wants to rank.',
     highlights: [
       'Full technical SEO audit & fixes',
@@ -21,8 +20,7 @@ const services = [
   },
   {
     title: 'Local Dominance',
-    price: '$2,000',
-    priceNote: '/month',
+    tag: 'Monthly',
     description: 'Ongoing SEO that compounds. Monthly content, link building, and ranking improvements you can track.',
     highlights: [
       'Everything in Launchpad',
@@ -61,17 +59,12 @@ export function ServicesOverview() {
                       Most Popular
                     </p>
                   )}
-                  <h3 className="text-2xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-2">
+                  <h3 className="text-2xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-1">
                     {service.title}
                   </h3>
-                  <div className="flex items-baseline gap-1 mb-4">
-                    <span className="text-3xl font-semibold text-[var(--text-primary)]">
-                      {service.price}
-                    </span>
-                    <span className="text-[var(--text-secondary)]">
-                      {service.priceNote}
-                    </span>
-                  </div>
+                  <p className="text-sm text-[var(--text-muted)] uppercase tracking-wide mb-4">
+                    {service.tag}
+                  </p>
                   <p className="text-[var(--text-secondary)] mb-6">
                     {service.description}
                   </p>
