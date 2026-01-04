@@ -123,7 +123,7 @@ export function Hero() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.6 }}
-            className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-[var(--text-muted)]"
+            className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-[var(--text-muted)]"
           >
             {trustItems.map((item, i) => (
               <span key={i} className="flex items-center gap-2">
