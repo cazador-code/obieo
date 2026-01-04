@@ -102,8 +102,25 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom */}
+        {/* Legal Links */}
         <div className="mt-12 pt-8 border-t border-[var(--border)]">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-6">
+            {[
+              { name: 'Terms & Conditions', href: '/terms-and-conditions' },
+              { name: 'Privacy Policy', href: '/privacy-policy' },
+              { name: 'Fulfillment Policy', href: '/fulfillment-policy' },
+              { name: 'Disclaimer', href: '/disclaimer' },
+              { name: 'AI Privacy Policy', href: '/ai-privacy-policy' },
+            ].map((link) => (
+              <Link
+                key={link.name}
+                href={link.href}
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors"
+              >
+                {link.name}
+              </Link>
+            ))}
+          </div>
           <p className="text-sm text-[var(--text-muted)] text-center">
             &copy; {new Date().getFullYear()} Obieo. All rights reserved.
           </p>
