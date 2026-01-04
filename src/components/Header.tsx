@@ -7,11 +7,11 @@ import CalendlyButton from './CalendlyButton'
 import { ThemeToggle } from './ThemeToggle'
 
 const navItems = [
+  { name: 'Process', href: '/process' },
   { name: 'Work', href: '/work' },
   { name: 'Services', href: '/services' },
   { name: 'Industries', href: '/industries' },
   { name: 'About', href: '/about' },
-  { name: 'Contact', href: '/contact' },
 ]
 
 export default function Header() {
