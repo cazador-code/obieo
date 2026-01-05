@@ -131,13 +131,13 @@ export default function IndustriesPage() {
   return (
     <div className="pt-16 sm:pt-20">
         {/* Hero */}
-        <section className="bg-gradient-to-b from-cream-100 to-cream-50 py-16 sm:py-24">
+        <section className="bg-[var(--bg-secondary)] py-16 sm:py-24">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl">
-              <h1 className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
+              <h1 className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--text-primary)] tracking-tight">
                 Industries I Serve
               </h1>
-              <p className="mt-6 text-lg text-slate-600 leading-relaxed">
+              <p className="mt-6 text-lg text-[var(--text-secondary)] leading-relaxed">
                 I specialize in home service businesses. These are the trades I
                 know best — because I run one myself and have studied the others
                 inside and out.
@@ -147,37 +147,37 @@ export default function IndustriesPage() {
         </section>
 
         {/* Industries Grid */}
-        <section className="bg-cream-50 py-16 sm:py-24">
+        <section className="bg-[var(--bg-primary)] py-16 sm:py-24">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
               {industries.map((industry) => (
                 <div
                   key={industry.slug}
-                  className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 hover:shadow-lg hover:shadow-slate-200/50 transition-shadow group"
+                  className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] p-6 sm:p-8 hover:shadow-lg transition-shadow group"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-terracotta-500/10 text-terracotta-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <div className="w-14 h-14 bg-[var(--accent)]/10 text-[var(--accent)] rounded-xl flex items-center justify-center flex-shrink-0">
                       {industry.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h2 className="font-[family-name:var(--font-display)] text-xl sm:text-2xl font-bold text-slate-900">
+                      <h2 className="font-[family-name:var(--font-display)] text-xl sm:text-2xl font-bold text-[var(--text-primary)]">
                         {industry.name}
                       </h2>
-                      <p className="mt-2 text-slate-600 leading-relaxed">
+                      <p className="mt-2 text-[var(--text-secondary)] leading-relaxed">
                         {industry.description}
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-6 pt-6 border-t border-slate-100">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                  <div className="mt-6 pt-6 border-t border-[var(--border-light)]">
+                    <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-3">
                       Common Challenges
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {industry.painPoints.map((point, i) => (
                         <span
                           key={i}
-                          className="px-3 py-1 bg-slate-100 text-slate-600 text-sm rounded-full"
+                          className="px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-sm rounded-full"
                         >
                           {point}
                         </span>
@@ -191,25 +191,25 @@ export default function IndustriesPage() {
         </section>
 
         {/* CTA */}
-        <section className="bg-slate-900 text-white py-16 sm:py-24">
+        <section className="bg-[#1a1612] text-white py-16 sm:py-24">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
               Don&apos;t See Your Industry?
             </h2>
-            <p className="mt-4 text-slate-300 text-lg">
+            <p className="mt-4 text-stone-300 text-lg">
               If you run a home service business, there&apos;s a good chance I
               can help. Let&apos;s talk about your specific situation.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
               <CalendlyButton
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg transition-all cursor-pointer"
               >
                 Book a Free Call
                 <ArrowIcon />
               </CalendlyButton>
               <Link
                 href="/services"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg border border-slate-700 transition-all"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg border border-white/20 transition-all"
               >
                 View Services
               </Link>
