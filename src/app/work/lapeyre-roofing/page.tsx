@@ -214,7 +214,7 @@ export default function LapeyreRoofingCaseStudy() {
                   understanding of what makes homeowners trust a roofer.
                 </p>
                 <p className="leading-relaxed">
-                  I had spent <strong className="text-[var(--text-primary)]">tens of thousands of dollars</strong>
+                  I had spent <strong className="text-[var(--text-primary)]">tens of thousands of dollars</strong>{" "}
                   and felt no closer to dominating my market.
                 </p>
               </div>
