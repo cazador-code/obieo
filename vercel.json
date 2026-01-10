@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "obieo.com"
+        }
+      ],
+      "destination": "https://www.obieo.com/:path*",
+      "permanent": true
+    }
+  ]
+}
