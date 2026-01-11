@@ -110,14 +110,17 @@ export async function POST(request: NextRequest) {
 
     // Send email notification if Resend is configured
     const resend = getResendClient()
+    console.log('Email notification check:', { source, hasResend: !!resend })
+
     if (resend && source === 'roi-calculator') {
       try {
-        await resend.emails.send({
+        const emailResult = await resend.emails.send({
           from: 'Obieo <noreply@leads.obieo.com>',
           to: process.env.NOTIFICATION_EMAIL || 'hunter@obieo.com',
           subject: `New ROI Calculator Lead: ${name}`,
           html: formatROIEmail(name, email, website, body.quizAnswers, score),
         })
+        console.log('Email sent successfully:', emailResult)
       } catch (emailError) {
         console.error('Failed to send notification email:', emailError)
         // Don't fail the request if email fails
