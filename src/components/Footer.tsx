@@ -73,6 +73,14 @@ export default function Footer() {
                   Free Website Score
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/roi-calculator"
+                  className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
+                >
+                  ROI Calculator
+                </Link>
+              </li>
             </ul>
           </div>
 
