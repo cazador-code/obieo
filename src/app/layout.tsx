@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     title: "Obieo | Websites for Home Service Businesses",
     description:
       "We build websites that turn clicks into customers for home service businesses.",
-    url: "https://obieo.com",
+    url: "https://www.obieo.com",
     siteName: "Obieo",
     type: "website",
   },
