@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     if (resend && source === 'roi-calculator') {
       try {
         await resend.emails.send({
-          from: 'Obieo <noreply@obieo.com>',
+          from: 'Obieo <noreply@leads.obieo.com>',
           to: process.env.NOTIFICATION_EMAIL || 'hunter@obieo.com',
           subject: `New ROI Calculator Lead: ${name}`,
           html: formatROIEmail(name, email, website, body.quizAnswers, score),
