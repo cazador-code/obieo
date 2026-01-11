@@ -17,6 +17,7 @@ interface MetricCardProps {
   prefix?: string
   duration?: number
   highlight?: boolean
+  formatWithCommas?: boolean
 }
 
 interface EBITDACardProps {
@@ -32,6 +33,7 @@ function MetricCard({
   prefix = '',
   duration = 1,
   highlight = false,
+  formatWithCommas = false,
 }: MetricCardProps) {
   const bgClass = highlight
     ? 'bg-green-500/5 border-green-500/20'
@@ -44,7 +46,7 @@ function MetricCard({
     <div className={`rounded-xl p-5 border ${bgClass}`}>
       <p className="text-sm text-[var(--text-secondary)] mb-1">{label}</p>
       <p className={`text-2xl md:text-3xl font-bold ${textClass}`}>
-        {prefix}<Counter value={value} duration={duration} />
+        {prefix}<Counter value={value} duration={duration} formatWithCommas={formatWithCommas} />
       </p>
     </div>
   )
@@ -90,7 +92,7 @@ export function GatedResults({ results, inputs }: Props) {
           Your Potential Annual Revenue Increase
         </p>
         <div className="text-5xl md:text-6xl font-bold text-[var(--accent)]">
-          $<Counter value={results.additionalAnnualRevenue} duration={1.5} />
+          $<Counter value={results.additionalAnnualRevenue} duration={1.5} formatWithCommas />
         </div>
         <p className="text-sm text-[var(--text-secondary)] mt-2">
           Based on a 30% increase in leads from SEO
@@ -114,6 +116,7 @@ export function GatedResults({ results, inputs }: Props) {
           prefix="+$"
           duration={1.2}
           highlight
+          formatWithCommas
         />
         <MetricCard
           label="Annual Profit Increase"
@@ -121,6 +124,7 @@ export function GatedResults({ results, inputs }: Props) {
           prefix="+$"
           duration={1.2}
           highlight
+          formatWithCommas
         />
       </div>
 

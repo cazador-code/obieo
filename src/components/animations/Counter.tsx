@@ -29,6 +29,12 @@ interface CounterProps {
   suffix?: string
   duration?: number
   className?: string
+  /** Format number with commas (e.g., 1,234,567) */
+  formatWithCommas?: boolean
+}
+
+function formatNumber(num: number): string {
+  return num.toLocaleString('en-US')
 }
 
 export function Counter({
@@ -37,6 +43,7 @@ export function Counter({
   suffix = '',
   duration = 2,
   className = '',
+  formatWithCommas = false,
 }: CounterProps) {
   const ref = useRef<HTMLSpanElement>(null)
   const prefersReducedMotion = useSyncExternalStore(
@@ -77,10 +84,11 @@ export function Counter({
 
   // For reduced motion, just show the final value
   const finalDisplayValue = prefersReducedMotion ? value : displayValue
+  const formattedValue = formatWithCommas ? formatNumber(finalDisplayValue) : finalDisplayValue
 
   return (
     <span ref={ref} className={className}>
-      {prefix}{finalDisplayValue}{suffix}
+      {prefix}{formattedValue}{suffix}
     </span>
   )
 }
