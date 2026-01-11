@@ -5,6 +5,7 @@ import {
   ServicesOverview,
   QuizCTA,
   Testimonial,
+  ROICalculatorCTA,
   FinalCTA,
 } from '@/components/home'
 import { sanityFetch, urlFor } from '@/sanity/client'
@@ -101,6 +102,8 @@ export default async function Home() {
           metric="Increased leads by 147% in 6 months"
         />
       )}
+
+      <ROICalculatorCTA />
 
       <FinalCTA />
     </>
