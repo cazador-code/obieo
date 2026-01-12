@@ -98,14 +98,6 @@ export default function Footer() {
                   hunter@obieo.com
                 </a>
               </li>
-              <li>
-                <a
-                  href="tel:+15551234567"
-                  className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
-                >
-                  (555) 123-4567
-                </a>
-              </li>
             </ul>
           </div>
         </div>

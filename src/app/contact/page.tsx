@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Contact — Obieo | Book a Free Audit Call",
   description:
-    "Book a free 20-minute call to discuss your SEO needs. Or text/email Hunter directly.",
+    "Book a free 20-minute call to discuss your SEO needs. Or email Hunter directly.",
 };
 
 export default function ContactPage() {
@@ -59,39 +59,10 @@ export default function ContactPage() {
                     Or Reach Out Directly
                   </h2>
                   <p className="mt-2 text-slate-600">
-                    Prefer to text or email? I respond to everything personally.
+                    Prefer email? I respond to everything personally.
                   </p>
 
-                  <div className="mt-6 space-y-4">
-                    <a
-                      href="tel:5551234567"
-                      className="flex items-center gap-4 p-4 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors group"
-                    >
-                      <div className="w-12 h-12 bg-terracotta-500/10 rounded-full flex items-center justify-center">
-                        <svg
-                          className="w-5 h-5 text-terracotta-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                          />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="font-medium text-slate-900 group-hover:text-terracotta-600 transition-colors">
-                          (555) 123-4567
-                        </p>
-                        <p className="text-sm text-slate-500">
-                          Call or text anytime
-                        </p>
-                      </div>
-                    </a>
-
+                  <div className="mt-6">
                     <a
                       href="mailto:hunter@obieo.com"
                       className="flex items-center gap-4 p-4 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors group"
