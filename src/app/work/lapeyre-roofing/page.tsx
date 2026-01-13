@@ -320,6 +320,72 @@ export default function LapeyreRoofingCaseStudy() {
         </Container>
       </section>
 
+      {/* AI Search Proof - Gemini Recommendation */}
+      <Section size="lg" variant="alternate">
+        <Container size="md">
+          <FadeInSection>
+            <p className="text-[var(--accent)] uppercase tracking-[0.15em] text-sm font-medium mb-4">
+              Chapter 5
+            </p>
+            <h2 className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-bold text-[var(--text-primary)] mb-8">
+              AI Search Is Already Here
+            </h2>
+            <div className="prose prose-lg max-w-none text-[var(--text-secondary)] space-y-6">
+              <p className="text-xl leading-relaxed">
+                Six weeks after launching the new site, I asked Gemini:
+                <em className="text-[var(--text-primary)]"> "I need a roof replaced here in Austin, Texas. What are some companies I should call?"</em>
+              </p>
+            </div>
+          </FadeInSection>
+
+          {/* Gemini Quote Card */}
+          <FadeInSection delay={0.1}>
+            <div className="my-10 bg-[var(--bg-primary)] border border-[var(--border)] rounded-2xl p-8 shadow-lg">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                  </svg>
+                </div>
+                <span className="text-sm font-medium text-[var(--text-secondary)]">Google Gemini Response</span>
+              </div>
+
+              <div className="space-y-4 text-[var(--text-secondary)]">
+                <p className="font-medium text-[var(--text-primary)]">Community Favorites (Highly Mentioned on Reddit/Nextdoor)</p>
+                <p className="text-sm italic">Recent threads from Austin homeowners often highlight smaller or more specialized companies that excel at communication and insurance handling.</p>
+
+                <div className="bg-[var(--accent)]/10 border border-[var(--accent)]/20 rounded-xl p-6 mt-4">
+                  <p className="font-semibold text-[var(--text-primary)] text-lg mb-2">Lapeyre Roofing</p>
+                  <p className="text-[var(--text-secondary)]">
+                    Multiple recent discussions identify this company as a strong choice for insurance claim handling
+                    (specifically with carriers like State Farm) and responsiveness. Users have noted them for being
+                    a <strong className="text-[var(--text-primary)]">"smaller company with good people"</strong> and for
+                    effective communication during the claims process.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </FadeInSection>
+
+          <FadeInSection delay={0.2}>
+            <div className="prose prose-lg max-w-none text-[var(--text-secondary)] space-y-6">
+              <p className="leading-relaxed">
+                Lapeyre Roofing is being recommended <strong className="text-[var(--text-primary)]">alongside companies
+                that have been in business for 40-50 years</strong> — Kidd Roofing (since 1982), Ja-Mar (50+ years),
+                Wilson Roofing. Companies with decades of brand recognition.
+              </p>
+              <p className="leading-relaxed">
+                This isn't just Google anymore. AI is changing how people find services. And the strategies that
+                work for AI search are different from traditional SEO.
+              </p>
+              <p className="text-xl leading-relaxed text-[var(--text-primary)]">
+                <strong>Most agencies haven't even started thinking about this. I've been optimizing for it from day one.</strong>
+              </p>
+            </div>
+          </FadeInSection>
+        </Container>
+      </Section>
+
       {/* The Transformation */}
       <Section size="lg">
         <Container size="md">
