@@ -26,9 +26,9 @@ export default function CallLandingPage() {
         {/* Calendly Embed - The Star of the Show */}
         <div className="w-full max-w-3xl">
           <div
-            className="calendly-inline-widget rounded-2xl overflow-hidden bg-white"
+            className="calendly-inline-widget rounded-2xl overflow-hidden"
             data-url="https://calendly.com/hello-obieo"
-            style={{ minWidth: '320px', height: '700px' }}
+            style={{ minWidth: '320px', height: '950px' }}
           />
           <Script
             src="https://assets.calendly.com/assets/external/widget.js"
