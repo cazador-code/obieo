@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+@theme {
+  --color-terracotta-300: #f2b094;
+  --color-terracotta-400: #e8916b;
+  --color-terracotta-500: #d97650;
+  --color-terracotta-600: #c4613c;
+
+  --color-cream-50: #fdfcfa;
+  --color-cream-100: #f5f2ed;
+}
+
 :root {
   /* Light mode (default) */
   --bg-primary: #fdfcfa;
