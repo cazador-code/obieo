@@ -1,0 +1,41 @@
+# Obieo
+> SEO and Generative Engine Optimization for home service businesses
+
+## About
+Obieo helps contractors, roofers, plumbers, and home service companies dominate local search through SEO and AI search optimization. Founded by Hunter Lapeyre, who also owns and operates Lapeyre Roofing in Texas — every strategy is tested on a real business first.
+
+## Services
+- Local SEO for home service businesses
+- Generative Engine Optimization (GEO)
+- AI search visibility optimization
+- Website development optimized for search
+- Content strategy for contractors
+
+## Key Pages
+- /: Homepage - overview of services and approach
+- /blog/generative-engine-optimization-guide: Complete guide to GEO with implementation strategies
+- /blog/ai-search-contractors: Why AI search matters for home service businesses
+- /blog/contractor-lead-generation-guide: Lead generation strategies for contractors
+- /work/lapeyre-roofing: Case study showing real SEO and GEO results
+- /call: Book a free strategy consultation
+- /about: Hunter Lapeyre's background and philosophy
+
+## Expertise Areas
+- Home service industry marketing (roofing, HVAC, plumbing, electrical)
+- Local SEO and Google Business Profile optimization
+- Generative Engine Optimization (GEO)
+- AI search citation strategies
+- E-E-A-T optimization for service businesses
+
+## Differentiators
+- Owner operates Lapeyre Roofing — strategies tested on real business first
+- Small client list by design — no account managers, work directly with Hunter
+- Early adopter of GEO — Lapeyre Roofing recommended by AI alongside 40-50 year competitors
+- Focus exclusively on home service businesses
+
+## Contact
+- Email: hunter@obieo.com
+- Strategy calls: https://obieo.com/call
+
+## Location
+Based in Texas, serving home service businesses nationwide.
