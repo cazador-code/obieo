@@ -117,3 +117,48 @@ export const faqsByCategoryQuery = groq`
     answer
   }
 `
+
+// Blog Posts
+export const blogPostsQuery = groq`
+  *[_type == "blogPost"] | order(publishedAt desc) {
+    _id,
+    title,
+    slug,
+    excerpt,
+    featuredImage,
+    publishedAt,
+    featured
+  }
+`
+
+export const featuredBlogPostQuery = groq`
+  *[_type == "blogPost" && featured == true][0] {
+    _id,
+    title,
+    slug,
+    excerpt,
+    featuredImage,
+    publishedAt
+  }
+`
+
+export const blogPostBySlugQuery = groq`
+  *[_type == "blogPost" && slug.current == $slug][0] {
+    _id,
+    title,
+    slug,
+    metaTitle,
+    metaDescription,
+    excerpt,
+    featuredImage,
+    body,
+    publishedAt,
+    primaryKeyword
+  }
+`
+
+export const blogPostSlugsQuery = groq`
+  *[_type == "blogPost"] {
+    slug
+  }
+`
