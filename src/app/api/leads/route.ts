@@ -171,6 +171,33 @@ export async function POST(request: NextRequest) {
         html: formatROIEmail(name, email, website, body.quizAnswers, score),
       })
       console.log('Email sent:', emailResult)
+
+      // Send to GHL
+      const roiData = body.quizAnswers as ROICalculatorData
+      try {
+        const response = await fetch(GHL_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            name,
+            company: website || '',
+            source,
+            roi_average_ticket: roiData.averageTicketSize,
+            roi_close_rate: roiData.closeRate,
+            roi_leads_per_month: roiData.currentLeadsPerMonth,
+            roi_profit_margin: roiData.grossProfitMargin,
+            roi_potential_revenue: score,
+          }),
+        })
+        if (response.ok) {
+          console.log('ROI lead sent to GHL successfully')
+        } else {
+          console.error('GHL webhook failed:', response.status)
+        }
+      } catch (error) {
+        console.error('Error sending ROI lead to GHL:', error)
+      }
     }
 
     if (source === 'quiz') {
