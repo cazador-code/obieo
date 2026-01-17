@@ -69,19 +69,6 @@ export default function RootLayout({
             })(window,document,'script','dataLayer','GTM-TMBFS7H7');
           `}
         </Script>
-        {/* Google Analytics 4 (gtag.js) */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-MX9JQW8DJ9"
-          strategy="afterInteractive"
-        />
-        <Script id="ga4" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-MX9JQW8DJ9');
-          `}
-        </Script>
         {/* Facebook Pixel */}
         <Script id="facebook-pixel" strategy="afterInteractive">
           {`
