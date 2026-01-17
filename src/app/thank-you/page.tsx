@@ -18,7 +18,7 @@ export default function ThankYouPage() {
     if (typeof window !== 'undefined' && window.gtag) {
       window.gtag('event', 'conversion', {
         event_category: 'Lead',
-        event_label: 'Calendly Booking',
+        event_label: 'GHL Booking',
         value: 1,
       })
     }
@@ -26,7 +26,7 @@ export default function ThankYouPage() {
     // Fire Facebook Pixel Lead event
     if (typeof window !== 'undefined' && window.fbq) {
       window.fbq('track', 'Lead', {
-        content_name: 'Calendly Booking',
+        content_name: 'GHL Booking',
       })
     }
   }, [])

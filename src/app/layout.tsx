@@ -82,15 +82,6 @@ export default function RootLayout({
             gtag('config', 'G-MX9JQW8DJ9');
           `}
         </Script>
-        {/* Calendly */}
-        <link
-          href="https://assets.calendly.com/assets/external/widget.css"
-          rel="stylesheet"
-        />
-        <Script
-          src="https://assets.calendly.com/assets/external/widget.js"
-          strategy="afterInteractive"
-        />
         {/* Facebook Pixel */}
         <Script id="facebook-pixel" strategy="afterInteractive">
           {`

@@ -283,7 +283,7 @@ export default function CallLandingPage() {
           {/* GHL Calendar Widget */}
           <div className="mt-10 rounded-2xl overflow-hidden">
             <iframe
-              src="https://api.leadconnectorhq.com/widget/booking/0sf1QEe5x3p5eHFHPJLW"
+              src="https://api.leadconnectorhq.com/widget/booking/0sf1QEe5x3p5eHFHPJLW?source=call-page"
               style={{ width: '100%', border: 'none', overflow: 'hidden', minHeight: '700px' }}
               scrolling="no"
               id="0sf1QEe5x3p5eHFHPJLW_1768508624665"

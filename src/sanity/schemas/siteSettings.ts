@@ -28,9 +28,10 @@ export const siteSettings = defineType({
       type: 'string',
     }),
     defineField({
-      name: 'calendlyUrl',
-      title: 'Calendly URL',
+      name: 'bookingUrl',
+      title: 'Booking URL (GHL Calendar)',
       type: 'url',
+      description: 'GoHighLevel calendar booking URL',
     }),
     defineField({
       name: 'socialLinks',

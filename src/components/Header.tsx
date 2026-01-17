@@ -63,7 +63,7 @@ export default function Header() {
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
-            <CalendlyButton className="px-5 py-2.5 bg-[var(--accent)] text-white text-sm font-semibold rounded-lg hover:bg-[var(--accent-hover)] hover:scale-[1.02] transition-all">
+            <CalendlyButton source="header" className="px-5 py-2.5 bg-[var(--accent)] text-white text-sm font-semibold rounded-lg hover:bg-[var(--accent-hover)] hover:scale-[1.02] transition-all">
               Book a Call
             </CalendlyButton>
           </div>
@@ -125,7 +125,7 @@ export default function Header() {
                 </Link>
               ))}
               <div className="pt-4">
-                <CalendlyButton className="w-full px-4 py-3 bg-[var(--accent)] text-white text-base font-semibold rounded-lg hover:bg-[var(--accent-hover)] transition-colors text-center">
+                <CalendlyButton source="header-mobile" className="w-full px-4 py-3 bg-[var(--accent)] text-white text-base font-semibold rounded-lg hover:bg-[var(--accent-hover)] transition-colors text-center">
                   Book a Call
                 </CalendlyButton>
               </div>

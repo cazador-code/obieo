@@ -1,36 +1,24 @@
 "use client";
 
 import { ReactNode } from "react";
-
-declare global {
-  interface Window {
-    Calendly?: {
-      initPopupWidget: (options: { url: string }) => void;
-    };
-  }
-}
+import Link from "next/link";
 
 interface CalendlyButtonProps {
   children: ReactNode;
   className?: string;
+  source?: string;
 }
 
 export default function CalendlyButton({
   children,
   className = "",
+  source,
 }: CalendlyButtonProps) {
-  const openCalendly = () => {
-    if (typeof window !== "undefined" && window.Calendly) {
-      window.Calendly.initPopupWidget({
-        url: "https://calendly.com/hello-obieo",
-      });
-    }
-  };
+  const href = source ? `/call?source=${encodeURIComponent(source)}` : "/call";
 
   return (
-    <button type="button" onClick={openCalendly} className={className}>
+    <Link href={href} className={className}>
       {children}
-    </button>
+    </Link>
   );
 }
-

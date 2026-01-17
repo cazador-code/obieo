@@ -18,7 +18,7 @@ export function FinalCTA() {
             to start showing up for the searches that matter.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <CalendlyButton className="px-8 py-4 bg-[var(--accent)] text-white text-lg font-semibold rounded-lg hover:bg-[var(--accent-hover)] hover:scale-[1.02] transition-all">
+            <CalendlyButton source="homepage-cta" className="px-8 py-4 bg-[var(--accent)] text-white text-lg font-semibold rounded-lg hover:bg-[var(--accent-hover)] hover:scale-[1.02] transition-all">
               Book a Free SEO Call
             </CalendlyButton>
             <Link href="/quiz">

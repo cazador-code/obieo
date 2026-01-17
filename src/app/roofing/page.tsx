@@ -280,15 +280,16 @@ export default function RoofingLandingPage() {
             and give you an honest assessment of what it would take to dominate your local market.
           </p>
 
-          {/* Calendly Inline Widget */}
-          <div className="mt-10">
-            <div
-              className="calendly-inline-widget rounded-2xl overflow-hidden"
-              data-url="https://calendly.com/hello-obieo"
-              style={{ minWidth: '320px', height: '950px' }}
+          {/* GHL Calendar Widget */}
+          <div className="mt-10 rounded-2xl overflow-hidden">
+            <iframe
+              src="https://api.leadconnectorhq.com/widget/booking/0sf1QEe5x3p5eHFHPJLW?source=roofing-page"
+              style={{ width: '100%', border: 'none', overflow: 'hidden', minHeight: '700px' }}
+              scrolling="no"
+              id="ghl-roofing-calendar"
             />
             <Script
-              src="https://assets.calendly.com/assets/external/widget.js"
+              src="https://link.msgsndr.com/js/form_embed.js"
               strategy="lazyOnload"
             />
           </div>

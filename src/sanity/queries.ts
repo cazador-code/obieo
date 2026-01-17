@@ -7,7 +7,7 @@ export const siteSettingsQuery = groq`
     siteDescription,
     contactEmail,
     contactPhone,
-    calendlyUrl,
+    bookingUrl,
     socialLinks
   }
 `

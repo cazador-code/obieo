@@ -185,7 +185,7 @@ export function GatedResults({ results, inputs }: Props) {
         <p className="text-[var(--text-secondary)] mb-6">
           Let&apos;s discuss a custom SEO strategy for your business.
         </p>
-        <CalendlyButton className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-lg bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] transition-all hover:scale-[1.02]">
+        <CalendlyButton source="roi-calculator" className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-lg bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] transition-all hover:scale-[1.02]">
           Book a Free Strategy Call
         </CalendlyButton>
         <p className="text-xs text-[var(--text-muted)] mt-3">

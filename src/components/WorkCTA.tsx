@@ -18,7 +18,7 @@ export function WorkCTA() {
           <Link href="/quiz">
             <Button size="lg">Get Your Free Website Score</Button>
           </Link>
-          <CalendlyButton className="px-6 py-3 border border-[var(--border)] text-[var(--text-primary)] font-semibold rounded-lg hover:bg-[var(--bg-secondary)] transition-all">
+          <CalendlyButton source="work-cta" className="px-6 py-3 border border-[var(--border)] text-[var(--text-primary)] font-semibold rounded-lg hover:bg-[var(--bg-secondary)] transition-all">
             Book a Call
           </CalendlyButton>
         </div>
