@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import Link from "next/link";
+import { useBookingModal } from "./BookingModalContext";
 
 interface CalendlyButtonProps {
   children: ReactNode;
@@ -14,11 +14,14 @@ export default function CalendlyButton({
   className = "",
   source,
 }: CalendlyButtonProps) {
-  const href = source ? `/call?source=${encodeURIComponent(source)}` : "/call";
+  const { openModal } = useBookingModal();
 
   return (
-    <Link href={href} className={className}>
+    <button
+      onClick={() => openModal(source)}
+      className={className}
+    >
       {children}
-    </Link>
+    </button>
   );
 }

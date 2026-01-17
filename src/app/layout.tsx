@@ -6,6 +6,8 @@ import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { CustomCursor } from "@/components/CustomCursor";
+import { BookingModalProvider } from "@/components/BookingModalContext";
+import { BookingModal } from "@/components/BookingModal";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -107,14 +109,17 @@ export default function RootLayout({
             style={{ display: 'none', visibility: 'hidden' }}
           />
         </noscript>
-        <ThemeProvider>
-          <SmoothScroll>
-            <CustomCursor />
-            <Header />
-            <main className="min-h-screen">{children}</main>
-            <Footer />
-          </SmoothScroll>
-        </ThemeProvider>
+        <BookingModalProvider>
+          <ThemeProvider>
+            <SmoothScroll>
+              <CustomCursor />
+              <Header />
+              <main className="min-h-screen">{children}</main>
+              <Footer />
+            </SmoothScroll>
+          </ThemeProvider>
+          <BookingModal />
+        </BookingModalProvider>
       </body>
     </html>
   );
