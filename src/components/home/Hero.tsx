@@ -87,7 +87,7 @@ export function Hero() {
             transition={{ delay: 0.4, duration: 0.6 }}
             className="text-lg sm:text-xl text-[var(--text-secondary)] max-w-2xl mb-8"
           >
-            Local SEO that actually drives calls — for roofers, HVAC, plumbers, and electricians doing $1–3M.
+            Local SEO that actually drives calls. For local businesses that depend on being found.
           </motion.p>
 
           {/* CTAs */}
