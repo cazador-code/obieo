@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 interface FormData {
@@ -11,7 +11,14 @@ interface FormData {
   source: 'quiz' | 'roi-calculator' | 'demo';
 }
 
+const STORED_AUTH_KEY = 'obieo-audit-auth';
+
 export default function ProspectAuditPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -22,6 +29,58 @@ export default function ProspectAuditPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Check for stored authentication on mount
+  useEffect(() => {
+    const storedAuth = localStorage.getItem(STORED_AUTH_KEY);
+    if (storedAuth) {
+      // Verify the stored token is still valid
+      fetch('/api/internal/verify-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: storedAuth }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.valid) {
+            setIsAuthenticated(true);
+          } else {
+            localStorage.removeItem(STORED_AUTH_KEY);
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem(STORED_AUTH_KEY);
+        })
+        .finally(() => {
+          setCheckingAuth(false);
+        });
+    } else {
+      setCheckingAuth(false);
+    }
+  }, []);
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(false);
+
+    try {
+      const res = await fetch('/api/internal/verify-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+
+      if (data.valid && data.token) {
+        localStorage.setItem(STORED_AUTH_KEY, data.token);
+        setIsAuthenticated(true);
+      } else {
+        setAuthError(true);
+      }
+    } catch {
+      setAuthError(true);
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -67,6 +126,70 @@ export default function ProspectAuditPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Loading state while checking auth
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-2 border-[var(--accent)] border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // Password gate
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-sm w-full"
+        >
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
+              Prospect Intel
+            </h1>
+            <p className="text-[var(--text-secondary)] text-sm">
+              Internal tool - authentication required
+            </p>
+          </div>
+
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-6">
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-[var(--text-primary)] mb-1.5"
+                >
+                  Password
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter access password"
+                  className="w-full px-4 py-3 bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent transition-all"
+                  autoFocus
+                />
+              </div>
+
+              {authError && (
+                <p className="text-red-500 text-sm">Incorrect password</p>
+              )}
+
+              <button
+                type="submit"
+                className="w-full py-3 px-6 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium rounded-xl transition-all"
+              >
+                Access Tool
+              </button>
+            </form>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   if (submitted) {
     return (
