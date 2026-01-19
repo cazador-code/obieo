@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import CalendlyButton from '@/components/CalendlyButton'
+import { CheckIcon, XIcon, WarningIcon, ChevronDownIcon, LightningIcon, ArrowRightIcon } from '@/components/ui'
 
 const testPrompts = [
   {
@@ -110,6 +111,72 @@ const faqs = [
   }
 ]
 
+const statusCards = [
+  {
+    status: 'green',
+    title: "You're Being Recommended",
+    description: "Great. You're ahead of most competitors. But AI recommendations change as new data comes in. The question now is how to maintain and strengthen your position.",
+    Icon: CheckIcon,
+    colors: { bg: 'bg-green-50', border: 'border-green-200', iconBg: 'bg-green-500', title: 'text-green-900', text: 'text-green-800' }
+  },
+  {
+    status: 'amber',
+    title: "You Show Up Sometimes",
+    description: "AI has some information about you, but not enough to consistently recommend you. You're on the edge. Specific improvements could push you into the top recommendations.",
+    Icon: WarningIcon,
+    colors: { bg: 'bg-amber-50', border: 'border-amber-200', iconBg: 'bg-amber-500', title: 'text-amber-900', text: 'text-amber-800' }
+  },
+  {
+    status: 'red',
+    title: "You're Not Showing Up",
+    description: "AI doesn't have enough trust signals to recommend you. Every time a homeowner asks AI for a recommendation in your service area, you're invisible. Your competitors are getting those calls.",
+    Icon: XIcon,
+    colors: { bg: 'bg-red-50', border: 'border-red-200', iconBg: 'bg-red-500', title: 'text-red-900', text: 'text-red-800' }
+  }
+]
+
+const actionSteps = [
+  {
+    title: "Audit All Three Data Sources",
+    description: "AI pulls from your website, crawled data across the web, and third-party platforms. Check each one:",
+    bullets: [
+      { bold: "Your website:", text: "Is every service page complete? Do you have FAQ content?" },
+      { bold: "Google Business Profile:", text: "All categories, services, hours, photos filled in?" },
+      { bold: "Directories:", text: "Yelp, BBB, Angi, HomeAdvisor, Thumbtack. Is the info consistent everywhere?" }
+    ]
+  },
+  {
+    title: "Structure Content for Intent",
+    description: "AI interprets queries as intents. Structure your content to match how people actually ask:",
+    bullets: [
+      { bold: "Front-load benefits:", text: "Who you serve, what problem you solve, what makes you different" },
+      { bold: "Add use-case context:", text: "\"Best for emergency repairs\" or \"Specializing in homes built before 1980\"" },
+      { bold: "Mirror real queries:", text: "Create headings like \"How much does a water heater replacement cost in [City]?\"" },
+      { bold: "Write descriptive titles:", text: "\"24/7 Emergency Plumber in Phoenix | Licensed & Same-Day Service\"" }
+    ]
+  },
+  {
+    title: "Build Authoritative Citations",
+    description: "AI prioritizes trustworthy sources. Get mentioned on sites AI already trusts:",
+    bullets: [
+      { text: "Local news features or \"best of\" lists" },
+      { text: "Industry publications and trade associations" },
+      { text: "Chamber of commerce and business associations" },
+      { text: "Manufacturer partner pages (if you're a certified installer)" }
+    ]
+  },
+  {
+    title: "Generate Reviews That Give AI Reasons",
+    description: "AI reads review content to make natural-language recommendations. Reviews with specific outcomes help:",
+    bullets: [
+      { text: "\"Fixed the leak same day\" → AI recommends you for emergency calls" },
+      { text: "\"Explained everything before starting\" → AI recommends you for transparency" },
+      { text: "\"Fair price, no hidden fees\" → AI recommends you for honest pricing" },
+      { text: "\"Showed up exactly when they said\" → AI recommends you for reliability" }
+    ]
+  }
+]
+
 export default function AIVisibilityGuidePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
@@ -119,9 +186,7 @@ export default function AIVisibilityGuidePage() {
       <section className="bg-cream-100 py-16 sm:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 bg-terracotta-500/10 text-terracotta-600 px-4 py-2 rounded-full text-sm font-medium mb-6">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+            <LightningIcon className="w-4 h-4" />
             Free AI Visibility Check
           </div>
           <h1 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 mb-6">
@@ -226,47 +291,17 @@ export default function AIVisibilityGuidePage() {
           </p>
 
           <div className="grid gap-6">
-            <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
+            {statusCards.map((card) => (
+              <div key={card.status} className={`${card.colors.bg} border ${card.colors.border} rounded-xl p-6`}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={`w-10 h-10 ${card.colors.iconBg} rounded-full flex items-center justify-center`}>
+                    <card.Icon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className={`font-[family-name:var(--font-display)] text-xl font-bold ${card.colors.title}`}>{card.title}</h3>
                 </div>
-                <h3 className="font-[family-name:var(--font-display)] text-xl font-bold text-green-900">You're Being Recommended</h3>
+                <p className={card.colors.text}>{card.description}</p>
               </div>
-              <p className="text-green-800">
-                Great. You're ahead of most competitors. But AI recommendations change as new data comes in. The question now is how to maintain and strengthen your position.
-              </p>
-            </div>
-
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <h3 className="font-[family-name:var(--font-display)] text-xl font-bold text-amber-900">You Show Up Sometimes</h3>
-              </div>
-              <p className="text-amber-800">
-                AI has some information about you, but not enough to consistently recommend you. You're on the edge. Specific improvements could push you into the top recommendations.
-              </p>
-            </div>
-
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </div>
-                <h3 className="font-[family-name:var(--font-display)] text-xl font-bold text-red-900">You're Not Showing Up</h3>
-              </div>
-              <p className="text-red-800">
-                AI doesn't have enough trust signals to recommend you. Every time a homeowner asks AI for a recommendation in your service area, you're invisible. Your competitors are getting those calls.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -323,60 +358,24 @@ export default function AIVisibilityGuidePage() {
           </div>
 
           <div className="space-y-8">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-terracotta-500 text-white rounded-full flex items-center justify-center font-bold text-sm">1</div>
-              <div>
-                <h3 className="font-[family-name:var(--font-display)] text-xl font-bold text-stone-900 mb-2">Audit All Three Data Sources</h3>
-                <p className="text-stone-600 mb-3">AI pulls from your website, crawled data across the web, and third-party platforms. Check each one:</p>
-                <ul className="text-stone-600 text-sm space-y-1 ml-4">
-                  <li>• <strong>Your website:</strong> Is every service page complete? Do you have FAQ content?</li>
-                  <li>• <strong>Google Business Profile:</strong> All categories, services, hours, photos filled in?</li>
-                  <li>• <strong>Directories:</strong> Yelp, BBB, Angi, HomeAdvisor, Thumbtack. Is the info consistent everywhere?</li>
-                </ul>
+            {actionSteps.map((step, index) => (
+              <div key={index} className="flex gap-4">
+                <div className="flex-shrink-0 w-8 h-8 bg-terracotta-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                  {index + 1}
+                </div>
+                <div>
+                  <h3 className="font-[family-name:var(--font-display)] text-xl font-bold text-stone-900 mb-2">{step.title}</h3>
+                  <p className="text-stone-600 mb-3">{step.description}</p>
+                  <ul className="text-stone-600 text-sm space-y-1 ml-4">
+                    {step.bullets.map((bullet, i) => (
+                      <li key={i}>
+                        • {'bold' in bullet && <strong>{bullet.bold}</strong>} {bullet.text}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-            </div>
-
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-terracotta-500 text-white rounded-full flex items-center justify-center font-bold text-sm">2</div>
-              <div>
-                <h3 className="font-[family-name:var(--font-display)] text-xl font-bold text-stone-900 mb-2">Structure Content for Intent</h3>
-                <p className="text-stone-600 mb-3">AI interprets queries as intents. Structure your content to match how people actually ask:</p>
-                <ul className="text-stone-600 text-sm space-y-1 ml-4">
-                  <li>• <strong>Front-load benefits:</strong> Who you serve, what problem you solve, what makes you different</li>
-                  <li>• <strong>Add use-case context:</strong> "Best for emergency repairs" or "Specializing in homes built before 1980"</li>
-                  <li>• <strong>Mirror real queries:</strong> Create headings like "How much does a water heater replacement cost in [City]?"</li>
-                  <li>• <strong>Write descriptive titles:</strong> "24/7 Emergency Plumber in Phoenix | Licensed & Same-Day Service"</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-terracotta-500 text-white rounded-full flex items-center justify-center font-bold text-sm">3</div>
-              <div>
-                <h3 className="font-[family-name:var(--font-display)] text-xl font-bold text-stone-900 mb-2">Build Authoritative Citations</h3>
-                <p className="text-stone-600 mb-3">AI prioritizes trustworthy sources. Get mentioned on sites AI already trusts:</p>
-                <ul className="text-stone-600 text-sm space-y-1 ml-4">
-                  <li>• Local news features or "best of" lists</li>
-                  <li>• Industry publications and trade associations</li>
-                  <li>• Chamber of commerce and business associations</li>
-                  <li>• Manufacturer partner pages (if you're a certified installer)</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-terracotta-500 text-white rounded-full flex items-center justify-center font-bold text-sm">4</div>
-              <div>
-                <h3 className="font-[family-name:var(--font-display)] text-xl font-bold text-stone-900 mb-2">Generate Reviews That Give AI Reasons</h3>
-                <p className="text-stone-600 mb-3">AI reads review content to make natural-language recommendations. Reviews with specific outcomes help:</p>
-                <ul className="text-stone-600 text-sm space-y-1 ml-4">
-                  <li>• "Fixed the leak same day" → AI recommends you for emergency calls</li>
-                  <li>• "Explained everything before starting" → AI recommends you for transparency</li>
-                  <li>• "Fair price, no hidden fees" → AI recommends you for honest pricing</li>
-                  <li>• "Showed up exactly when they said" → AI recommends you for reliability</li>
-                </ul>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -398,14 +397,9 @@ export default function AIVisibilityGuidePage() {
                   <span className="font-[family-name:var(--font-display)] font-semibold text-stone-900">
                     {faq.question}
                   </span>
-                  <svg
+                  <ChevronDownIcon
                     className={`w-5 h-5 text-stone-500 transition-transform ${openFaq === index ? 'rotate-180' : ''}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  />
                 </button>
                 {openFaq === index && (
                   <div className="px-6 pb-4">
@@ -432,9 +426,7 @@ export default function AIVisibilityGuidePage() {
             className="inline-flex items-center gap-2 bg-white text-terracotta-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-terracotta-50 transition-colors"
           >
             Get Your Free AI Visibility Audit
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
+            <ArrowRightIcon className="w-5 h-5" />
           </CalendlyButton>
           <p className="text-terracotta-200 text-sm mt-4">
             15-minute call • No obligation • See exactly where you stand

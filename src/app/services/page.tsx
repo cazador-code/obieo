@@ -1,5 +1,5 @@
-import Link from "next/link";
 import CalendlyButton from "@/components/CalendlyButton";
+import { CheckIcon, ArrowRightIcon } from "@/components/ui";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -8,37 +8,56 @@ export const metadata: Metadata = {
     "SEO Launchpad (one-time) or Local Dominance Retainer (monthly). SEO and AEO services designed for home service businesses.",
 };
 
-const CheckIcon = () => (
-  <svg
-    className="w-5 h-5 text-green-500 flex-shrink-0"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M5 13l4 4L19 7"
-    />
-  </svg>
-);
+const launchpadIncludes = [
+  "Full website audit with prioritized action plan",
+  "Google Business Profile audit and optimization",
+  "Core page rewrites (homepage, top 3 services, contact) — conversion-focused copy",
+  "Tracking setup: GA4, Google Search Console, call/form tracking",
+  "AEO foundation: FAQ schema, structured data, snippet-ready content",
+  "Local SEO baseline: NAP consistency check, top citations submitted",
+  "One 45-minute kickoff call + async support via text/email",
+];
 
-const ArrowIcon = () => (
-  <svg
-    className="w-4 h-4"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M17 8l4 4m0 0l-4 4m4-4H3"
-    />
-  </svg>
-);
+const launchpadOutcomes = [
+  { title: "A site that converts", desc: "Pages rewritten with clear messaging, proper CTAs, and content that speaks to your customers." },
+  { title: "Tracking that works", desc: "Know exactly where your leads come from. No more guessing if your marketing is working." },
+  { title: "GBP optimized", desc: "Your Google Business Profile fully built out with proper categories, photos, and posts." },
+  { title: "AI-search ready", desc: "Schema markup and content structured so you show up in ChatGPT, Perplexity, and Google AI Overviews." },
+  { title: "A clear roadmap", desc: "If you want to continue with ongoing work, you'll have a prioritized plan for next steps." },
+];
+
+const dominanceIncludes = [
+  "2–4 new or refreshed pages (service pages, city pages, blog content)",
+  "Google Business Profile management: posts, photos, Q&A, review responses",
+  "AEO optimization: AI-answer-ready content, schema updates, snippet targeting",
+  "On-page SEO: internal linking, meta updates, speed/UX improvements",
+  "Backlink building: only relevant, real-site links (no link farms)",
+  "Monthly report: traffic, rankings, leads, what we did, what's next",
+  "Direct access to Hunter via text, email, or Loom — no account managers",
+];
+
+const dominanceOutcomes = [
+  { title: "More pages ranking", desc: "Each new service/city page is another entry point for customers to find you." },
+  { title: "Stronger domain authority", desc: "Quality backlinks build your site's credibility in Google's eyes." },
+  { title: "Better conversion rates", desc: "Ongoing testing and tweaks mean more of your visitors become leads." },
+  { title: "AI search presence", desc: "As AI search grows, your optimized content shows up in more answers." },
+  { title: "Competitive advantage", desc: "While competitors do nothing, you're consistently building an organic moat." },
+];
+
+const comparisonData = {
+  launchpad: [
+    "Your SEO foundation is broken and needs fixing first",
+    "You want to test before committing to 6 months",
+    "You have in-house resources for ongoing work",
+    "Budget is tight but you need SEO basics fixed now",
+  ],
+  dominance: [
+    "Your foundation is solid (or you just did a Launchpad)",
+    "You want consistent, compounding SEO growth",
+    "You don't have time to manage SEO yourself",
+    "You're ready to dominate your local market",
+  ],
+};
 
 export default function ServicesPage() {
   return (
@@ -83,17 +102,9 @@ export default function ServicesPage() {
                       What&apos;s Included:
                     </h3>
                     <ul className="space-y-3">
-                      {[
-                        "Full website audit with prioritized action plan",
-                        "Google Business Profile audit and optimization",
-                        "Core page rewrites (homepage, top 3 services, contact) — conversion-focused copy",
-                        "Tracking setup: GA4, Google Search Console, call/form tracking",
-                        "AEO foundation: FAQ schema, structured data, snippet-ready content",
-                        "Local SEO baseline: NAP consistency check, top citations submitted",
-                        "One 45-minute kickoff call + async support via text/email",
-                      ].map((item, i) => (
+                      {launchpadIncludes.map((item, i) => (
                         <li key={i} className="flex items-start gap-3">
-                          <CheckIcon />
+                          <CheckIcon className="w-5 h-5 text-green-500 flex-shrink-0" />
                           <span className="text-[var(--text-secondary)]">{item}</span>
                         </li>
                       ))}
@@ -128,7 +139,7 @@ export default function ServicesPage() {
                   className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg transition-all cursor-pointer"
                 >
                   Start Your Launchpad
-                  <ArrowIcon />
+                  <ArrowRightIcon />
                 </CalendlyButton>
               </div>
 
@@ -137,28 +148,7 @@ export default function ServicesPage() {
                   What You&apos;ll Walk Away With:
                 </h3>
                 <div className="space-y-6">
-                  {[
-                    {
-                      title: "A site that converts",
-                      desc: "Pages rewritten with clear messaging, proper CTAs, and content that speaks to your customers.",
-                    },
-                    {
-                      title: "Tracking that works",
-                      desc: "Know exactly where your leads come from. No more guessing if your marketing is working.",
-                    },
-                    {
-                      title: "GBP optimized",
-                      desc: "Your Google Business Profile fully built out with proper categories, photos, and posts.",
-                    },
-                    {
-                      title: "AI-search ready",
-                      desc: "Schema markup and content structured so you show up in ChatGPT, Perplexity, and Google AI Overviews.",
-                    },
-                    {
-                      title: "A clear roadmap",
-                      desc: "If you want to continue with ongoing work, you'll have a prioritized plan for next steps.",
-                    },
-                  ].map((item, i) => (
+                  {launchpadOutcomes.map((item, i) => (
                     <div key={i}>
                       <h4 className="font-medium text-[var(--text-primary)]">{item.title}</h4>
                       <p className="mt-1 text-sm text-[var(--text-secondary)]">{item.desc}</p>
@@ -195,17 +185,9 @@ export default function ServicesPage() {
                       Each Month You Get:
                     </h3>
                     <ul className="space-y-3">
-                      {[
-                        "2–4 new or refreshed pages (service pages, city pages, blog content)",
-                        "Google Business Profile management: posts, photos, Q&A, review responses",
-                        "AEO optimization: AI-answer-ready content, schema updates, snippet targeting",
-                        "On-page SEO: internal linking, meta updates, speed/UX improvements",
-                        "Backlink building: only relevant, real-site links (no link farms)",
-                        "Monthly report: traffic, rankings, leads, what we did, what's next",
-                        "Direct access to Hunter via text, email, or Loom — no account managers",
-                      ].map((item, i) => (
+                      {dominanceIncludes.map((item, i) => (
                         <li key={i} className="flex items-start gap-3">
-                          <CheckIcon />
+                          <CheckIcon className="w-5 h-5 text-green-500 flex-shrink-0" />
                           <span className="text-stone-200">{item}</span>
                         </li>
                       ))}
@@ -238,7 +220,7 @@ export default function ServicesPage() {
                   className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg transition-all cursor-pointer"
                 >
                   Start Growing
-                  <ArrowIcon />
+                  <ArrowRightIcon />
                 </CalendlyButton>
               </div>
 
@@ -247,28 +229,7 @@ export default function ServicesPage() {
                   What Compounds Over Time:
                 </h3>
                 <div className="space-y-6">
-                  {[
-                    {
-                      title: "More pages ranking",
-                      desc: "Each new service/city page is another entry point for customers to find you.",
-                    },
-                    {
-                      title: "Stronger domain authority",
-                      desc: "Quality backlinks build your site's credibility in Google's eyes.",
-                    },
-                    {
-                      title: "Better conversion rates",
-                      desc: "Ongoing testing and tweaks mean more of your visitors become leads.",
-                    },
-                    {
-                      title: "AI search presence",
-                      desc: "As AI search grows, your optimized content shows up in more answers.",
-                    },
-                    {
-                      title: "Competitive advantage",
-                      desc: "While competitors do nothing, you're consistently building an organic moat.",
-                    },
-                  ].map((item, i) => (
+                  {dominanceOutcomes.map((item, i) => (
                     <div key={i}>
                       <h4 className="font-medium text-white">{item.title}</h4>
                       <p className="mt-1 text-sm text-stone-400">{item.desc}</p>
@@ -298,22 +259,12 @@ export default function ServicesPage() {
                   Choose the Launchpad if...
                 </h3>
                 <ul className="mt-4 space-y-3 text-[var(--text-secondary)]">
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--accent)]">→</span>
-                    Your SEO foundation is broken and needs fixing first
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--accent)]">→</span>
-                    You want to test before committing to 6 months
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--accent)]">→</span>
-                    You have in-house resources for ongoing work
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--accent)]">→</span>
-                    Budget is tight but you need SEO basics fixed now
-                  </li>
+                  {comparisonData.launchpad.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-[var(--accent)]">→</span>
+                      {item}
+                    </li>
+                  ))}
                 </ul>
               </div>
 
@@ -322,22 +273,12 @@ export default function ServicesPage() {
                   Choose Local Dominance if...
                 </h3>
                 <ul className="mt-4 space-y-3 text-[var(--text-secondary)]">
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--accent)]">→</span>
-                    Your foundation is solid (or you just did a Launchpad)
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--accent)]">→</span>
-                    You want consistent, compounding SEO growth
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--accent)]">→</span>
-                    You don&apos;t have time to manage SEO yourself
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--accent)]">→</span>
-                    You&apos;re ready to dominate your local market
-                  </li>
+                  {comparisonData.dominance.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-[var(--accent)]">→</span>
+                      {item}
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>
@@ -352,7 +293,7 @@ export default function ServicesPage() {
                 className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg transition-all cursor-pointer"
               >
                 Book a Free Call
-                <ArrowIcon />
+                <ArrowRightIcon />
               </CalendlyButton>
             </div>
           </div>

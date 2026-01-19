@@ -1,5 +1,5 @@
-import Link from "next/link";
 import CalendlyButton from "@/components/CalendlyButton";
+import { ArrowRightIcon } from "@/components/ui";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -8,21 +8,13 @@ export const metadata: Metadata = {
     "I'm Hunter Lapeyre. I run Obieo and Lapeyre Roofing. That's why I understand home service businesses better than any agency.",
 };
 
-const ArrowIcon = () => (
-  <svg
-    className="w-4 h-4"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M17 8l4 4m0 0l-4 4m4-4H3"
-    />
-  </svg>
-);
+const differentiators = [
+  { title: "I know your business.", description: 'Not from a case study — from running one. I understand seasonality, emergency calls, local reputation, and why "free estimate" matters.' },
+  { title: "You work with me directly.", description: "No account managers, no sales team hand-offs. You text me. You email me. We talk." },
+  { title: "I keep my client list small.", description: "I don't want 50 clients. I want a handful that I can actually help. That means I learn your specific market." },
+  { title: "I'm ahead on AEO.", description: "AI search is changing how people find services. Most agencies haven't caught up. I've been optimizing for it since the beginning." },
+  { title: "Better value, better attention.", description: "You get big agency tactics without the big agency price tag. Not because I cut corners — because I don't have their overhead." },
+];
 
 export default function AboutPage() {
   return (
@@ -97,68 +89,17 @@ export default function AboutPage() {
               </h2>
 
               <ul className="space-y-4 text-[var(--text-secondary)]">
-                <li className="flex items-start gap-3">
-                  <span className="w-6 h-6 bg-[var(--accent)]/10 text-[var(--accent)] rounded-full flex items-center justify-center flex-shrink-0 mt-1 text-sm font-bold">
-                    1
-                  </span>
-                  <span>
-                    <strong className="text-[var(--text-primary)]">
-                      I know your business.
-                    </strong>{" "}
-                    Not from a case study — from running one. I understand
-                    seasonality, emergency calls, local reputation, and why
-                    &quot;free estimate&quot; matters.
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="w-6 h-6 bg-[var(--accent)]/10 text-[var(--accent)] rounded-full flex items-center justify-center flex-shrink-0 mt-1 text-sm font-bold">
-                    2
-                  </span>
-                  <span>
-                    <strong className="text-[var(--text-primary)]">
-                      You work with me directly.
-                    </strong>{" "}
-                    No account managers, no sales team hand-offs. You text me.
-                    You email me. We talk.
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="w-6 h-6 bg-[var(--accent)]/10 text-[var(--accent)] rounded-full flex items-center justify-center flex-shrink-0 mt-1 text-sm font-bold">
-                    3
-                  </span>
-                  <span>
-                    <strong className="text-[var(--text-primary)]">
-                      I keep my client list small.
-                    </strong>{" "}
-                    I don&apos;t want 50 clients. I want a handful that I can
-                    actually help. That means I learn your specific market.
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="w-6 h-6 bg-[var(--accent)]/10 text-[var(--accent)] rounded-full flex items-center justify-center flex-shrink-0 mt-1 text-sm font-bold">
-                    4
-                  </span>
-                  <span>
-                    <strong className="text-[var(--text-primary)]">
-                      I&apos;m ahead on AEO.
-                    </strong>{" "}
-                    AI search is changing how people find services. Most
-                    agencies haven&apos;t caught up. I&apos;ve been optimizing
-                    for it since the beginning.
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="w-6 h-6 bg-[var(--accent)]/10 text-[var(--accent)] rounded-full flex items-center justify-center flex-shrink-0 mt-1 text-sm font-bold">
-                    5
-                  </span>
-                  <span>
-                    <strong className="text-[var(--text-primary)]">
-                      Better value, better attention.
-                    </strong>{" "}
-                    You get big agency tactics without the big agency price tag.
-                    Not because I cut corners — because I don&apos;t have their overhead.
-                  </span>
-                </li>
+                {differentiators.map((item, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="w-6 h-6 bg-[var(--accent)]/10 text-[var(--accent)] rounded-full flex items-center justify-center flex-shrink-0 mt-1 text-sm font-bold">
+                      {i + 1}
+                    </span>
+                    <span>
+                      <strong className="text-[var(--text-primary)]">{item.title}</strong>{" "}
+                      {item.description}
+                    </span>
+                  </li>
+                ))}
               </ul>
 
               <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-primary)] mt-12 mb-4">
@@ -189,7 +130,7 @@ export default function AboutPage() {
                 className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg transition-all cursor-pointer"
               >
                 Book a Free Call
-                <ArrowIcon />
+                <ArrowRightIcon />
               </CalendlyButton>
               <a
                 href="mailto:hunter@obieo.com"

@@ -4,3 +4,11 @@ export { Input } from './Input'
 export { Textarea } from './Textarea'
 export { Section } from './Section'
 export { Container } from './Container'
+export {
+  CheckIcon,
+  XIcon,
+  ArrowRightIcon,
+  ChevronDownIcon,
+  WarningIcon,
+  LightningIcon,
+} from './icons'
