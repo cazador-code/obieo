@@ -6,6 +6,50 @@ import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 // Configure for longer execution time (Vercel Pro supports up to 300s)
 export const maxDuration = 300;
 
+// Security: Sanitize user inputs to prevent prompt injection
+function sanitizeForPrompt(input: string): string {
+  return input
+    .replace(/[`${}\\]/g, '') // Remove template literal and escape chars
+    .replace(/\n/g, ' ')      // Flatten newlines (injection vector)
+    .replace(/\r/g, '')       // Remove carriage returns
+    .trim()
+    .slice(0, 200);           // Limit length
+}
+
+// Security: Validate URL format
+function isValidWebsiteUrl(url: string): { valid: boolean; normalized: string } {
+  try {
+    // Add protocol if missing
+    let normalizedUrl = url;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      normalizedUrl = `https://${url}`;
+    }
+
+    const parsed = new URL(normalizedUrl);
+
+    // Only allow http/https protocols
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      return { valid: false, normalized: '' };
+    }
+
+    // Basic hostname validation (no localhost, no IP addresses for prod)
+    const hostname = parsed.hostname.toLowerCase();
+    if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+      return { valid: false, normalized: '' };
+    }
+
+    return { valid: true, normalized: normalizedUrl };
+  } catch {
+    return { valid: false, normalized: '' };
+  }
+}
+
+// Security: Validate email format
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email) && email.length <= 254;
+}
+
 interface LeadInfo {
   name: string;
   email: string;
@@ -159,6 +203,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Security: Validate email format
+    if (!isValidEmail(email)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+
+    // Security: Validate and normalize website URL
+    const urlValidation = isValidWebsiteUrl(website);
+    if (!urlValidation.valid) {
+      return NextResponse.json(
+        { error: 'Invalid website URL' },
+        { status: 400 }
+      );
+    }
+
+    // Security: Sanitize all user inputs to prevent prompt injection
+    const safeName = sanitizeForPrompt(name);
+    const safeCompany = sanitizeForPrompt(company);
+    const safeEmail = sanitizeForPrompt(email);
+    const safeWebsite = urlValidation.normalized;
+    const safeSource = ['quiz', 'roi-calculator', 'demo'].includes(source) ? source : 'demo';
+
     // Check for API key
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
@@ -170,18 +238,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Run the audit using Agent SDK with WebSearch and WebFetch tools
+    // Security: Using sanitized inputs to prevent prompt injection
     const userPrompt = `Please perform a comprehensive SEO/GEO audit for this prospect:
 
 **Lead Information:**
-- Name: ${name}
-- Company: ${company}
-- Email: ${email}
-- Website: ${website}
-- Source: ${source}${quizScore ? `\n- Quiz Score: ${quizScore}` : ''}
+- Name: ${safeName}
+- Company: ${safeCompany}
+- Email: ${safeEmail}
+- Website: ${safeWebsite}
+- Source: ${safeSource}${quizScore ? `\n- Quiz Score: ${quizScore}` : ''}
 
 Start by fetching their homepage, then use web search to gather competitive intelligence. Provide a complete Prospect Intelligence Report.`;
 
-    console.log(`Starting audit for ${company} (${website})`);
+    console.log(`Starting audit for ${safeCompany} (${safeWebsite})`);
 
     let reportContent = '';
 
@@ -216,7 +285,7 @@ Start by fetching their homepage, then use web search to gather competitive inte
 
     const timestamp = new Date().toISOString();
 
-    console.log(`Audit complete for ${company}, sending email...`);
+    console.log(`Audit complete for ${safeCompany}, sending email...`);
 
     // Send email
     const resendKey = process.env.RESEND_API_KEY;
@@ -245,7 +314,7 @@ Start by fetching their homepage, then use web search to gather competitive inte
     await resend.emails.send({
       from: 'Prospect Intel <noreply@leads.obieo.com>',
       to: HUNTER_EMAIL,
-      subject: `Prospect Intel: ${company}`,
+      subject: `Prospect Intel: ${safeCompany}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -267,17 +336,17 @@ Start by fetching their homepage, then use web search to gather competitive inte
                 <tr>
                   <td style="vertical-align: top;">
                     <p style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 4px 0;">Lead</p>
-                    <p style="color: #0f172a; font-size: 16px; font-weight: 600; margin: 0 0 4px 0;">${name}</p>
-                    <a href="mailto:${email}" style="color: #2563eb; font-size: 14px; text-decoration: none;">${email}</a>
+                    <p style="color: #0f172a; font-size: 16px; font-weight: 600; margin: 0 0 4px 0;">${safeName}</p>
+                    <a href="mailto:${safeEmail}" style="color: #2563eb; font-size: 14px; text-decoration: none;">${safeEmail}</a>
                   </td>
                   <td style="vertical-align: top;">
                     <p style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 4px 0;">Company</p>
-                    <p style="color: #0f172a; font-size: 16px; font-weight: 600; margin: 0 0 4px 0;">${company}</p>
-                    <a href="${website}" style="color: #2563eb; font-size: 14px; text-decoration: none;">${website}</a>
+                    <p style="color: #0f172a; font-size: 16px; font-weight: 600; margin: 0 0 4px 0;">${safeCompany}</p>
+                    <a href="${safeWebsite}" style="color: #2563eb; font-size: 14px; text-decoration: none;">${safeWebsite}</a>
                   </td>
                   <td style="vertical-align: top;">
                     <p style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 4px 0;">Source</p>
-                    <p style="color: #0f172a; font-size: 16px; font-weight: 600; margin: 0;">${sourceLabels[source] || source}</p>
+                    <p style="color: #0f172a; font-size: 16px; font-weight: 600; margin: 0;">${sourceLabels[safeSource] || safeSource}</p>
                   </td>
                 </tr>
               </table>
