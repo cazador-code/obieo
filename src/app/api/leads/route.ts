@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { leadsLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 const GHL_WEBHOOK_URL = 'https://services.leadconnectorhq.com/hooks/uYeEUrkrjlAgGnhEu9Ts/webhook-trigger/abe6a2b5-4487-478f-a496-f55503f9d27d'
 
@@ -142,6 +143,13 @@ function formatROIEmail(
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limiting
+  const ip = getClientIp(request);
+  const { success, remaining } = await leadsLimiter.limit(ip);
+  if (!success) {
+    return rateLimitResponse(remaining);
+  }
+
   try {
     const body = await request.json()
     const { name, email, website, score, source } = body

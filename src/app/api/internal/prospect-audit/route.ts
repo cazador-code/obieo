@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import { Resend } from 'resend';
+import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 
 // Configure for longer execution time (Vercel Pro supports up to 300s)
 export const maxDuration = 300;
@@ -139,6 +140,13 @@ Be thorough but concise. This report will be emailed to the sales team for demo 
 **IMPORTANT:** Do NOT include any report metadata like "Report Generated", "Demo Source", "Lead Source", timestamps, or similar footer information. The email system will add this metadata automatically from the lead data.`;
 
 export async function POST(request: NextRequest) {
+  // Rate limiting - this endpoint is expensive ($2/request)
+  const ip = getClientIp(request);
+  const { success, remaining } = await auditLimiter.limit(ip);
+  if (!success) {
+    return rateLimitResponse(remaining);
+  }
+
   try {
     const body = await request.json();
     const { name, email, company, website, source, quizScore } = body as LeadInfo;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
+import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 
 // Simple token generation - hash of password + secret
 function generateToken(password: string): string {
@@ -8,6 +9,13 @@ function generateToken(password: string): string {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limiting - prevents brute force attacks
+  const ip = getClientIp(request);
+  const { success, remaining } = await authLimiter.limit(ip);
+  if (!success) {
+    return rateLimitResponse(remaining);
+  }
+
   try {
     const body = await request.json();
     const { password, token } = body;

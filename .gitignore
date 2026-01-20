@@ -42,6 +42,8 @@ next-env.d.ts
 
 # internal notes
 SCRATCH.md
+SECURITY-AUDIT.md
 
 # SEO Machine tool (separate repo)
 .seomachine/
+.env*.local
