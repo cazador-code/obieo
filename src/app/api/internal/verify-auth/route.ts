@@ -1,11 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createHash } from 'crypto';
+import { SignJWT, jwtVerify } from 'jose';
 import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 
-// Simple token generation - hash of password + secret
-function generateToken(password: string): string {
-  const secret = process.env.INTERNAL_AUTH_SECRET || 'obieo-internal-2024';
-  return createHash('sha256').update(`${password}-${secret}`).digest('hex');
+// JWT configuration
+const TOKEN_EXPIRATION = '1h'; // Tokens expire after 1 hour
+
+// Get the secret as Uint8Array for jose
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error('JWT_SECRET must be set and at least 32 characters');
+  }
+  return new TextEncoder().encode(secret);
+}
+
+// Create a signed JWT with expiration
+async function createToken(): Promise<string> {
+  const secret = getJwtSecret();
+  return new SignJWT({ authorized: true })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(TOKEN_EXPIRATION)
+    .sign(secret);
+}
+
+// Verify a JWT token
+async function verifyToken(token: string): Promise<boolean> {
+  try {
+    const secret = getJwtSecret();
+    await jwtVerify(token, secret);
+    return true;
+  } catch {
+    // Token is invalid or expired
+    return false;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -20,25 +48,30 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { password, token } = body;
 
-    const correctPassword = process.env.INTERNAL_TOOL_PASSWORD || 'obieo2024';
+    const correctPassword = process.env.INTERNAL_TOOL_PASSWORD;
+    if (!correctPassword) {
+      console.error('INTERNAL_TOOL_PASSWORD not configured');
+      return NextResponse.json({ valid: false }, { status: 500 });
+    }
 
     // If token provided, verify it
     if (token) {
-      const expectedToken = generateToken(correctPassword);
-      return NextResponse.json({ valid: token === expectedToken });
+      const isValid = await verifyToken(token);
+      return NextResponse.json({ valid: isValid });
     }
 
-    // If password provided, check it and return token
+    // If password provided, check it and return new token
     if (password) {
       if (password === correctPassword) {
-        const newToken = generateToken(correctPassword);
+        const newToken = await createToken();
         return NextResponse.json({ valid: true, token: newToken });
       }
       return NextResponse.json({ valid: false });
     }
 
     return NextResponse.json({ valid: false });
-  } catch {
+  } catch (error) {
+    console.error('Auth error:', error);
     return NextResponse.json({ valid: false }, { status: 400 });
   }
 }
