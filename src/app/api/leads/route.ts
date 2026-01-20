@@ -2,7 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { leadsLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
-const GHL_WEBHOOK_URL = 'https://services.leadconnectorhq.com/hooks/uYeEUrkrjlAgGnhEu9Ts/webhook-trigger/abe6a2b5-4487-478f-a496-f55503f9d27d'
+// Security: Moved to environment variable
+const GHL_WEBHOOK_URL = process.env.GHL_WEBHOOK_URL
+
+// Security: Escape HTML to prevent XSS in email clients
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
 
 function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY
@@ -35,25 +46,28 @@ function formatQuizEmail(
   score: number
 ): string {
   const scoreCategory = score >= 80 ? 'Excellent' : score >= 60 ? 'Good' : score >= 40 ? 'Needs Work' : 'Needs Major Work'
+  const safeName = escapeHtml(name || 'Not provided')
+  const safeEmail = escapeHtml(email)
+  const safeWebsite = website ? escapeHtml(website) : ''
 
   return `
     <h2>New Quiz Lead: Website Score</h2>
 
     <h3>Contact Information</h3>
-    <p><strong>Name:</strong> ${name || 'Not provided'}</p>
-    <p><strong>Email:</strong> ${email}</p>
-    ${website ? `<p><strong>Website:</strong> ${website}</p>` : ''}
+    <p><strong>Name:</strong> ${safeName}</p>
+    <p><strong>Email:</strong> ${safeEmail}</p>
+    ${safeWebsite ? `<p><strong>Website:</strong> ${safeWebsite}</p>` : ''}
 
     <h3>Quiz Results</h3>
     <p><strong>Score:</strong> ${score}/100 (${scoreCategory})</p>
 
     <h3>Quiz Answers</h3>
     <ul>
-      ${answers.industry ? `<li><strong>Industry:</strong> ${answers.industry}</li>` : ''}
-      ${answers.hasWebsite ? `<li><strong>Has Website:</strong> ${answers.hasWebsite}</li>` : ''}
-      ${answers.leadSource ? `<li><strong>Current Lead Source:</strong> ${answers.leadSource}</li>` : ''}
-      ${answers.frustration ? `<li><strong>Biggest Frustration:</strong> ${answers.frustration}</li>` : ''}
-      ${answers.goals ? `<li><strong>Goals:</strong> ${answers.goals}</li>` : ''}
+      ${answers.industry ? `<li><strong>Industry:</strong> ${escapeHtml(answers.industry)}</li>` : ''}
+      ${answers.hasWebsite ? `<li><strong>Has Website:</strong> ${escapeHtml(answers.hasWebsite)}</li>` : ''}
+      ${answers.leadSource ? `<li><strong>Current Lead Source:</strong> ${escapeHtml(answers.leadSource)}</li>` : ''}
+      ${answers.frustration ? `<li><strong>Biggest Frustration:</strong> ${escapeHtml(answers.frustration)}</li>` : ''}
+      ${answers.goals ? `<li><strong>Goals:</strong> ${escapeHtml(answers.goals)}</li>` : ''}
     </ul>
 
     <hr />
@@ -71,6 +85,10 @@ async function sendToGHL(data: {
   score: number
   answers: QuizAnswers
 }) {
+  if (!GHL_WEBHOOK_URL) {
+    console.warn('GHL_WEBHOOK_URL not configured, skipping webhook')
+    return
+  }
   try {
     const response = await fetch(GHL_WEBHOOK_URL, {
       method: 'POST',
@@ -110,14 +128,17 @@ function formatROIEmail(
   const additionalJobs = extraLeads * (data.closeRate / 100)
   const additionalRevenue = additionalJobs * data.averageTicketSize * 12
   const additionalProfit = additionalRevenue * (data.grossProfitMargin / 100)
+  const safeName = escapeHtml(name || '')
+  const safeEmail = escapeHtml(email)
+  const safeCompany = company ? escapeHtml(company) : ''
 
   return `
     <h2>New ROI Calculator Lead</h2>
 
     <h3>Contact Information</h3>
-    <p><strong>Name:</strong> ${name}</p>
-    <p><strong>Email:</strong> ${email}</p>
-    ${company ? `<p><strong>Company:</strong> ${company}</p>` : ''}
+    <p><strong>Name:</strong> ${safeName}</p>
+    <p><strong>Email:</strong> ${safeEmail}</p>
+    ${safeCompany ? `<p><strong>Company:</strong> ${safeCompany}</p>` : ''}
 
     <h3>Business Metrics Entered</h3>
     <ul>
@@ -181,30 +202,32 @@ export async function POST(request: NextRequest) {
       console.log('Email sent:', emailResult)
 
       // Send to GHL
-      const roiData = body.quizAnswers as ROICalculatorData
-      try {
-        const response = await fetch(GHL_WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email,
-            name,
-            company: website || '',
-            source,
-            roi_average_ticket: roiData.averageTicketSize,
-            roi_close_rate: roiData.closeRate,
-            roi_leads_per_month: roiData.currentLeadsPerMonth,
-            roi_profit_margin: roiData.grossProfitMargin,
-            roi_potential_revenue: score,
-          }),
-        })
-        if (response.ok) {
-          console.log('ROI lead sent to GHL successfully')
-        } else {
-          console.error('GHL webhook failed:', response.status)
+      if (GHL_WEBHOOK_URL) {
+        const roiData = body.quizAnswers as ROICalculatorData
+        try {
+          const response = await fetch(GHL_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              name,
+              company: website || '',
+              source,
+              roi_average_ticket: roiData.averageTicketSize,
+              roi_close_rate: roiData.closeRate,
+              roi_leads_per_month: roiData.currentLeadsPerMonth,
+              roi_profit_margin: roiData.grossProfitMargin,
+              roi_potential_revenue: score,
+            }),
+          })
+          if (response.ok) {
+            console.log('ROI lead sent to GHL successfully')
+          } else {
+            console.error('GHL webhook failed:', response.status)
+          }
+        } catch (error) {
+          console.error('Error sending ROI lead to GHL:', error)
         }
-      } catch (error) {
-        console.error('Error sending ROI lead to GHL:', error)
       }
     }
 
