@@ -72,8 +72,7 @@ export function BookingModal() {
             {/* GHL Calendar iframe */}
             <iframe
               src={iframeUrl}
-              style={{ width: '100%', border: 'none', overflow: 'hidden', minHeight: '700px' }}
-              scrolling="no"
+              style={{ width: '100%', border: 'none', minHeight: '85vh', maxHeight: '85vh' }}
               title="Book a call"
             />
           </motion.div>
