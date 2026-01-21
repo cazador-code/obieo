@@ -23,9 +23,14 @@ export default function ThankYouPage() {
       })
     }
 
-    // Fire Facebook Pixel Lead event with retry for timing issues
-    const firePixelLead = () => {
+    // Fire Facebook Pixel events with retry for timing issues
+    const firePixelEvents = () => {
       if (typeof window !== 'undefined' && window.fbq) {
+        // Schedule event - specific to booking appointments
+        window.fbq('track', 'Schedule', {
+          content_name: 'Strategy Call Booking',
+        })
+        // Lead event - for general conversion tracking
         window.fbq('track', 'Lead', {
           content_name: 'GHL Booking',
         })
@@ -35,11 +40,11 @@ export default function ThankYouPage() {
     }
 
     // Try immediately, then retry up to 5 times with 500ms delay
-    if (!firePixelLead()) {
+    if (!firePixelEvents()) {
       let attempts = 0
       const interval = setInterval(() => {
         attempts++
-        if (firePixelLead() || attempts >= 5) {
+        if (firePixelEvents() || attempts >= 5) {
           clearInterval(interval)
         }
       }, 500)
