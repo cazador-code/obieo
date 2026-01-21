@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createHash } from 'crypto'
 import { Resend } from 'resend'
 import { leadsLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 // Security: Moved to environment variable
 const GHL_WEBHOOK_URL = process.env.GHL_WEBHOOK_URL
+
+// Facebook Conversions API config
+const FB_PIXEL_ID = '290774033453771'
+const FB_ACCESS_TOKEN = process.env.FB_CONVERSIONS_API_TOKEN
 
 // Security: Escape HTML to prevent XSS in email clients
 function escapeHtml(text: string): string {
@@ -75,6 +80,65 @@ function formatQuizEmail(
       This lead completed the Website Score Quiz on obieo.com
     </p>
   `
+}
+
+// Facebook Conversions API - sends Lead event server-side
+async function sendToFacebookCAPI(data: {
+  email: string
+  eventSourceUrl: string
+  clientIp: string
+  clientUserAgent: string
+  contentName: string
+}) {
+  if (!FB_ACCESS_TOKEN) {
+    console.warn('FB_CONVERSIONS_API_TOKEN not configured, skipping CAPI')
+    return
+  }
+
+  try {
+    // Hash email for privacy (required by Facebook)
+    const hashedEmail = createHash('sha256')
+      .update(data.email.toLowerCase().trim())
+      .digest('hex')
+
+    const eventData = {
+      data: [
+        {
+          event_name: 'Lead',
+          event_time: Math.floor(Date.now() / 1000),
+          action_source: 'website',
+          event_source_url: data.eventSourceUrl,
+          user_data: {
+            em: [hashedEmail], // hashed email
+            client_ip_address: data.clientIp,
+            client_user_agent: data.clientUserAgent,
+          },
+          custom_data: {
+            content_name: data.contentName,
+          },
+        },
+      ],
+    }
+
+    const response = await fetch(
+      `https://graph.facebook.com/v21.0/${FB_PIXEL_ID}/events?access_token=${FB_ACCESS_TOKEN}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(eventData),
+      }
+    )
+
+    if (response.ok) {
+      const result = await response.json()
+      console.log('Facebook CAPI Lead event sent:', result)
+    } else {
+      const error = await response.text()
+      console.error('Facebook CAPI failed:', response.status, error)
+    }
+  } catch (error) {
+    console.error('Error sending to Facebook CAPI:', error)
+  }
 }
 
 async function sendToGHL(data: {
@@ -171,6 +235,9 @@ export async function POST(request: NextRequest) {
     return rateLimitResponse(remaining);
   }
 
+  // Capture user agent for Facebook CAPI
+  const userAgent = request.headers.get('user-agent') || ''
+
   try {
     const body = await request.json()
     const { name, email, website, score, source } = body
@@ -251,6 +318,15 @@ export async function POST(request: NextRequest) {
         answers: body.answers || {},
       })
     }
+
+    // Send to Facebook Conversions API (server-side tracking)
+    await sendToFacebookCAPI({
+      email,
+      eventSourceUrl: `https://obieo.com/${source === 'quiz' ? 'quiz' : 'roi-calculator'}`,
+      clientIp: ip,
+      clientUserAgent: userAgent,
+      contentName: source === 'quiz' ? 'AI Visibility Quiz' : 'ROI Calculator',
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {
