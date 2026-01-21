@@ -8,7 +8,6 @@ import { FadeInSection } from '@/components/animations'
 declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void
-    fbq?: (...args: unknown[]) => void
   }
 }
 
@@ -23,32 +22,7 @@ export default function ThankYouPage() {
       })
     }
 
-    // Fire Facebook Pixel events with retry for timing issues
-    const firePixelEvents = () => {
-      if (typeof window !== 'undefined' && window.fbq) {
-        // Schedule event - specific to booking appointments
-        window.fbq('track', 'Schedule', {
-          content_name: 'Strategy Call Booking',
-        })
-        // Lead event - for general conversion tracking
-        window.fbq('track', 'Lead', {
-          content_name: 'GHL Booking',
-        })
-        return true
-      }
-      return false
-    }
-
-    // Try immediately, then retry up to 5 times with 500ms delay
-    if (!firePixelEvents()) {
-      let attempts = 0
-      const interval = setInterval(() => {
-        attempts++
-        if (firePixelEvents() || attempts >= 5) {
-          clearInterval(interval)
-        }
-      }, 500)
-    }
+    // Facebook Pixel events (Schedule, Lead) are managed via GTM
   }, [])
 
   return (
