@@ -23,11 +23,26 @@ export default function ThankYouPage() {
       })
     }
 
-    // Fire Facebook Pixel Lead event
-    if (typeof window !== 'undefined' && window.fbq) {
-      window.fbq('track', 'Lead', {
-        content_name: 'GHL Booking',
-      })
+    // Fire Facebook Pixel Lead event with retry for timing issues
+    const firePixelLead = () => {
+      if (typeof window !== 'undefined' && window.fbq) {
+        window.fbq('track', 'Lead', {
+          content_name: 'GHL Booking',
+        })
+        return true
+      }
+      return false
+    }
+
+    // Try immediately, then retry up to 5 times with 500ms delay
+    if (!firePixelLead()) {
+      let attempts = 0
+      const interval = setInterval(() => {
+        attempts++
+        if (firePixelLead() || attempts >= 5) {
+          clearInterval(interval)
+        }
+      }, 500)
     }
   }, [])
 
