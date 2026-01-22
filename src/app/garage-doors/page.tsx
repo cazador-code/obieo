@@ -2,7 +2,7 @@
 
 import Script from 'next/script'
 import { useState } from 'react'
-import { ShingleStack } from '@/components/roi-widgets/ShingleStack'
+import { ValueLever } from '@/components/roi-widgets/ValueLever'
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -22,9 +22,9 @@ const ArrowIcon = () => (
   </svg>
 )
 
-export default function RoofingLandingPage() {
+export default function GarageDoorsLandingPage() {
   const [ebitdaIncrease, setEbitdaIncrease] = useState(75000)
-  const multiplier = 4 // Typical roofing company EBITDA multiple
+  const multiplier = 4 // Typical garage door company EBITDA multiple
 
   return (
     <div className="min-h-screen bg-[#0c0a09]">
@@ -40,34 +40,33 @@ export default function RoofingLandingPage() {
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           {/* Pill Callout */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-full mb-8">
-            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            <span className="text-red-400 text-sm font-medium">
-              Attention roofing company owners tired of generic agencies
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 border border-orange-500/30 rounded-full mb-8">
+            <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+            <span className="text-orange-400 text-sm font-medium">
+              Attention garage door company owners tired of generic agencies
             </span>
           </div>
 
           {/* Main Headline */}
           <h1 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] tracking-tight">
-            We Will Install The Same{' '}
-            <span className="text-[var(--accent)]">SEO System</span>{' '}
-            We Used To Scale Our Own Roofing Company
+            SEO That Opens{' '}
+            <span className="text-orange-400">More Opportunities</span>
           </h1>
 
-          {/* Subhead - Founder Credibility */}
+          {/* Subhead */}
           <p className="mt-8 text-xl sm:text-2xl text-white/70 max-w-2xl mx-auto leading-relaxed">
-            Forget generic &quot;marketing.&quot; We are roofing founders who built a proprietary system to dominate local search. We don&apos;t guess. We just copy-paste what worked for us into your business.
+            I run a trades business. I know what it&apos;s like when homeowners need emergency repairs. My SEO system captures garage door searches when they matter most.
           </p>
 
           <p className="mt-6 text-lg text-white/50">
-            <strong className="text-white/80">+5 ranking positions</strong> and <strong className="text-white/80">66% more impressions</strong> in 30 days. On our own roofing company.
+            <strong className="text-white/80">+5 ranking positions</strong> and <strong className="text-white/80">66% more impressions</strong> in 30 days. On my own company.
           </p>
 
           {/* Primary CTA */}
           <div className="mt-10">
             <a
               href="#book-call"
-              className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg transition-all cursor-pointer text-lg shadow-lg shadow-[var(--accent)]/25 hover:shadow-[var(--accent)]/40 hover:scale-[1.02]"
+              className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-all cursor-pointer text-lg shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-[1.02]"
             >
               Book Your Free Strategy Call
               <ArrowIcon />
@@ -83,16 +82,16 @@ export default function RoofingLandingPage() {
       <section className="py-16 sm:py-24 bg-[#141210]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
-            Let me guess...
+            Sound familiar?
           </h2>
 
           <div className="mt-8 space-y-4">
             {[
-              "You're paying $2,000-$5,000/month to an agency that treats you like Account #47",
-              "Monthly reports full of jargon you don't understand (and can't tie to actual phone calls)",
-              "Your \"account manager\" changes every 6 months and can't pronounce your company name",
-              "50 blog posts about \"the history of roofing\" that have generated exactly zero leads",
-              "Six months in, still waiting for the results they promised",
+              "Homeowners are stuck outside at 10pm but calling your competitor for emergency repairs",
+              "You're getting outranked by national franchises with bigger marketing budgets",
+              "Your agency writes generic blog posts about 'garage door maintenance' that nobody finds",
+              "Spring replacements and opener installs are going to someone else",
+              "You've invested in SEO but can't trace a single job back to Google",
             ].map((pain, i) => (
               <div key={i} className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
                 <XIcon />
@@ -102,11 +101,11 @@ export default function RoofingLandingPage() {
           </div>
 
           <p className="mt-8 text-xl text-white/60">
-            Meanwhile, your competitor down the street is getting the calls you should be getting.
+            Meanwhile, that other garage door company is showing up every time someone searches &quot;garage door repair near me.&quot;
           </p>
 
           <p className="mt-4 text-lg text-white font-medium">
-            It&apos;s not that SEO doesn&apos;t work. It&apos;s that most agencies optimize for their efficiency, not your results.
+            It&apos;s not that SEO doesn&apos;t work for garage door companies. It&apos;s that most agencies don&apos;t understand emergency service businesses.
           </p>
         </div>
       </section>
@@ -116,10 +115,10 @@ export default function RoofingLandingPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
-              What&apos;s This Worth When You Sell?
+              Pull the Value Lever
             </h2>
             <p className="mt-4 text-lg text-white/60 max-w-2xl mx-auto">
-              Every dollar of EBITDA you add through SEO gets multiplied at exit. Roofing companies typically sell at 3-5x EBITDA.
+              Every dollar of EBITDA you add through SEO gets multiplied at exit. Garage door companies typically sell at 3-5x EBITDA.
             </p>
           </div>
 
@@ -135,28 +134,28 @@ export default function RoofingLandingPage() {
               step="5000"
               value={ebitdaIncrease}
               onChange={(e) => setEbitdaIncrease(Number(e.target.value))}
-              className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-amber-500"
+              className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-orange-500"
             />
             <div className="flex justify-between text-sm text-white/40 mt-2">
               <span>$25K</span>
-              <span className="text-lg font-bold text-amber-500">${ebitdaIncrease.toLocaleString()}</span>
+              <span className="text-lg font-bold text-orange-400">${ebitdaIncrease.toLocaleString()}</span>
               <span>$500K</span>
             </div>
           </div>
 
           {/* Widget Container */}
           <div className="bg-white/5 rounded-2xl border border-white/10 p-8 flex items-center justify-center">
-            <ShingleStack ebitdaIncrease={ebitdaIncrease} multiplier={multiplier} />
+            <ValueLever ebitdaIncrease={ebitdaIncrease} multiplier={multiplier} />
           </div>
 
           <p className="mt-6 text-center text-white/40 text-sm">
-            This isn&apos;t hypothetical. It&apos;s math. Better SEO → more leads → more revenue → higher EBITDA → bigger exit.
+            More visibility → more emergency calls + installs → more revenue → higher EBITDA → bigger exit.
           </p>
         </div>
       </section>
 
       {/* The Difference Section */}
-      <section className="py-16 sm:py-24 bg-[#0c0a09]">
+      <section className="py-16 sm:py-24 bg-[#141210]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
             Why I&apos;m Different
@@ -164,7 +163,7 @@ export default function RoofingLandingPage() {
 
           <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
             <p>
-              I&apos;m Hunter. I own <strong className="text-white">Lapeyre Roofing</strong>, a real roofing company
+              I&apos;m Hunter. I own <strong className="text-white">Lapeyre Roofing</strong>, a real trades company
               serving Texas and Louisiana. Real crews. Real trucks. Real customers.
             </p>
             <p>
@@ -179,8 +178,8 @@ export default function RoofingLandingPage() {
 
           <div className="mt-8 grid sm:grid-cols-2 gap-4">
             {[
-              { label: 'I understand storm season', desc: 'Because I live it every year' },
-              { label: 'I know what makes homeowners trust a roofer', desc: 'Because I earn that trust daily' },
+              { label: 'I understand emergency search intent', desc: 'When a door is stuck, homeowners need help NOW' },
+              { label: 'I know upsells matter', desc: 'Spring repairs lead to full replacements - SEO can capture both' },
               { label: 'I test everything on my own company first', desc: 'You get what actually works' },
               { label: 'Small client list by design', desc: 'So I can actually give a damn' },
             ].map((item, i) => (
@@ -196,92 +195,6 @@ export default function RoofingLandingPage() {
         </div>
       </section>
 
-      {/* Google SERP Mockup - Visual Proof */}
-      <section className="py-16 sm:py-24 bg-[#141210]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Browser Window */}
-          <div className="relative rounded-2xl border-2 border-red-500 overflow-hidden shadow-2xl shadow-red-500/10">
-            {/* Browser Chrome */}
-            <div className="bg-[#1a1a1a] px-4 py-3 flex items-center gap-3">
-              {/* Traffic lights */}
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-              </div>
-              {/* Search bar */}
-              <div className="flex-1 bg-[#2a2a2a] rounded-lg px-4 py-2 flex items-center gap-2">
-                <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <span className="text-white/60 text-sm">best roofing company in [CITY]</span>
-              </div>
-            </div>
-
-            {/* Search Results */}
-            <div className="bg-white p-4 sm:p-6">
-              {/* Faded Ad Result */}
-              <div className="opacity-50 mb-4 pb-4 border-b border-gray-200">
-                <p className="text-xs text-gray-500 mb-1">Ad · Generic Roofer A</p>
-                <p className="text-blue-600 text-lg">We do Roofs | Call Us</p>
-                <p className="text-gray-500 text-sm">The average roofing agency result...</p>
-              </div>
-
-              {/* Highlighted Result - YOUR Company */}
-              <div className="relative bg-red-50 border-2 border-red-500 rounded-xl p-4 sm:p-5">
-                {/* YOUR COMPANY badge */}
-                <div className="absolute -right-1 -top-3 bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg">
-                  THIS COULD BE YOU
-                </div>
-
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-blue-700 text-lg sm:text-xl font-medium">
-                      <span className="bg-yellow-200 px-1">[Your Company]</span> Roofing | #1 Rated in <span className="bg-yellow-200 px-1">[Your City]</span>
-                    </p>
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <span className="text-sm font-medium text-gray-700">5.0</span>
-                      <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <svg key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ))}
-                      </div>
-                      <span className="text-sm text-green-600 font-medium">(200+ Reviews)</span>
-                    </div>
-                    <p className="text-gray-600 text-sm mt-1">Roofing Contractors · Serves <span className="bg-yellow-200 px-1">[Your Area]</span></p>
-                    <p className="text-gray-700 text-sm mt-2 italic">
-                      &quot;Best roofing company we&apos;ve ever worked with. Fast, professional, and fair pricing...&quot;
-                    </p>
-                  </div>
-                  {/* Trending icon */}
-                  <div className="hidden sm:flex flex-col items-center bg-green-100 rounded-lg p-3 flex-shrink-0">
-                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Faded Competitor */}
-              <div className="opacity-40 mt-4 pt-4 border-t border-gray-200">
-                <p className="text-blue-600 text-lg">Other Guy Roofing</p>
-                <p className="text-gray-500 text-sm">We also do roofs sometimes...</p>
-              </div>
-            </div>
-
-            {/* Bottom Banner */}
-            <div className="bg-red-500 text-white text-center py-3 px-4">
-              <p className="font-bold text-sm sm:text-base uppercase tracking-wide">
-                Verified Result: +66% Search Impressions in 30 Days
-              </p>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
       {/* What You Get Section */}
       <section className="py-16 sm:py-24 bg-[#0c0a09]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -293,15 +206,15 @@ export default function RoofingLandingPage() {
             {[
               {
                 title: 'The Exact System I Use',
-                desc: 'Same SEO playbook that works for my roofing company. Adapted for your market.',
+                desc: 'Same SEO playbook that works for my company. Adapted for garage door keywords.',
               },
               {
                 title: 'You Work With Me Directly',
                 desc: 'No account managers. No hand-offs. You text me, I respond.',
               },
               {
-                title: 'Roofing-Specific Strategy',
-                desc: 'I understand storm season, insurance jobs, and what homeowners actually search for.',
+                title: 'Garage Door-Specific Strategy',
+                desc: 'I understand springs, openers, full replacements - and what homeowners search for in emergencies.',
               },
               {
                 title: 'Results You Can Actually Measure',
@@ -321,21 +234,21 @@ export default function RoofingLandingPage() {
       <section id="book-call" className="py-16 sm:py-24 bg-[#141210] scroll-mt-8">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
-            Ready to Stop Being Treated Like a Number?
+            Ready to Open New Doors?
           </h2>
 
           <p className="mt-6 text-lg text-white/60 max-w-2xl mx-auto">
             Book a 20-minute call. I&apos;ll take a look at your current rankings, your competition,
-            and give you an honest assessment of what it would take to dominate your local market.
+            and give you an honest assessment of what it would take to dominate garage door search in your area.
           </p>
 
           {/* GHL Calendar Widget */}
           <div className="mt-10 rounded-2xl overflow-hidden">
             <iframe
-              src="https://api.leadconnectorhq.com/widget/booking/0sf1QEe5x3p5eHFHPJLW?source=roofing-page"
+              src="https://api.leadconnectorhq.com/widget/booking/0sf1QEe5x3p5eHFHPJLW?source=garage-doors-page"
               style={{ width: '100%', border: 'none', overflow: 'hidden', minHeight: '700px' }}
               scrolling="no"
-              id="ghl-roofing-calendar"
+              id="ghl-garage-doors-calendar"
             />
             <Script
               src="https://link.msgsndr.com/js/form_embed.js"
