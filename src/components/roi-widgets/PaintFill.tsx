@@ -7,7 +7,7 @@ interface Props {
   multiplier?: number
 }
 
-function PaintDrip({ x, delay, color }: { x: number; delay: number; color: string }) {
+function PaintDrip({ x, delay, color }: { x: string; delay: number; color: string }) {
   return (
     <motion.div
       className="absolute top-0 w-2"
