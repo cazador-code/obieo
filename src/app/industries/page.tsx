@@ -151,16 +151,17 @@ export default function IndustriesPage() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
               {industries.map((industry) => (
-                <div
+                <Link
                   key={industry.slug}
-                  className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] p-6 sm:p-8 hover:shadow-lg transition-shadow group"
+                  href={`/${industry.slug}`}
+                  className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] p-6 sm:p-8 hover:shadow-lg hover:border-[var(--accent)]/30 transition-all group block"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-[var(--accent)]/10 text-[var(--accent)] rounded-xl flex items-center justify-center flex-shrink-0">
+                    <div className="w-14 h-14 bg-[var(--accent)]/10 text-[var(--accent)] rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-[var(--accent)]/20 transition-colors">
                       {industry.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h2 className="font-[family-name:var(--font-display)] text-xl sm:text-2xl font-bold text-[var(--text-primary)]">
+                      <h2 className="font-[family-name:var(--font-display)] text-xl sm:text-2xl font-bold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
                         {industry.name}
                       </h2>
                       <p className="mt-2 text-[var(--text-secondary)] leading-relaxed">
@@ -184,7 +185,14 @@ export default function IndustriesPage() {
                       ))}
                     </div>
                   </div>
-                </div>
+
+                  <div className="mt-4 flex items-center text-[var(--accent)] text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                    Learn more
+                    <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </div>
+                </Link>
               ))}
             </div>
           </div>
