@@ -8,9 +8,70 @@ import {
   AnalysisIssue,
   AnalyzeAPIResponse,
 } from '@/components/quiz/types'
+import { auditLimiter, getClientIp } from '@/lib/rate-limit'
 
 const PAGESPEED_API_KEY = process.env.GOOGLE_PAGESPEED_API_KEY
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
+
+/**
+ * Security: Validate URL is not targeting internal/private networks (SSRF protection)
+ */
+function isInternalUrl(urlString: string): boolean {
+  try {
+    const url = new URL(urlString)
+    const hostname = url.hostname.toLowerCase()
+
+    // Block localhost variants
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+      return true
+    }
+
+    // Block private IP ranges
+    const ipParts = hostname.split('.').map(Number)
+    if (ipParts.length === 4 && ipParts.every(p => !isNaN(p))) {
+      // 10.0.0.0/8
+      if (ipParts[0] === 10) return true
+      // 172.16.0.0/12
+      if (ipParts[0] === 172 && ipParts[1] >= 16 && ipParts[1] <= 31) return true
+      // 192.168.0.0/16
+      if (ipParts[0] === 192 && ipParts[1] === 168) return true
+      // 169.254.0.0/16 (link-local, includes cloud metadata)
+      if (ipParts[0] === 169 && ipParts[1] === 254) return true
+      // 0.0.0.0
+      if (ipParts.every(p => p === 0)) return true
+    }
+
+    // Block cloud metadata endpoints
+    const blockedHosts = [
+      'metadata.google.internal',
+      'metadata.goog',
+      'instance-data',
+      'metadata',
+    ]
+    if (blockedHosts.some(h => hostname === h || hostname.endsWith('.' + h))) {
+      return true
+    }
+
+    return false
+  } catch {
+    return true // If we can't parse it, block it
+  }
+}
+
+/**
+ * Security: Sanitize user input for AI prompts to reduce prompt injection risk
+ */
+function sanitizeForPrompt(input: string, maxLength: number = 200): string {
+  return input
+    // Remove control characters
+    .replace(/[\x00-\x1F\x7F]/g, '')
+    // Remove common prompt injection patterns
+    .replace(/ignore (all )?(previous |prior )?instructions/gi, '')
+    .replace(/disregard (all )?(previous |prior )?instructions/gi, '')
+    // Limit length
+    .slice(0, maxLength)
+    .trim()
+}
 
 /**
  * POST /api/quiz/analyze
@@ -20,6 +81,22 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
  * 3. AI visibility check (would this site be cited by AI?)
  */
 export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeAPIResponse>> {
+  // Rate limiting - 3 requests per minute (expensive endpoint)
+  const ip = getClientIp(request)
+  const { success: rateLimitOk, remaining } = await auditLimiter.limit(ip)
+  if (!rateLimitOk) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      {
+        status: 429,
+        headers: {
+          'X-RateLimit-Remaining': remaining.toString(),
+          'Retry-After': '60',
+        },
+      }
+    )
+  }
+
   try {
     const { websiteUrl, targetKeyword, businessName, city } = await request.json()
 
@@ -38,6 +115,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeAP
         throw new Error('Invalid protocol')
       }
     } catch {
+      return NextResponse.json(
+        { success: false, error: 'Invalid website URL' },
+        { status: 400 }
+      )
+    }
+
+    // Security: Block internal/private network URLs (SSRF protection)
+    if (isInternalUrl(url.toString())) {
       return NextResponse.json(
         { success: false, error: 'Invalid website URL' },
         { status: 400 }
@@ -293,21 +378,26 @@ async function analyzeAIVisibility(
     return defaultResult
   }
 
+  // Security: Sanitize user inputs before including in prompt
+  const safeBusinessName = sanitizeForPrompt(businessName, 100)
+  const safeKeyword = sanitizeForPrompt(keyword, 100)
+  const safeCity = sanitizeForPrompt(city || 'Unknown', 100)
+
   try {
     const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY })
 
     const prompt = `You are analyzing AI search visibility for a local home service business.
 
-Business: "${businessName}"
-Location: ${city || 'Unknown'}
+Business: "${safeBusinessName}"
+Location: ${safeCity}
 Website: ${websiteUrl}
-Target Search Keyword: "${keyword}"
+Target Search Keyword: "${safeKeyword}"
 
-Your task: Simulate what AI search engines (ChatGPT, Perplexity, Claude) would likely return if a user searched for "${keyword}".
+Your task: Simulate what AI search engines (ChatGPT, Perplexity, Claude) would likely return if a user searched for "${safeKeyword}".
 
 Based on your knowledge of the home services industry and how AI systems cite sources:
 
-1. Would "${businessName}" likely be mentioned/cited in an AI response for this keyword? Consider:
+1. Would "${safeBusinessName}" likely be mentioned/cited in an AI response for this keyword? Consider:
    - Is this a well-known business with strong online presence?
    - Do they have reviews, citations, and authority signals?
    - Is their content structured for AI consumption (FAQs, clear services, schema)?

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { leadsLimiter, getClientIp } from '@/lib/rate-limit'
 
 const ZEROBOUNCE_API_KEY = process.env.ZEROBOUNCE_API_KEY
 
@@ -25,6 +26,22 @@ interface VerifyEmailResponse {
  * Verifies an email address using ZeroBounce API
  */
 export async function POST(request: NextRequest): Promise<NextResponse<VerifyEmailResponse>> {
+  // Rate limiting - 5 requests per minute (ZeroBounce charges per verification)
+  const ip = getClientIp(request)
+  const { success: rateLimitOk, remaining } = await leadsLimiter.limit(ip)
+  if (!rateLimitOk) {
+    return NextResponse.json(
+      { valid: false, reason: 'Too many requests. Please try again later.' },
+      {
+        status: 429,
+        headers: {
+          'X-RateLimit-Remaining': remaining.toString(),
+          'Retry-After': '60',
+        },
+      }
+    )
+  }
+
   try {
     const { email } = await request.json()
 

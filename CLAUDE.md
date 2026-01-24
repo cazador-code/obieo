@@ -127,6 +127,13 @@ RESEND_API_KEY=
 GHL_WEBHOOK_URL=
 ```
 
+**AI Visibility Quiz (new):**
+```env
+NEXT_PUBLIC_GOOGLE_PLACES_API_KEY=   # Business name autocomplete
+ZEROBOUNCE_API_KEY=                   # Email verification
+GOOGLE_PAGESPEED_API_KEY=             # Optional, higher rate limits
+```
+
 **Optional:**
 ```env
 FB_CONVERSIONS_API_TOKEN=
