@@ -43,6 +43,38 @@ interface ROICalculatorData {
   grossProfitMargin: number
 }
 
+interface AIQuizData {
+  business: {
+    name: string
+    placeId: string
+    city: string
+    formattedAddress: string
+  }
+  websiteUrl: string
+  targetKeyword: string
+  leadSource: string
+  monthlyLeadGoal: string
+  contact: {
+    name: string
+    email: string
+    phone?: string
+  }
+}
+
+interface AIAnalysisResults {
+  overallScore: number
+  technical: {
+    performanceScore: number
+    seoScore: number
+  }
+  aiVisibility: {
+    wasCited: boolean
+    aiReadinessScore: number
+    competitors: Array<{ name: string; reason: string }>
+    whyNotCited: string[]
+  }
+}
+
 function formatQuizEmail(
   name: string,
   email: string,
@@ -179,6 +211,91 @@ async function sendToGHL(data: {
   } catch (error) {
     console.error('Error sending to GHL:', error)
   }
+}
+
+function formatAIQuizEmail(
+  data: AIQuizData,
+  analysis: AIAnalysisResults
+): string {
+  const safeName = escapeHtml(data.contact.name || 'Not provided')
+  const safeEmail = escapeHtml(data.contact.email)
+  const safeBusinessName = escapeHtml(data.business.name)
+  const safeKeyword = escapeHtml(data.targetKeyword)
+  const safeWebsite = escapeHtml(data.websiteUrl)
+
+  const scoreColor = analysis.overallScore >= 70 ? '#22c55e' : analysis.overallScore >= 50 ? '#f59e0b' : '#ef4444'
+  const citedStatus = analysis.aiVisibility.wasCited ? '✓ Appearing' : '✗ NOT Appearing'
+  const citedColor = analysis.aiVisibility.wasCited ? '#22c55e' : '#ef4444'
+
+  return `
+    <h2 style="color: #1a1a2e;">🔍 New AI Visibility Quiz Lead</h2>
+
+    <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+      <h3 style="margin-top: 0; color: #334155;">Contact Information</h3>
+      <p><strong>Name:</strong> ${safeName}</p>
+      <p><strong>Email:</strong> ${safeEmail}</p>
+      ${data.contact.phone ? `<p><strong>Phone:</strong> ${escapeHtml(data.contact.phone)}</p>` : ''}
+    </div>
+
+    <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+      <h3 style="margin-top: 0; color: #334155;">Business Details</h3>
+      <p><strong>Business:</strong> ${safeBusinessName}</p>
+      <p><strong>Location:</strong> ${escapeHtml(data.business.city || data.business.formattedAddress)}</p>
+      <p><strong>Website:</strong> <a href="${safeWebsite}">${safeWebsite}</a></p>
+      <p><strong>Target Keyword:</strong> "${safeKeyword}"</p>
+    </div>
+
+    <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+      <h3 style="margin-top: 0; color: #334155;">Analysis Results</h3>
+      <p style="font-size: 24px; margin: 0;">
+        <strong style="color: ${scoreColor};">${analysis.overallScore}/100</strong>
+        <span style="color: #64748b; font-size: 14px;"> Overall AI Visibility Score</span>
+      </p>
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 12px 0;" />
+      <p><strong>Performance:</strong> ${analysis.technical.performanceScore}/100</p>
+      <p><strong>SEO:</strong> ${analysis.technical.seoScore}/100</p>
+      <p><strong>AI Readiness:</strong> ${analysis.aiVisibility.aiReadinessScore}/100</p>
+      <p style="margin-top: 12px;">
+        <strong>AI Search Status:</strong>
+        <span style="color: ${citedColor}; font-weight: bold;"> ${citedStatus}</span>
+        <span style="color: #64748b;"> for "${safeKeyword}"</span>
+      </p>
+    </div>
+
+    <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+      <h3 style="margin-top: 0; color: #334155;">Qualification Data</h3>
+      <p><strong>Current Lead Source:</strong> ${escapeHtml(data.leadSource)}</p>
+      <p><strong>Monthly Lead Goal:</strong> ${escapeHtml(data.monthlyLeadGoal)}</p>
+    </div>
+
+    ${analysis.aiVisibility.competitors.length > 0 ? `
+    <div style="background: #fef2f2; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+      <h3 style="margin-top: 0; color: #991b1b;">Competitors Being Cited Instead</h3>
+      <ul>
+        ${analysis.aiVisibility.competitors.slice(0, 3).map(c =>
+          `<li><strong>${escapeHtml(c.name)}</strong> - ${escapeHtml(c.reason)}</li>`
+        ).join('')}
+      </ul>
+    </div>
+    ` : ''}
+
+    ${analysis.aiVisibility.whyNotCited.length > 0 ? `
+    <div style="background: #fffbeb; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+      <h3 style="margin-top: 0; color: #92400e;">Why They're Not Appearing</h3>
+      <ul>
+        ${analysis.aiVisibility.whyNotCited.slice(0, 3).map(r =>
+          `<li>${escapeHtml(r)}</li>`
+        ).join('')}
+      </ul>
+    </div>
+    ` : ''}
+
+    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+    <p style="color: #666; font-size: 12px;">
+      This lead completed the AI Visibility Quiz on obieo.com<br/>
+      Google Place ID: ${escapeHtml(data.business.placeId || 'N/A')}
+    </p>
+  `
 }
 
 function formatROIEmail(
@@ -319,13 +436,79 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Handle AI Visibility Quiz leads
+    if (source === 'ai-visibility-quiz') {
+      const aiQuizData = body.aiQuizData as AIQuizData
+      const analysisResults = body.analysisResults as AIAnalysisResults
+
+      // Send detailed email notification
+      const emailResult = await resend.emails.send({
+        from: 'Obieo <noreply@leads.obieo.com>',
+        to: process.env.NOTIFICATION_EMAIL || 'hunter@obieo.com',
+        subject: `🔥 AI Quiz Lead: ${aiQuizData?.business?.name || name} (Score: ${score}/100)`,
+        html: formatAIQuizEmail(aiQuizData, analysisResults),
+      })
+      console.log('AI Quiz email sent:', emailResult)
+
+      // Send to GHL with enriched data
+      if (GHL_WEBHOOK_URL) {
+        try {
+          const response = await fetch(GHL_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              name,
+              phone: aiQuizData?.contact?.phone || '',
+              company: aiQuizData?.business?.name || '',
+              website: website || aiQuizData?.websiteUrl || '',
+              source: 'ai-visibility-quiz',
+              // Scores
+              ai_visibility_score: score,
+              ai_readiness_score: analysisResults?.aiVisibility?.aiReadinessScore || 0,
+              performance_score: analysisResults?.technical?.performanceScore || 0,
+              seo_score: analysisResults?.technical?.seoScore || 0,
+              // AI Status
+              ai_cited: analysisResults?.aiVisibility?.wasCited ? 'Yes' : 'No',
+              // Business data
+              business_city: aiQuizData?.business?.city || '',
+              business_place_id: aiQuizData?.business?.placeId || '',
+              target_keyword: aiQuizData?.targetKeyword || '',
+              // Qualification
+              current_lead_source: aiQuizData?.leadSource || '',
+              monthly_lead_goal: aiQuizData?.monthlyLeadGoal || '',
+              // Competitors (for sales context)
+              top_competitor: analysisResults?.aiVisibility?.competitors?.[0]?.name || '',
+            }),
+          })
+          if (response.ok) {
+            console.log('AI Quiz lead sent to GHL successfully')
+          } else {
+            console.error('GHL webhook failed:', response.status)
+          }
+        } catch (error) {
+          console.error('Error sending AI Quiz lead to GHL:', error)
+        }
+      }
+    }
+
     // Send to Facebook Conversions API (server-side tracking)
+    const sourceUrls: Record<string, string> = {
+      'quiz': 'quiz',
+      'ai-visibility-quiz': 'quiz',
+      'roi-calculator': 'roi-calculator',
+    }
+    const contentNames: Record<string, string> = {
+      'quiz': 'Website Score Quiz',
+      'ai-visibility-quiz': 'AI Visibility Quiz',
+      'roi-calculator': 'ROI Calculator',
+    }
     await sendToFacebookCAPI({
       email,
-      eventSourceUrl: `https://obieo.com/${source === 'quiz' ? 'quiz' : 'roi-calculator'}`,
+      eventSourceUrl: `https://obieo.com/${sourceUrls[source] || source}`,
       clientIp: ip,
       clientUserAgent: userAgent,
-      contentName: source === 'quiz' ? 'AI Visibility Quiz' : 'ROI Calculator',
+      contentName: contentNames[source] || source,
     })
 
     return NextResponse.json({ success: true })
