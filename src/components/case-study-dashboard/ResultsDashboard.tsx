@@ -73,10 +73,7 @@ export function ResultsDashboard() {
             <GeographicMap />
           </FadeInSection>
           <FadeInSection delay={0.2}>
-            <ScreenshotProof
-              imageSrc="/case-studies/lapeyre-roofing/gsc-screenshot.png"
-              imageAlt="Google Search Console performance data"
-            />
+            <ScreenshotProof />
           </FadeInSection>
         </div>
 

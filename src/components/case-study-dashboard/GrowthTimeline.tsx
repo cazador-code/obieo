@@ -99,23 +99,23 @@ export function GrowthTimeline({ steps = defaultSteps }: GrowthTimelineProps) {
   }, [])
 
   return (
-    <div ref={containerRef} className="relative py-12 px-4 sm:px-8">
-      {/* Timeline line - positioned at dot level */}
-      <div className="absolute top-12 left-8 right-8 sm:left-12 sm:right-12 h-0.5 bg-zinc-700/50">
-        <div ref={lineRef} className="absolute inset-0 bg-gradient-to-r from-[var(--accent)] to-[var(--accent)]/60" />
-      </div>
-
+    <div ref={containerRef} className="relative px-4 sm:px-8 py-4">
       {/* Timeline steps */}
-      <div className="relative grid grid-cols-5 gap-2 sm:gap-4">
+      <div className="relative grid grid-cols-5">
+        {/* Timeline line - runs through dot centers */}
+        <div className="absolute top-3 sm:top-[14px] left-[10%] right-[10%] h-0.5 bg-zinc-700/50">
+          <div ref={lineRef} className="absolute inset-0 bg-gradient-to-r from-[var(--accent)] to-[var(--accent)]/60" />
+        </div>
+
         {steps.map((step, index) => (
-          <div key={index} className="flex flex-col items-center text-center">
+          <div key={index} className="flex flex-col items-center text-center px-1">
             {/* Dot */}
             <div
               ref={(el) => { dotsRef.current[index] = el }}
-              className={`relative z-10 w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 ${
+              className={`relative z-10 w-6 h-6 sm:w-7 sm:h-7 rounded-full border-2 ${
                 step.highlight
                   ? 'bg-[var(--accent)] border-[var(--accent)] shadow-lg shadow-[var(--accent)]/50'
-                  : 'bg-zinc-900 border-zinc-500'
+                  : 'bg-[#0a0a0a] border-zinc-600'
               }`}
             >
               {step.highlight && (
@@ -124,7 +124,7 @@ export function GrowthTimeline({ steps = defaultSteps }: GrowthTimelineProps) {
             </div>
 
             {/* Content */}
-            <div className="mt-6 space-y-1">
+            <div className="mt-4 space-y-1">
               <p className="text-[10px] sm:text-xs text-zinc-500 uppercase tracking-wider font-medium">{step.week}</p>
               <p
                 className={`text-xs sm:text-sm font-semibold leading-tight ${
