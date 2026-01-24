@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Section, Container, Button } from '@/components/ui'
 import { FadeInSection, Counter } from '@/components/animations'
+import { ResultsDashboard } from '@/components/case-study-dashboard'
 import CalendlyButton from '@/components/CalendlyButton'
 
 // JSON-LD Schema for Case Study Article
@@ -365,6 +366,9 @@ export default function LapeyreRoofingCaseStudy() {
           </FadeInSection>
         </Container>
       </section>
+
+      {/* Results Dashboard - Live Analytics */}
+      <ResultsDashboard />
 
       {/* AI Search Proof - Gemini Recommendation */}
       <Section size="lg" variant="alternate">
