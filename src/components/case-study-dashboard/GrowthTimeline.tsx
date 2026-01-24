@@ -99,20 +99,20 @@ export function GrowthTimeline({ steps = defaultSteps }: GrowthTimelineProps) {
   }, [])
 
   return (
-    <div ref={containerRef} className="relative py-8">
-      {/* Timeline line */}
-      <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-zinc-700/50 -translate-y-1/2">
+    <div ref={containerRef} className="relative py-12 px-4 sm:px-8">
+      {/* Timeline line - positioned at dot level */}
+      <div className="absolute top-12 left-8 right-8 sm:left-12 sm:right-12 h-0.5 bg-zinc-700/50">
         <div ref={lineRef} className="absolute inset-0 bg-gradient-to-r from-[var(--accent)] to-[var(--accent)]/60" />
       </div>
 
       {/* Timeline steps */}
-      <div className="relative flex justify-between">
+      <div className="relative grid grid-cols-5 gap-2 sm:gap-4">
         {steps.map((step, index) => (
-          <div key={index} className="flex flex-col items-center text-center w-1/5">
+          <div key={index} className="flex flex-col items-center text-center">
             {/* Dot */}
             <div
               ref={(el) => { dotsRef.current[index] = el }}
-              className={`relative z-10 w-4 h-4 rounded-full border-2 ${
+              className={`relative z-10 w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 ${
                 step.highlight
                   ? 'bg-[var(--accent)] border-[var(--accent)] shadow-lg shadow-[var(--accent)]/50'
                   : 'bg-zinc-900 border-zinc-500'
@@ -124,16 +124,16 @@ export function GrowthTimeline({ steps = defaultSteps }: GrowthTimelineProps) {
             </div>
 
             {/* Content */}
-            <div className="mt-4">
-              <p className="text-xs sm:text-sm text-zinc-500 uppercase tracking-wide">{step.week}</p>
+            <div className="mt-6 space-y-1">
+              <p className="text-[10px] sm:text-xs text-zinc-500 uppercase tracking-wider font-medium">{step.week}</p>
               <p
-                className={`text-sm sm:text-base font-semibold mt-1 ${
+                className={`text-xs sm:text-sm font-semibold leading-tight ${
                   step.highlight ? 'text-[var(--accent)]' : 'text-white'
                 }`}
               >
                 {step.title}
               </p>
-              <p className="text-xs sm:text-sm text-zinc-500 mt-0.5 hidden sm:block">{step.description}</p>
+              <p className="text-[10px] sm:text-xs text-zinc-500 leading-tight max-w-[100px] sm:max-w-[120px] mx-auto">{step.description}</p>
             </div>
           </div>
         ))}

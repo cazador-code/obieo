@@ -18,11 +18,11 @@ interface CityPin {
 }
 
 const defaultCities: CityPin[] = [
-  { name: 'Austin', sessions: 100, engagement: '65%', x: 35, y: 55, highlight: true },
-  { name: 'Houston', sessions: 8, engagement: '100%', x: 52, y: 68 },
-  { name: 'Dallas', sessions: 14, engagement: '64%', x: 42, y: 28 },
-  { name: 'New Orleans', sessions: 30, engagement: '80%', x: 78, y: 60, highlight: true },
-  { name: 'Metairie', sessions: 17, engagement: '82%', x: 76, y: 58 },
+  { name: 'Austin', sessions: 100, engagement: '65%', x: 32, y: 58, highlight: true },
+  { name: 'Houston', sessions: 8, engagement: '100%', x: 44, y: 70 },
+  { name: 'Dallas', sessions: 14, engagement: '64%', x: 35, y: 30 },
+  { name: 'New Orleans', sessions: 30, engagement: '80%', x: 85, y: 65, highlight: true },
+  { name: 'Metairie', sessions: 17, engagement: '82%', x: 82, y: 58 },
 ]
 
 interface GeographicMapProps {
@@ -70,42 +70,37 @@ export function GeographicMap({ cities = defaultCities }: GeographicMapProps) {
   }, [])
 
   return (
-    <div ref={containerRef} className="relative rounded-xl bg-zinc-900/80 border border-zinc-700/50 p-6 overflow-hidden">
-      {/* Subtle gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent)]/5 to-transparent pointer-events-none" />
-
+    <div ref={containerRef} className="relative rounded-xl bg-zinc-900/80 border border-zinc-700/50 p-6 h-full flex flex-col">
       {/* Map title */}
-      <h3 className="text-lg font-semibold text-white mb-4 relative z-10">Traffic by Market</h3>
+      <h3 className="text-lg font-semibold text-white mb-4">Traffic by Market</h3>
 
       {/* Map container */}
-      <div className="relative aspect-[16/10] sm:aspect-[2/1]">
+      <div className="relative flex-1 min-h-[200px]">
         {/* Simplified Texas + Louisiana shape */}
         <svg
-          viewBox="0 0 400 200"
+          viewBox="0 0 100 60"
           className="absolute inset-0 w-full h-full"
           preserveAspectRatio="xMidYMid meet"
         >
-          {/* Texas outline (simplified) */}
+          {/* Texas outline - more recognizable shape */}
           <path
-            d="M50,20 L180,20 L180,40 L200,40 L200,60 L220,60 L220,100 L200,120 L180,180 L140,180 L100,160 L60,180 L40,160 L20,140 L20,100 L40,80 L50,60 Z"
-            fill="none"
-            stroke="rgba(251, 146, 60, 0.3)"
-            strokeWidth="1.5"
-            className="drop-shadow-sm"
+            d="M10,8 L42,8 L42,12 L48,12 L48,22 L52,28 L52,42 L48,48 L40,52 L30,52 L22,48 L14,52 L8,46 L6,38 L6,22 L10,16 Z"
+            fill="rgba(251, 146, 60, 0.08)"
+            stroke="rgba(251, 146, 60, 0.4)"
+            strokeWidth="0.5"
           />
-          {/* Louisiana outline (simplified) */}
+          {/* Louisiana outline - boot shape */}
           <path
-            d="M280,80 L340,60 L380,60 L380,100 L360,120 L380,140 L360,160 L320,160 L300,140 L280,160 L260,140 L260,100 Z"
-            fill="none"
-            stroke="rgba(251, 146, 60, 0.3)"
-            strokeWidth="1.5"
-            className="drop-shadow-sm"
+            d="M62,25 L72,22 L80,22 L82,26 L90,28 L92,35 L88,42 L92,48 L85,52 L78,48 L72,52 L65,48 L62,40 Z"
+            fill="rgba(251, 146, 60, 0.08)"
+            stroke="rgba(251, 146, 60, 0.4)"
+            strokeWidth="0.5"
           />
           {/* State labels */}
-          <text x="110" y="100" fill="rgba(255,255,255,0.2)" fontSize="16" fontWeight="bold" textAnchor="middle">
+          <text x="28" y="32" fill="rgba(255,255,255,0.15)" fontSize="6" fontWeight="bold" textAnchor="middle">
             TEXAS
           </text>
-          <text x="320" y="110" fill="rgba(255,255,255,0.2)" fontSize="12" fontWeight="bold" textAnchor="middle">
+          <text x="77" y="38" fill="rgba(255,255,255,0.15)" fontSize="4" fontWeight="bold" textAnchor="middle">
             LA
           </text>
         </svg>
@@ -163,13 +158,13 @@ export function GeographicMap({ cities = defaultCities }: GeographicMapProps) {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-6 mt-6 text-xs text-zinc-500">
+      <div className="flex items-center gap-6 mt-4 pt-4 border-t border-zinc-800 text-xs text-zinc-500">
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-[var(--accent)]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />
           <span>Primary Markets</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-zinc-400" />
+          <span className="w-2.5 h-2.5 rounded-full bg-zinc-400" />
           <span>Expanding Markets</span>
         </div>
       </div>

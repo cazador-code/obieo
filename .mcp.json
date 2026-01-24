@@ -3,6 +3,10 @@
     "gtm": {
       "command": "npx",
       "args": ["-y", "mcp-remote", "https://gtm-mcp.stape.ai/mcp"]
+    },
+    "analytics-mcp": {
+      "command": "pipx",
+      "args": ["run", "analytics-mcp"]
     }
   }
 }
