@@ -5,6 +5,46 @@ import { Section, Container, Button } from '@/components/ui'
 import { FadeInSection, Counter } from '@/components/animations'
 import CalendlyButton from '@/components/CalendlyButton'
 
+// JSON-LD Schema for Case Study Article
+const caseStudySchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'How I Fired My SEO Agency and Jumped 5 Spots in 30 Days',
+  description: 'After spending tens of thousands on an agency that made me feel like a number, I took control of my roofing company\'s SEO. The results: +5 ranking positions and 66% more search impressions in month one.',
+  url: 'https://obieo.com/work/lapeyre-roofing',
+  datePublished: '2025-01-01',
+  dateModified: '2025-01-01',
+  author: {
+    '@type': 'Person',
+    name: 'Hunter Lapeyre',
+    url: 'https://obieo.com/about',
+    jobTitle: 'Founder & SEO Consultant',
+    worksFor: {
+      '@type': 'Organization',
+      name: 'Obieo',
+    },
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://obieo.com/logo.png',
+    },
+  },
+  image: 'https://obieo.com/case-studies/lapeyre-roofing/mockup.svg',
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': 'https://obieo.com/work/lapeyre-roofing',
+  },
+  about: {
+    '@type': 'Organization',
+    name: 'Lapeyre Roofing',
+    description: 'Roofing company serving Texas and Louisiana',
+  },
+}
+
 export const metadata: Metadata = {
   title: 'How I Fired My SEO Agency and Jumped 5 Spots in 30 Days | Obieo',
   description: 'After spending tens of thousands on an agency that made me feel like a number, I took control of my roofing company\'s SEO. The results: +5 ranking positions and 66% more search impressions in month one.',
@@ -17,6 +57,12 @@ export const metadata: Metadata = {
 export default function LapeyreRoofingCaseStudy() {
   return (
     <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(caseStudySchema) }}
+      />
+
       {/* Hero - Editorial Magazine Style */}
       <section className="relative min-h-[90vh] flex items-center bg-[#0c0a09] overflow-hidden">
         {/* Subtle grain texture overlay */}

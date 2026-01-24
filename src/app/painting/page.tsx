@@ -3,6 +3,54 @@
 import Script from 'next/script'
 import { useState } from 'react'
 import { PaintFill } from '@/components/roi-widgets/PaintFill'
+import { RelatedIndustries } from '@/components/RelatedIndustries'
+
+// JSON-LD Schema - static hardcoded content for SEO, safe for dangerouslySetInnerHTML
+const serviceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'Painting Contractor SEO Services',
+  description: 'Specialized SEO services for painting contractors that drive leads for interior, exterior, and commercial painting projects through local search optimization.',
+  provider: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  areaServed: 'United States',
+  serviceType: 'Search Engine Optimization',
+}
+
+// FAQ Schema - static hardcoded content for SEO, safe for dangerouslySetInnerHTML
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What is painter SEO?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Painter SEO is search engine optimization specifically designed for painting contractors. It focuses on ranking for interior painting, exterior painting, cabinet refinishing, and commercial painting searches that homeowners and property managers use when hiring painters.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How long does painting contractor SEO take to show results?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Most painting companies see measurable improvements in 60-90 days. Interior and exterior keywords have seasonal patterns, so results compound over time. Full market dominance typically takes 6-12 months depending on local competition.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Why do painting contractors need specialized SEO?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Painting businesses have seasonal demand cycles (interior in winter, exterior in summer), different buyer intent (residential vs commercial), and project-based keywords. Generic SEO agencies miss these patterns and attract DIYers instead of paying clients.',
+      },
+    },
+  ],
+}
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,6 +76,18 @@ export default function PaintingLandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0c0a09]">
+      {/* JSON-LD Schema - static hardcoded content defined above */}
+      <Script
+        id="service-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <Script
+        id="faq-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* Hero Section */}
       <section className="relative pt-8 pb-20 sm:pt-12 sm:pb-32 overflow-hidden">
         {/* Subtle grain texture */}
@@ -230,8 +290,91 @@ export default function PaintingLandingPage() {
         </div>
       </section>
 
+      {/* SEO Content Section - What is Painter SEO */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            What is Painter SEO?
+          </h2>
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              <strong className="text-white">Painter SEO</strong> is search engine optimization specifically designed for painting contractors. It focuses on ranking for the searches homeowners and property managers make when they need professional painting services—not DIY tips.
+            </p>
+            <p>
+              Unlike generic SEO, painting contractor marketing requires understanding <strong className="text-white">seasonal search patterns</strong> and project types. Interior painting searches peak in winter, exterior in summer. Commercial projects have different keywords than residential. Effective SEO adapts to these cycles.
+            </p>
+            <p>
+              Smart painter SEO targets keywords like &quot;house painters near me,&quot; &quot;interior painting services,&quot; &quot;commercial painting contractors,&quot; and &quot;cabinet painting&quot;—the searches that lead to actual estimates, not Pinterest browsers.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* SEO Content Section - Why Generic SEO Doesn't Work */}
+      <section className="py-16 sm:py-24 bg-[#0c0a09]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            Why Generic SEO Doesn&apos;t Work for Painting Contractors
+          </h2>
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              Most SEO agencies treat painting companies like any other service business. They write blog posts about &quot;how to choose paint colors&quot; and attract DIYers instead of paying clients. Here&apos;s what they miss:
+            </p>
+            <ul className="space-y-3 list-disc list-inside">
+              <li><strong className="text-white">Seasonal intent shifts:</strong> Interior painting dominates winter searches, exterior in summer—your SEO must adapt</li>
+              <li><strong className="text-white">Residential vs. commercial:</strong> Property managers search differently than homeowners and have much larger contracts</li>
+              <li><strong className="text-white">Project specificity matters:</strong> &quot;Cabinet refinishing&quot; is a different customer than &quot;whole house painting&quot;</li>
+              <li><strong className="text-white">Visual proof drives conversions:</strong> Your before/after portfolio needs to rank in image search too</li>
+            </ul>
+            <p>
+              A painting contractor SEO specialist understands these patterns and builds a strategy that captures high-value projects year-round.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight mb-8">
+            Frequently Asked Questions
+          </h2>
+          <div className="space-y-6">
+            {[
+              {
+                q: 'What is painter SEO?',
+                a: 'Painter SEO is search engine optimization specifically designed for painting contractors. It focuses on ranking for interior painting, exterior painting, cabinet refinishing, and commercial painting searches that homeowners and property managers use when hiring painters.',
+              },
+              {
+                q: 'How long does painting contractor SEO take to show results?',
+                a: 'Most painting companies see measurable improvements in 60-90 days. Interior and exterior keywords have seasonal patterns, so results compound over time. Full market dominance typically takes 6-12 months depending on local competition.',
+              },
+              {
+                q: 'Why do painting contractors need specialized SEO?',
+                a: 'Painting businesses have seasonal demand cycles (interior in winter, exterior in summer), different buyer intent (residential vs commercial), and project-based keywords. Generic SEO agencies miss these patterns and attract DIYers instead of paying clients.',
+              },
+            ].map((faq, i) => (
+              <details key={i} className="group bg-white/5 border border-white/10 rounded-lg">
+                <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
+                  <h3 className="text-lg font-semibold text-white pr-4">{faq.q}</h3>
+                  <span className="text-rose-400 group-open:rotate-180 transition-transform">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </span>
+                </summary>
+                <p className="px-6 pb-6 text-white/70">{faq.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Related Industries */}
+      <RelatedIndustries currentSlug="painting" />
+
       {/* Calendar Section */}
-      <section id="book-call" className="py-16 sm:py-24 bg-[#141210] scroll-mt-8">
+      <section id="book-call" className="py-16 sm:py-24 bg-[#0c0a09] scroll-mt-8">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
             Ready to Paint Your Market Your Color?

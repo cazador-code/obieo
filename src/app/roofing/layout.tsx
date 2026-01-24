@@ -1,13 +1,24 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'SEO For Roofing Companies | Built By a Roofer | Obieo',
-  description: 'We built an SEO system for our own roofing company. Now we\'ll install it in yours. +5 ranking positions and 66% more impressions in 30 days.',
+  title: 'Roofing SEO Services | Get Found by Homeowners | Obieo',
+  description: 'Specialized roofing SEO that gets your company found on Google and AI search. Built by a roofer\'s son who grew the family business 10x. Book a free strategy call.',
+  keywords: ['roofing seo', 'roofing company seo', 'roofing seo company', 'seo for roofers', 'roofing marketing'],
   openGraph: {
-    title: 'SEO For Roofing Companies | Built By a Roofer',
-    description: 'We built an SEO system for our own roofing company. Now we\'ll install it in yours.',
+    title: 'Roofing SEO Services | Get Found by Homeowners | Obieo',
+    description: 'Specialized roofing SEO that gets your company found on Google and AI search. Built by a roofer\'s son who grew the family business 10x.',
+    url: 'https://obieo.com/roofing',
+    siteName: 'Obieo',
+    type: 'website',
   },
-  robots: 'noindex, nofollow', // Don't index ad landing pages
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Roofing SEO Services | Get Found by Homeowners | Obieo',
+    description: 'Specialized roofing SEO that gets your company found on Google and AI search.',
+  },
+  alternates: {
+    canonical: 'https://obieo.com/roofing',
+  },
 }
 
 export default function RoofingLayout({
@@ -15,15 +26,5 @@ export default function RoofingLayout({
 }: {
   children: React.ReactNode
 }) {
-  return (
-    <>
-      {/* Hide the main header/nav for this landing page funnel */}
-      <style>{`
-        header, nav, footer {
-          display: none !important;
-        }
-      `}</style>
-      {children}
-    </>
-  )
+  return <>{children}</>
 }

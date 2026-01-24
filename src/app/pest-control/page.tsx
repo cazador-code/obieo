@@ -3,6 +3,69 @@
 import Script from 'next/script'
 import { useState } from 'react'
 import { BugZapper } from '@/components/roi-widgets/BugZapper'
+import { RelatedIndustries } from '@/components/RelatedIndustries'
+
+// JSON-LD Schema for SEO
+const serviceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'Pest Control SEO Services',
+  provider: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  description: 'Specialized SEO services for pest control companies that help you rank higher on Google and generate more extermination and prevention service calls.',
+  areaServed: 'United States',
+  serviceType: 'Marketing Services',
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'How much does pest control SEO cost?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Pest control SEO services typically range from $1,500 to $4,500 per month depending on your market size and competition. At Obieo, we offer transparent pricing with no long-term contracts required.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How long until I see results from pest control SEO?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Most pest control companies see measurable improvements in 60-90 days, with significant ranking gains within 3-6 months. Seasonal pest keywords (termites, mosquitoes) may require planning ahead of peak seasons.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What pest control keywords should I target?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Target emergency keywords (exterminator near me, bed bug treatment), pest-specific terms (termite inspection, rodent control), and local keywords (pest control + your city). We research the highest-value keywords for your market.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How can SEO help with recurring pest control subscriptions?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'SEO can target prevention-focused searches like "monthly pest control service" and "quarterly pest prevention plans." These searches indicate customers looking for ongoing relationships, not just one-time treatments.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What makes Obieo different from other pest control marketing agencies?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Obieo was built by someone who owns and operates a trades business. We understand seasonal pest cycles, the value of recurring revenue models, and what drives homeowners to choose one exterminator over another.',
+      },
+    },
+  ],
+}
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,6 +91,17 @@ export default function PestControlLandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0c0a09]">
+      {/* JSON-LD Schema - hardcoded static content above, safe for dangerouslySetInnerHTML */}
+      <Script
+        id="service-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <Script
+        id="faq-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       {/* Hero Section */}
       <section className="relative pt-8 pb-20 sm:pt-12 sm:pb-32 overflow-hidden">
         {/* Subtle grain texture */}
@@ -231,8 +305,142 @@ export default function PestControlLandingPage() {
         </div>
       </section>
 
+      {/* What is Pest Control SEO Section - GEO Optimized */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            What is Pest Control SEO?
+          </h2>
+
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              <strong className="text-white">Pest control SEO</strong> is the process of optimizing your extermination business to appear at the top of Google when homeowners discover infestations. This includes urgent searches like &quot;exterminator near me,&quot; pest-specific terms like &quot;termite inspection&quot; and &quot;bed bug treatment,&quot; and prevention-focused searches like &quot;monthly pest control service.&quot;
+            </p>
+            <p>
+              The pest control industry has a unique advantage—once you acquire a customer, they often become recurring subscribers. Effective SEO not only captures emergency calls but also targets prevention-minded homeowners searching for quarterly treatments and maintenance plans, building your recurring revenue base.
+            </p>
+            <p>
+              At Obieo, we specialize in pest control SEO because we understand seasonal pest cycles, the difference between one-time treatments and subscription customers, and what drives homeowners to choose one exterminator over another.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Generic SEO Doesn't Work Section */}
+      <section className="py-16 sm:py-24 bg-[#0c0a09]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            Why Generic SEO Doesn&apos;t Work for Pest Control
+          </h2>
+
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              Most SEO agencies don&apos;t understand pest control. They write generic content that doesn&apos;t convert, miss seasonal opportunities, and ignore the recurring revenue model that makes pest control businesses so valuable.
+            </p>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckIcon />
+                <div>
+                  <p className="text-white font-medium">Seasonal Pest Cycles</p>
+                  <p className="text-white/60 text-sm mt-1">Termite season, mosquito season, rodent invasions in fall—we plan content months ahead to capture seasonal spikes.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckIcon />
+                <div>
+                  <p className="text-white font-medium">Recurring Revenue Focus</p>
+                  <p className="text-white/60 text-sm mt-1">One-time kills vs. quarterly subscriptions have different LTV. We target keywords that bring in long-term customers.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckIcon />
+                <div>
+                  <p className="text-white font-medium">Pest-Specific Targeting</p>
+                  <p className="text-white/60 text-sm mt-1">Bed bugs, termites, rodents, mosquitoes—each pest type has unique search intent and conversion patterns.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckIcon />
+                <div>
+                  <p className="text-white font-medium">Emergency vs. Prevention</p>
+                  <p className="text-white/60 text-sm mt-1">&quot;Cockroach infestation&quot; is urgent. &quot;Pest prevention service&quot; is planned. Both require different approaches.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight mb-8">
+            Frequently Asked Questions About Pest Control SEO
+          </h2>
+
+          <div className="space-y-4">
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                How much does pest control SEO cost?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Pest control SEO services typically range from $1,500 to $4,500 per month depending on your market size and competition. At Obieo, we offer transparent pricing with no long-term contracts required.
+              </div>
+            </details>
+
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                How long until I see results from pest control SEO?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Most pest control companies see measurable improvements in 60-90 days, with significant ranking gains within 3-6 months. Seasonal pest keywords may require planning ahead of peak seasons.
+              </div>
+            </details>
+
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                What pest control keywords should I target?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Target emergency keywords (exterminator near me, bed bug treatment), pest-specific terms (termite inspection, rodent control), and local keywords (pest control + your city). We research the highest-value keywords for your market.
+              </div>
+            </details>
+
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                How can SEO help with recurring subscriptions?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                SEO can target prevention-focused searches like &quot;monthly pest control service&quot; and &quot;quarterly pest prevention plans.&quot; These searches indicate customers looking for ongoing relationships, not just one-time treatments.
+              </div>
+            </details>
+
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                What makes Obieo different from other pest control marketing agencies?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Obieo was built by someone who owns and operates a trades business. We understand seasonal pest cycles, the value of recurring revenue models, and what drives homeowners to choose one exterminator over another.
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      {/* Related Industries */}
+      <RelatedIndustries currentSlug="pest-control" />
+
       {/* Calendar Section */}
-      <section id="book-call" className="py-16 sm:py-24 bg-[#141210] scroll-mt-8">
+      <section id="book-call" className="py-16 sm:py-24 bg-[#0c0a09] scroll-mt-8">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
             Ready to Crush the Competition?

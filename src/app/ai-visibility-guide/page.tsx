@@ -177,12 +177,90 @@ const actionSteps = [
   }
 ]
 
+// JSON-LD Schema for AI Visibility Guide
+const guideSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: 'How to Test Your AI Visibility',
+  description: 'Check if your home service business shows up when customers ask ChatGPT, Perplexity, or Google AI for recommendations.',
+  url: 'https://obieo.com/ai-visibility-guide',
+  totalTime: 'PT10M',
+  step: [
+    {
+      '@type': 'HowToStep',
+      name: 'Copy a Test Prompt',
+      text: 'Copy one of the provided test prompts and customize it with your service type and city.',
+      position: 1,
+    },
+    {
+      '@type': 'HowToStep',
+      name: 'Run the Prompt',
+      text: 'Paste the prompt into ChatGPT, Perplexity, or Google AI Overviews.',
+      position: 2,
+    },
+    {
+      '@type': 'HowToStep',
+      name: 'Check the Results',
+      text: 'Look for your business name in the response. Note if you appear in the top 3 recommendations.',
+      position: 3,
+    },
+    {
+      '@type': 'HowToStep',
+      name: 'Score Your Visibility',
+      text: 'Use the visibility score indicators to assess your current AI presence.',
+      position: 4,
+    },
+  ],
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What is AI visibility for businesses?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'AI visibility refers to how likely your business is to be recommended by AI assistants like ChatGPT, Perplexity, and Google AI when customers ask for service recommendations in your area.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How do I test if my business appears in AI search results?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Ask ChatGPT or Perplexity questions like "Recommend a [your service] in [your city]" or "What\'s the best [your service] company in [your area]?" and see if your business is mentioned in the response.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What factors affect AI recommendations for local businesses?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'AI considers machine-readable structure (schema markup), intent-matched content, review sentiment and volume, consistent data across platforms, authoritative citations, and verified trust signals like licenses and certifications.',
+      },
+    },
+  ],
+}
+
 export default function AIVisibilityGuidePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   return (
-    <div className="pt-16 sm:pt-20">
-      {/* Hero */}
+    <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(guideSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
+      <div className="pt-16 sm:pt-20">
+        {/* Hero */}
       <section className="bg-cream-100 py-16 sm:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 bg-terracotta-500/10 text-terracotta-600 px-4 py-2 rounded-full text-sm font-medium mb-6">
@@ -433,6 +511,7 @@ export default function AIVisibilityGuidePage() {
           </p>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   )
 }

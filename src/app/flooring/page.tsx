@@ -3,6 +3,54 @@
 import Script from 'next/script'
 import { useState } from 'react'
 import { CompoundCurve } from '@/components/roi-widgets/CompoundCurve'
+import { RelatedIndustries } from '@/components/RelatedIndustries'
+
+// JSON-LD Schema - static hardcoded content for SEO, safe for dangerouslySetInnerHTML
+const serviceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'Flooring Contractor SEO Services',
+  description: 'Specialized SEO services for flooring contractors that drive leads for hardwood, tile, LVP, and carpet installation projects through local search optimization.',
+  provider: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  areaServed: 'United States',
+  serviceType: 'Search Engine Optimization',
+}
+
+// FAQ Schema - static hardcoded content for SEO, safe for dangerouslySetInnerHTML
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What is flooring contractor SEO?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Flooring contractor SEO is search engine optimization specifically designed for flooring installation companies. It focuses on ranking for hardwood, tile, LVP, carpet, and refinishing searches that homeowners use when planning flooring projects.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How long does flooring company SEO take to show results?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Most flooring companies see measurable improvements in 60-90 days. Material-specific keywords like "hardwood floor installation" often rank faster than generic terms. Full market dominance typically takes 6-12 months depending on competition.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Why do flooring contractors need specialized SEO?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Flooring businesses compete against big box stores and have material-specific search intent (hardwood vs LVP vs tile). Generic SEO agencies miss these nuances and target keywords that attract DIYers instead of homeowners hiring professionals.',
+      },
+    },
+  ],
+}
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,6 +76,18 @@ export default function FlooringLandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0c0a09]">
+      {/* JSON-LD Schema - static hardcoded content defined above */}
+      <Script
+        id="service-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <Script
+        id="faq-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* Hero Section */}
       <section className="relative pt-8 pb-20 sm:pt-12 sm:pb-32 overflow-hidden">
         {/* Subtle grain texture */}
@@ -230,8 +290,91 @@ export default function FlooringLandingPage() {
         </div>
       </section>
 
+      {/* SEO Content Section - What is Flooring Contractor SEO */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            What is Flooring Contractor SEO?
+          </h2>
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              <strong className="text-white">Flooring contractor SEO</strong> is search engine optimization specifically designed for flooring installation companies. It focuses on ranking for the searches homeowners make when planning flooring projects—whether that&apos;s hardwood, tile, LVP, carpet, or refinishing.
+            </p>
+            <p>
+              Unlike generic SEO, flooring marketing requires understanding <strong className="text-white">material-specific search intent</strong>. Someone searching &quot;LVP installation&quot; is a different buyer than &quot;hardwood floor refinishing.&quot; Each has different budgets, timelines, and decision criteria.
+            </p>
+            <p>
+              Effective flooring SEO targets keywords like &quot;hardwood floor installation near me,&quot; &quot;tile flooring contractors,&quot; &quot;luxury vinyl plank installers,&quot; and &quot;wood floor refinishing&quot;—the searches from homeowners ready to hire, not browse Pinterest.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* SEO Content Section - Why Generic SEO Doesn't Work */}
+      <section className="py-16 sm:py-24 bg-[#0c0a09]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            Why Generic SEO Doesn&apos;t Work for Flooring Companies
+          </h2>
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              Most SEO agencies treat flooring companies like any other contractor. They write generic content and wonder why you&apos;re losing to Home Depot. Here&apos;s what they miss:
+            </p>
+            <ul className="space-y-3 list-disc list-inside">
+              <li><strong className="text-white">Big box competition:</strong> You&apos;re competing against national retailers with massive SEO budgets—you need a local strategy</li>
+              <li><strong className="text-white">Material-specific intent:</strong> Hardwood, tile, LVP, and carpet buyers have completely different search patterns</li>
+              <li><strong className="text-white">Project size matters:</strong> Whole-house renovations are 10x more valuable than single-room repairs</li>
+              <li><strong className="text-white">DIY vs. professional:</strong> Most flooring searches are DIYers—you need keywords that filter for hiring intent</li>
+            </ul>
+            <p>
+              A flooring SEO specialist understands these patterns and builds a strategy that captures high-value installation projects while outranking the big box stores locally.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight mb-8">
+            Frequently Asked Questions
+          </h2>
+          <div className="space-y-6">
+            {[
+              {
+                q: 'What is flooring contractor SEO?',
+                a: 'Flooring contractor SEO is search engine optimization specifically designed for flooring installation companies. It focuses on ranking for hardwood, tile, LVP, carpet, and refinishing searches that homeowners use when planning flooring projects.',
+              },
+              {
+                q: 'How long does flooring company SEO take to show results?',
+                a: 'Most flooring companies see measurable improvements in 60-90 days. Material-specific keywords like "hardwood floor installation" often rank faster than generic terms. Full market dominance typically takes 6-12 months depending on competition.',
+              },
+              {
+                q: 'Why do flooring contractors need specialized SEO?',
+                a: 'Flooring businesses compete against big box stores and have material-specific search intent (hardwood vs LVP vs tile). Generic SEO agencies miss these nuances and target keywords that attract DIYers instead of homeowners hiring professionals.',
+              },
+            ].map((faq, i) => (
+              <details key={i} className="group bg-white/5 border border-white/10 rounded-lg">
+                <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
+                  <h3 className="text-lg font-semibold text-white pr-4">{faq.q}</h3>
+                  <span className="text-amber-500 group-open:rotate-180 transition-transform">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </span>
+                </summary>
+                <p className="px-6 pb-6 text-white/70">{faq.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Related Industries */}
+      <RelatedIndustries currentSlug="flooring" />
+
       {/* Calendar Section */}
-      <section id="book-call" className="py-16 sm:py-24 bg-[#141210] scroll-mt-8">
+      <section id="book-call" className="py-16 sm:py-24 bg-[#0c0a09] scroll-mt-8">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
             Ready to Floor Your Competition?

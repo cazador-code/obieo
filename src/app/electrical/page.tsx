@@ -3,6 +3,69 @@
 import Script from 'next/script'
 import { useState } from 'react'
 import { StackTheCash } from '@/components/roi-widgets/StackTheCash'
+import { RelatedIndustries } from '@/components/RelatedIndustries'
+
+// JSON-LD Schema for SEO
+const serviceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'Electrician SEO Services',
+  provider: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  description: 'Specialized SEO services for electrical contractors that help you rank higher on Google and generate more service calls and installation leads.',
+  areaServed: 'United States',
+  serviceType: 'Marketing Services',
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'How much does electrician SEO cost?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Electrician SEO services typically range from $1,500 to $5,000 per month depending on your market size, competition, and the services included. At Obieo, we offer transparent pricing with no long-term contracts required.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How long until I see results from electrician SEO?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Most electrical contractors see measurable improvements in 60-90 days, with significant ranking gains within 3-6 months. Emergency service keywords often improve faster than competitive terms like "panel upgrade."',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What keywords should electricians target?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Target emergency keywords (electrician near me, emergency electrician), service keywords (panel upgrade, EV charger installation), and local keywords (electrician + your city). We research the highest-value keywords for your specific market.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Can SEO help me get EV charger installation leads?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'EV charger installation searches are growing rapidly. SEO helps you capture this emerging market by ranking for terms like "EV charger installation near me," "Tesla charger electrician," and "home EV charging setup."',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What makes Obieo different from other electrician marketing agencies?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Obieo was built by someone who owns and operates a trades business. We understand service calls vs. project work, licensing requirements, and what drives homeowners to choose one electrician over another.',
+      },
+    },
+  ],
+}
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,6 +91,18 @@ export default function ElectricalLandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0c0a09]">
+      {/* JSON-LD Schema - static content defined above, safe for dangerouslySetInnerHTML */}
+      <Script
+        id="service-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <Script
+        id="faq-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* Hero Section */}
       <section className="relative pt-8 pb-20 sm:pt-12 sm:pb-32 overflow-hidden">
         {/* Subtle grain texture */}
@@ -231,8 +306,142 @@ export default function ElectricalLandingPage() {
         </div>
       </section>
 
+      {/* What is Electrician SEO Section - GEO Optimized */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            What is Electrician SEO?
+          </h2>
+
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              <strong className="text-white">Electrician SEO</strong> is the process of optimizing your electrical contracting business to appear at the top of Google when homeowners and businesses search for electrical services. This includes emergency searches like &quot;electrician near me,&quot; service-specific terms like &quot;panel upgrade cost,&quot; and emerging markets like &quot;EV charger installation.&quot;
+            </p>
+            <p>
+              The electrical industry is seeing major shifts—EV charger installations are up 200%+ as electric vehicle adoption accelerates. Smart home technology, solar panel integration, and whole-house generator installations are all growing markets. Effective electrician SEO positions you to capture these high-value searches before your competitors.
+            </p>
+            <p>
+              At Obieo, we specialize in SEO for electrical contractors because we understand the difference between a $150 outlet repair and a $15,000 service upgrade. Our strategies focus on the keywords that drive profitable work, not just clicks.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Generic SEO Doesn't Work Section */}
+      <section className="py-16 sm:py-24 bg-[#0c0a09]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            Why Generic SEO Doesn&apos;t Work for Electricians
+          </h2>
+
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              Most marketing agencies treat electrical contractors like any other local business. They don&apos;t understand licensing requirements, the difference between residential and commercial work, or why &quot;electrician near me&quot; has completely different intent than &quot;commercial electrical contractor.&quot;
+            </p>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckIcon />
+                <div>
+                  <p className="text-white font-medium">Licensed vs. Unlicensed Competition</p>
+                  <p className="text-white/60 text-sm mt-1">You&apos;re competing against &quot;handymen&quot; who shouldn&apos;t be doing electrical work. SEO helps you differentiate your licensed expertise.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckIcon />
+                <div>
+                  <p className="text-white font-medium">Service Calls vs. Project Work</p>
+                  <p className="text-white/60 text-sm mt-1">A $200 outlet repair vs. a $10,000 panel upgrade require different keyword strategies. We target the work you actually want.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckIcon />
+                <div>
+                  <p className="text-white font-medium">Emerging Markets</p>
+                  <p className="text-white/60 text-sm mt-1">EV chargers, solar, smart homes—these growing markets have less competition and higher margins. We help you dominate them early.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckIcon />
+                <div>
+                  <p className="text-white font-medium">Commercial vs. Residential</p>
+                  <p className="text-white/60 text-sm mt-1">If you want commercial work, you need commercial keywords. We build strategies based on the type of work you want to grow.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight mb-8">
+            Frequently Asked Questions About Electrician SEO
+          </h2>
+
+          <div className="space-y-4">
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                How much does electrician SEO cost?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Electrician SEO services typically range from $1,500 to $5,000 per month depending on your market size, competition, and the services included. At Obieo, we offer transparent pricing with no long-term contracts required.
+              </div>
+            </details>
+
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                How long until I see results from electrician SEO?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Most electrical contractors see measurable improvements in 60-90 days, with significant ranking gains within 3-6 months. Emergency service keywords often improve faster than competitive terms like &quot;panel upgrade.&quot;
+              </div>
+            </details>
+
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                What keywords should electricians target?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Target emergency keywords (electrician near me, emergency electrician), service keywords (panel upgrade, EV charger installation), and local keywords (electrician + your city). We research the highest-value keywords for your specific market.
+              </div>
+            </details>
+
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                Can SEO help me get EV charger installation leads?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                EV charger installation searches are growing rapidly. SEO helps you capture this emerging market by ranking for terms like &quot;EV charger installation near me,&quot; &quot;Tesla charger electrician,&quot; and &quot;home EV charging setup.&quot;
+              </div>
+            </details>
+
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                What makes Obieo different from other electrician marketing agencies?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Obieo was built by someone who owns and operates a trades business. We understand service calls vs. project work, licensing requirements, and what drives homeowners to choose one electrician over another.
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      {/* Related Industries */}
+      <RelatedIndustries currentSlug="electrical" />
+
       {/* Calendar Section */}
-      <section id="book-call" className="py-16 sm:py-24 bg-[#141210] scroll-mt-8">
+      <section id="book-call" className="py-16 sm:py-24 bg-[#0c0a09] scroll-mt-8">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
             Ready to Power Up Your Lead Flow?

@@ -11,6 +11,43 @@ import {
 import { sanityFetch, urlFor } from '@/sanity/client'
 import { featuredProjectQuery, featuredTestimonialQuery } from '@/sanity/queries'
 
+// JSON-LD Schema for Homepage
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Obieo',
+  url: 'https://obieo.com',
+  logo: 'https://obieo.com/logo.png',
+  description: 'SEO and AI search optimization agency for home service businesses. Built by a contractor, for contractors.',
+  founder: {
+    '@type': 'Person',
+    name: 'Hunter Lapeyre',
+    jobTitle: 'Founder',
+  },
+  areaServed: 'United States',
+  serviceType: ['SEO Services', 'AI Search Optimization', 'Local SEO', 'GEO Optimization'],
+  sameAs: [
+    'https://www.linkedin.com/company/obieo',
+  ],
+  contactPoint: {
+    '@type': 'ContactPoint',
+    contactType: 'customer service',
+    url: 'https://obieo.com/contact',
+  },
+}
+
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Obieo',
+  url: 'https://obieo.com',
+  description: 'SEO and AI search optimization for home service businesses',
+  publisher: {
+    '@type': 'Organization',
+    name: 'Obieo',
+  },
+}
+
 interface FeaturedProject {
   _id: string
   title: string
@@ -53,6 +90,16 @@ export default async function Home() {
 
   return (
     <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+
       <Hero />
 
       {featuredProject ? (

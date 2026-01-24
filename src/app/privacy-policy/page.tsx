@@ -1,6 +1,27 @@
 import type { Metadata } from 'next'
 import { Section, Container } from '@/components/ui'
 
+// JSON-LD Schema for Privacy Policy Page
+const privacySchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Privacy Policy',
+  description: 'Privacy policy for Obieo services and website. Learn how we handle your data, SMS communications, and security practices.',
+  url: 'https://obieo.com/privacy-policy',
+  dateModified: '2026-01-04',
+  inLanguage: 'en-US',
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+}
+
 export const metadata: Metadata = {
   title: 'Privacy Policy | Obieo',
   description: 'Privacy policy for Obieo services and website.',
@@ -8,7 +29,14 @@ export const metadata: Metadata = {
 
 export default function PrivacyPolicyPage() {
   return (
-    <Section size="lg" className="pt-32">
+    <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(privacySchema) }}
+      />
+
+      <Section size="lg" className="pt-32">
       <Container size="md">
         <h1 className="text-4xl font-bold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-4">
           Privacy Policy
@@ -96,5 +124,6 @@ export default function PrivacyPolicyPage() {
         </div>
       </Container>
     </Section>
+    </>
   )
 }

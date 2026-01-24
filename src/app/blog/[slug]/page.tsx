@@ -97,8 +97,56 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   if (!post) notFound()
 
+  // Dynamic JSON-LD Schema for Blog Post
+  const blogPostSchema: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: post.title,
+    description: post.metaDescription || post.excerpt,
+    url: `https://obieo.com/blog/${slug}`,
+    datePublished: post.publishedAt,
+    dateModified: post.publishedAt,
+    author: {
+      '@type': 'Person',
+      name: 'Hunter Lapeyre',
+      url: 'https://obieo.com/about',
+      jobTitle: 'Founder & SEO Consultant',
+      worksFor: {
+        '@type': 'Organization',
+        name: 'Obieo',
+      },
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Obieo',
+      url: 'https://obieo.com',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://obieo.com/logo.png',
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://obieo.com/blog/${slug}`,
+    },
+  }
+
+  // Add optional fields
+  if (post.featuredImage) {
+    blogPostSchema.image = urlFor(post.featuredImage).width(1400).url()
+  }
+  if (post.primaryKeyword) {
+    blogPostSchema.keywords = post.primaryKeyword
+  }
+
   return (
     <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostSchema) }}
+      />
+
       {/* Hero */}
       <Section size="lg" className="pt-32">
         <Container size="md">

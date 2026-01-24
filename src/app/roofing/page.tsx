@@ -3,6 +3,69 @@
 import Script from 'next/script'
 import { useState } from 'react'
 import { ShingleStack } from '@/components/roi-widgets/ShingleStack'
+import { RelatedIndustries } from '@/components/RelatedIndustries'
+
+// JSON-LD Schema for SEO
+const serviceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'Roofing SEO Services',
+  provider: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  description: 'Specialized SEO services for roofing companies that help you rank higher on Google and get found by homeowners searching for roofing contractors.',
+  areaServed: 'United States',
+  serviceType: 'SEO Services',
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'How much does roofing SEO cost?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Roofing SEO services typically range from $1,500 to $5,000 per month depending on your market competitiveness and goals. At Obieo, we offer transparent pricing with no long-term contracts required.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How long until I see results from roofing SEO?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Most roofing companies see measurable improvements in 60-90 days, with significant ranking gains within 3-6 months. We achieved +5 ranking positions and 66% more impressions in just 30 days for our own roofing company.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Is SEO better than Google Ads for roofing companies?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Both have their place. Google Ads delivers immediate leads but stops when you stop paying. SEO builds long-term organic visibility that compounds over time. Most successful roofing companies use both, with SEO providing the foundation for sustainable growth.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Do you guarantee first page rankings?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Any agency that guarantees specific rankings is a red flag—Google\'s algorithm changes constantly. What we do guarantee is applying the same proven system that got our own roofing company to rank, with transparent reporting so you can track progress.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What makes Obieo different from other roofing marketing agencies?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Obieo was built by Hunter Lapeyre, who owns and operates Lapeyre Roofing in Texas and Louisiana. We don\'t just study roofing SEO—we use it every day for our own company. You get the exact system that works for us, adapted to your market.',
+      },
+    },
+  ],
+}
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,6 +91,16 @@ export default function RoofingLandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0c0a09]">
+      {/* JSON-LD Schema Markup for SEO - static content, safe to use dangerouslySetInnerHTML */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* Hero Section */}
       <section className="relative pt-8 pb-20 sm:pt-12 sm:pb-32 overflow-hidden">
         {/* Subtle grain texture */}
@@ -47,11 +120,10 @@ export default function RoofingLandingPage() {
             </span>
           </div>
 
-          {/* Main Headline */}
+          {/* Main Headline - Optimized for "roofing SEO" keyword */}
           <h1 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] tracking-tight">
-            We Will Install The Same{' '}
-            <span className="text-[var(--accent)]">SEO System</span>{' '}
-            We Used To Scale Our Own Roofing Company
+            <span className="text-[var(--accent)]">Roofing SEO</span>{' '}
+            That Actually Works—Built By a Roofer
           </h1>
 
           {/* Subhead - Founder Credibility */}
@@ -317,8 +389,155 @@ export default function RoofingLandingPage() {
         </div>
       </section>
 
+      {/* What is Roofing SEO - GEO Optimized Section */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            What is Roofing SEO?
+          </h2>
+
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              <strong className="text-white">Roofing SEO</strong> is the practice of optimizing a roofing company&apos;s
+              online presence to rank higher in Google search results and AI-powered search tools like ChatGPT and
+              Perplexity. For roofing businesses, this means appearing when homeowners search for &quot;roofer near
+              me,&quot; &quot;roof repair + [city],&quot; or &quot;best roofing company in [area].&quot;
+            </p>
+
+            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+              <h3 className="text-white font-semibold mb-4">Key Components of Roofing SEO:</h3>
+              <ul className="space-y-3">
+                {[
+                  'Google Business Profile optimization and management',
+                  'Local keyword targeting for your service areas',
+                  'Review generation and reputation management',
+                  'Technical website optimization (speed, mobile, schema)',
+                  'Content that answers homeowner questions about roofing',
+                  'AI search visibility (GEO) for ChatGPT, Perplexity, and other AI tools',
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <CheckIcon />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <p>
+              The average roofing company that invests in proper SEO sees a <strong className="text-white">40-60%
+              increase</strong> in organic leads within 6 months. Unlike paid ads that stop the moment you stop paying,
+              SEO builds lasting visibility that compounds over time.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Specialized SEO Section */}
+      <section className="py-16 sm:py-24 bg-[#0c0a09]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            Why Generic SEO Doesn&apos;t Work for Roofing Companies
+          </h2>
+
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              Most SEO agencies treat roofing companies like any other local business. They use the same cookie-cutter
+              approach they use for dentists, lawyers, and restaurants. But roofing has unique challenges:
+            </p>
+
+            <div className="grid gap-4">
+              {[
+                {
+                  title: 'Storm Season Dynamics',
+                  desc: 'Search volume spikes 300-500% after major storms. Generic agencies don\'t know how to capitalize on this.',
+                },
+                {
+                  title: 'Trust is Everything',
+                  desc: 'Homeowners are letting strangers on their roof. Reviews, credentials, and local presence matter more than any other industry.',
+                },
+                {
+                  title: 'Lead Quality Over Quantity',
+                  desc: 'A single roofing job is worth $8,000-$25,000. You need qualified homeowners, not tire-kickers.',
+                },
+                {
+                  title: 'Insurance Job Keywords',
+                  desc: 'Understanding terms like "storm damage," "insurance claim," and "roof inspection" requires industry knowledge.',
+                },
+              ].map((item, i) => (
+                <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-5">
+                  <h3 className="text-white font-semibold mb-2">{item.title}</h3>
+                  <p className="text-white/60">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <p>
+              That&apos;s why we built Obieo specifically for home service businesses. We understand the nuances because
+              we live them every day with our own roofing company.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section - Schema Markup Already Added */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight text-center mb-12">
+            Frequently Asked Questions About Roofing SEO
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              {
+                q: 'How much does roofing SEO cost?',
+                a: 'Roofing SEO services typically range from $1,500 to $5,000 per month depending on your market competitiveness and goals. At Obieo, we offer transparent pricing with no long-term contracts required. We\'ll give you an honest assessment on our strategy call.',
+              },
+              {
+                q: 'How long until I see results from roofing SEO?',
+                a: 'Most roofing companies see measurable improvements in 60-90 days, with significant ranking gains within 3-6 months. We achieved +5 ranking positions and 66% more impressions in just 30 days for our own roofing company.',
+              },
+              {
+                q: 'Is SEO better than Google Ads for roofing companies?',
+                a: 'Both have their place. Google Ads delivers immediate leads but stops when you stop paying. SEO builds long-term organic visibility that compounds over time. Most successful roofing companies use both, with SEO providing the foundation for sustainable growth.',
+              },
+              {
+                q: 'Do you guarantee first page rankings?',
+                a: 'Any agency that guarantees specific rankings is a red flag—Google\'s algorithm changes constantly. What we do guarantee is applying the same proven system that got our own roofing company to rank, with transparent reporting so you can track progress.',
+              },
+              {
+                q: 'What makes Obieo different from other roofing marketing agencies?',
+                a: 'Obieo was built by Hunter Lapeyre, who owns and operates Lapeyre Roofing in Texas and Louisiana. We don\'t just study roofing SEO—we use it every day for our own company. You get the exact system that works for us, adapted to your market.',
+              },
+            ].map((faq, i) => (
+              <details
+                key={i}
+                className="group bg-white/5 border border-white/10 rounded-xl overflow-hidden"
+              >
+                <summary className="flex items-center justify-between p-5 cursor-pointer list-none">
+                  <h3 className="text-white font-medium pr-4">{faq.q}</h3>
+                  <svg
+                    className="w-5 h-5 text-white/60 flex-shrink-0 transition-transform group-open:rotate-180"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div className="px-5 pb-5 text-white/70">
+                  {faq.a}
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Related Industries */}
+      <RelatedIndustries currentSlug="roofing" />
+
       {/* Calendar Section */}
-      <section id="book-call" className="py-16 sm:py-24 bg-[#141210] scroll-mt-8">
+      <section id="book-call" className="py-16 sm:py-24 bg-[#0c0a09] scroll-mt-8">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
             Ready to Stop Being Treated Like a Number?

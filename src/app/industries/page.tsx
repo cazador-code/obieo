@@ -2,6 +2,57 @@ import Link from "next/link";
 import CalendlyButton from "@/components/CalendlyButton";
 import type { Metadata } from "next";
 
+// JSON-LD Schema for SEO
+const itemListSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Home Service Industries Served by Obieo',
+  description: 'Specialized SEO and AEO services for roofing, HVAC, plumbing, electrical, pest control, landscaping, cleaning, garage doors, painting, and flooring companies.',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Roofing SEO', url: 'https://obieo.com/roofing' },
+    { '@type': 'ListItem', position: 2, name: 'HVAC SEO', url: 'https://obieo.com/hvac' },
+    { '@type': 'ListItem', position: 3, name: 'Plumbing SEO', url: 'https://obieo.com/plumbing' },
+    { '@type': 'ListItem', position: 4, name: 'Electrical SEO', url: 'https://obieo.com/electrical' },
+    { '@type': 'ListItem', position: 5, name: 'Pest Control SEO', url: 'https://obieo.com/pest-control' },
+    { '@type': 'ListItem', position: 6, name: 'Landscaping SEO', url: 'https://obieo.com/landscaping' },
+    { '@type': 'ListItem', position: 7, name: 'Cleaning Services SEO', url: 'https://obieo.com/cleaning' },
+    { '@type': 'ListItem', position: 8, name: 'Garage Door SEO', url: 'https://obieo.com/garage-doors' },
+    { '@type': 'ListItem', position: 9, name: 'Painting SEO', url: 'https://obieo.com/painting' },
+    { '@type': 'ListItem', position: 10, name: 'Flooring SEO', url: 'https://obieo.com/flooring' },
+  ],
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What industries does Obieo specialize in?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Obieo specializes in SEO for home service businesses including roofing, HVAC, plumbing, electrical, pest control, landscaping, cleaning services, garage doors, painting, and flooring contractors.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Does Obieo work with industries not listed here?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes. If you run a home service business, Obieo can likely help. The listed industries are specialties, but the SEO strategies apply broadly to local service businesses.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Why specialize in home service SEO?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Home service businesses have unique SEO needs: local search dominance, emergency service visibility, trust signals for in-home access, and seasonal demand patterns. Generic SEO agencies often miss these nuances.',
+      },
+    },
+  ],
+}
+
 export const metadata: Metadata = {
   title: "Industries We Serve — Obieo | SEO for Home Service Businesses",
   description:
@@ -129,7 +180,18 @@ const ArrowIcon = () => (
 
 export default function IndustriesPage() {
   return (
-    <div className="pt-16 sm:pt-20">
+    <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
+      <div className="pt-16 sm:pt-20">
         {/* Hero */}
         <section className="bg-[var(--bg-secondary)] py-16 sm:py-24">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -225,7 +287,8 @@ export default function IndustriesPage() {
             </div>
           </div>
         </section>
-    </div>
+      </div>
+    </>
   );
 }
 

@@ -3,6 +3,65 @@ import Link from 'next/link'
 import { Section, Container } from '@/components/ui'
 import { FadeInSection } from '@/components/animations'
 
+// JSON-LD Schema for SEO
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'Why Your Competitors Will Be Invisible in 2 Years',
+  description: 'AI is changing how homeowners find contractors. Most home service businesses have no idea. Here is your window to get ahead — with proof it works.',
+  image: 'https://obieo.com/og-ai-search.jpg',
+  datePublished: '2024-12-01',
+  dateModified: '2024-12-01',
+  author: {
+    '@type': 'Person',
+    name: 'Hunter Lapeyre',
+    url: 'https://obieo.com/about',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://obieo.com/logo.png',
+    },
+  },
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': 'https://obieo.com/blog/ai-search-contractors',
+  },
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'How do AI search engines like ChatGPT affect home service businesses?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'AI search engines are changing how homeowners find contractors. Instead of scrolling through Google results, users ask AI assistants for recommendations. Businesses optimized for AI visibility get recommended; those who are not become invisible.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is AEO (Answer Engine Optimization)?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'AEO is the practice of optimizing your website content to be recommended by AI assistants like ChatGPT, Perplexity, and Google AI Overviews. It focuses on structured data, clear answers, and factual density.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How can contractors get visibility in AI search results?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Contractors can improve AI visibility by implementing schema markup, creating FAQ-rich content, ensuring consistent business information across platforms, and building third-party credibility through reviews and citations.',
+      },
+    },
+  ],
+}
+
 export const metadata: Metadata = {
   title: "Why Your Competitors Will Be Invisible in 2 Years | Obieo",
   description: "AI is changing how homeowners find contractors. Most home service businesses have no idea. Here's your window to get ahead — with proof it works.",
@@ -110,6 +169,16 @@ function InlineLink({ href, external = false, children }: { href: string; extern
 export default function AISearchContractorsPage() {
   return (
     <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* Hero */}
       <Section size="lg" className="pt-32 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">

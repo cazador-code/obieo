@@ -3,6 +3,49 @@ import Link from 'next/link'
 import { Section, Container } from '@/components/ui'
 import { FadeInSection } from '@/components/animations'
 
+// JSON-LD Schema for Blog Index
+const blogSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Blog',
+  name: 'The Obieo Blog',
+  description: 'Insights on SEO, lead generation, and growth strategies for home service businesses. Real tactics tested on our own roofing company.',
+  url: 'https://obieo.com/blog',
+  publisher: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://obieo.com/logo.png',
+    },
+  },
+  blogPost: [
+    {
+      '@type': 'BlogPosting',
+      headline: 'The Complete Guide to Generative Engine Optimization (GEO)',
+      url: 'https://obieo.com/blog/generative-engine-optimization-guide',
+      datePublished: '2025-01-15',
+    },
+    {
+      '@type': 'BlogPosting',
+      headline: 'Why Your Competitors Will Be Invisible in 2 Years',
+      url: 'https://obieo.com/blog/ai-search-contractors',
+      datePublished: '2024-12-01',
+    },
+    {
+      '@type': 'BlogPosting',
+      headline: 'Contractor Lead Generation: Why Your Home Service Business Is Stuck at $3 Million',
+      url: 'https://obieo.com/blog/contractor-lead-generation-guide',
+      datePublished: '2025-01-05',
+    },
+    {
+      '@type': 'BlogPosting',
+      headline: "ChatGPT Is Adding Ads. Here's What It Means for You",
+      url: 'https://obieo.com/blog/chatgpt-ads',
+      datePublished: '2025-01-10',
+    },
+  ],
+}
+
 // Static blog posts (for now, until Sanity is set up)
 const posts = [
   {
@@ -39,6 +82,12 @@ export const metadata: Metadata = {
 export default function BlogPage() {
   return (
     <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogSchema) }}
+      />
+
       {/* Hero */}
       <Section size="lg" className="pt-32 relative overflow-hidden">
         {/* Decorative background */}

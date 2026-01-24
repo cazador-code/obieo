@@ -1,11 +1,67 @@
 'use client'
 
 import { useState } from 'react'
+import Script from 'next/script'
 import CalendlyButton from '@/components/CalendlyButton'
 import { CheckIcon, XIcon, ArrowRightIcon, ChevronDownIcon } from '@/components/ui'
 
 // Note: metadata must be in a separate file for client components
 // See layout.tsx for page metadata
+
+// JSON-LD Schema for SEO
+const serviceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'Local Dominance SEO Retainer',
+  provider: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  description:
+    'Monthly SEO retainer for home service businesses. Google Business Profile management, service pages, technical SEO, citations, and link building to dominate local search.',
+  areaServed: 'United States',
+  serviceType: 'Local SEO Services',
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Can you guarantee SEO rankings?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'No. Anyone who guarantees rankings is lying or using tactics that will get your site penalized. We guarantee consistent, quality work. Rankings follow.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How long until I see SEO results?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'SEO isn\'t a light switch. Typically 3-4 months to see movement, 6+ months for significant results. We set realistic expectations based on your specific market.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What if SEO isn\'t working after a few months?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'We\'ll have an honest conversation. Sometimes markets are tougher than expected. Sometimes the site needs more work. We won\'t keep taking your money if we\'re not making progress.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How is Obieo different from other SEO agencies?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Most agencies sell volume: 10 pages, 25 citations, 10 backlinks. Sounds impressive, delivers garbage. We focus on fewer, higher-quality deliverables that actually rank and convert.',
+      },
+    },
+  ],
+}
 
 const problemBullets = [
   'Paying $2,500/month for "SEO" but can\'t explain what you\'re getting',
@@ -104,6 +160,18 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 export default function LocalDominancePage() {
   return (
     <div className="pt-16 sm:pt-20">
+      {/* JSON-LD Schema */}
+      <Script
+        id="service-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <Script
+        id="faq-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* Hero */}
       <section className="bg-gradient-to-b from-cream-100 to-cream-50 py-20 sm:py-32">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

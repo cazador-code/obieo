@@ -1,6 +1,27 @@
 import type { Metadata } from 'next'
 import { Section, Container } from '@/components/ui'
 
+// JSON-LD Schema for Fulfillment Policy Page
+const fulfillmentSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Fulfillment Policy',
+  description: 'Fulfillment policy for Obieo services. Covers service commencement, refund terms, and cancellation procedures.',
+  url: 'https://obieo.com/fulfillment-policy',
+  dateModified: '2026-01-04',
+  inLanguage: 'en-US',
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+}
+
 export const metadata: Metadata = {
   title: 'Fulfillment Policy | Obieo',
   description: 'Fulfillment policy for Obieo services.',
@@ -8,7 +29,14 @@ export const metadata: Metadata = {
 
 export default function FulfillmentPolicyPage() {
   return (
-    <Section size="lg" className="pt-32">
+    <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(fulfillmentSchema) }}
+      />
+
+      <Section size="lg" className="pt-32">
       <Container size="md">
         <h1 className="text-4xl font-bold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-4">
           Fulfillment Policy
@@ -65,5 +93,6 @@ export default function FulfillmentPolicyPage() {
         </div>
       </Container>
     </Section>
+    </>
   )
 }

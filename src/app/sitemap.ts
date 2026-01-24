@@ -137,12 +137,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...workEntries,
     ...blogEntries,
 
-    // Secondary pages
+    // Industry landing pages - HIGH PRIORITY for SEO
+    // These target "[industry] seo" keywords (2,400+ monthly searches)
+    ...['roofing', 'plumbing', 'hvac', 'electrical', 'pest-control', 'landscaping', 'garage-doors', 'painting', 'flooring', 'cleaning'].map(industry => ({
+      url: `${baseUrl}/${industry}`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.9,
+    })),
+
+    // Industry hub page
     {
       url: `${baseUrl}/industries`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
-      priority: 0.7,
+      priority: 0.8,
     },
     {
       url: `${baseUrl}/about`,

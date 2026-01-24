@@ -2,6 +2,83 @@ import CalendlyButton from "@/components/CalendlyButton";
 import { CheckIcon, ArrowRightIcon } from "@/components/ui";
 import type { Metadata } from "next";
 
+// JSON-LD Schema for SEO
+const serviceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'SEO Services for Home Service Businesses',
+  provider: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  description:
+    'Professional SEO and AEO services designed for home service businesses. One-time SEO Launchpad to fix foundations or ongoing Local Dominance retainer for compounding growth.',
+  areaServed: 'United States',
+  serviceType: 'Marketing Services',
+  hasOfferCatalog: {
+    '@type': 'OfferCatalog',
+    name: 'SEO Service Packages',
+    itemListElement: [
+      {
+        '@type': 'Offer',
+        itemOffered: {
+          '@type': 'Service',
+          name: 'SEO Launchpad',
+          description: 'One-time 2-4 week engagement to audit, fix, and set up your SEO foundation. Technical fixes, on-page optimization, and Google Business Profile setup.',
+        },
+      },
+      {
+        '@type': 'Offer',
+        itemOffered: {
+          '@type': 'Service',
+          name: 'Local Dominance Retainer',
+          description: 'Monthly SEO retainer with content creation, GBP management, technical SEO, citations, and link building for compounding organic growth.',
+        },
+      },
+    ],
+  },
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Should I choose SEO Launchpad or Local Dominance retainer?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Most clients start with the SEO Launchpad to fix their foundation, then move to Local Dominance for ongoing growth. Choose Launchpad if your SEO foundation is broken, you want to test before committing, or budget is tight. Choose Local Dominance if your foundation is solid and you want consistent, compounding SEO growth.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How long does the SEO Launchpad take?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '2-4 weeks depending on the size of your site and scope of fixes needed. You will know the exact timeline before we start.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is the minimum commitment for Local Dominance?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '6-month minimum commitment. SEO takes time to show meaningful, compounding results. After 6 months, the retainer continues month-to-month with no long-term contract.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is AEO and why does it matter?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'AEO (Answer Engine Optimization) prepares your content to appear in AI search results like ChatGPT, Perplexity, and Google AI Overviews. Every page we create is optimized with FAQ schema, structured data, and snippet-ready content.',
+      },
+    },
+  ],
+}
+
 export const metadata: Metadata = {
   title: "Services — Obieo | SEO & AEO for Home Service Businesses",
   description:
@@ -61,7 +138,18 @@ const comparisonData = {
 
 export default function ServicesPage() {
   return (
-    <div className="pt-16 sm:pt-20">
+    <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
+      <div className="pt-16 sm:pt-20">
         {/* Hero */}
         <section className="bg-[var(--bg-secondary)] py-16 sm:py-24">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -298,7 +386,8 @@ export default function ServicesPage() {
             </div>
           </div>
         </section>
-    </div>
+      </div>
+    </>
   );
 }
 

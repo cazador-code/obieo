@@ -3,6 +3,69 @@
 import Script from 'next/script'
 import { useState } from 'react'
 import { MultiplierMachine } from '@/components/roi-widgets/MultiplierMachine'
+import { RelatedIndustries } from '@/components/RelatedIndustries'
+
+// JSON-LD Schema for SEO
+const serviceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'HVAC Marketing Services',
+  provider: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  description: 'Specialized marketing and SEO services for HVAC companies that help you rank higher on Google and generate more service calls year-round.',
+  areaServed: 'United States',
+  serviceType: 'Marketing Services',
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'How much does HVAC marketing cost?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'HVAC marketing services typically range from $2,000 to $6,000 per month depending on your market size and the services included. At Obieo, we offer transparent pricing with no long-term contracts required.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How long until I see results from HVAC SEO?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Most HVAC companies see measurable improvements in 60-90 days, with significant ranking gains within 3-6 months. Seasonal keywords may fluctuate, but building year-round visibility is the key to sustainable growth.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How do I get more HVAC leads during slow seasons?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Focus on maintenance agreement marketing, indoor air quality services, and off-season promotions. SEO builds visibility so when someone\'s system breaks in the shoulder season, you\'re the first call.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What HVAC keywords should I target?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Target emergency keywords (AC repair, furnace not working), seasonal keywords (AC tune-up, heating maintenance), and local keywords (HVAC + your city). We research the highest-value keywords for your specific market.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What makes Obieo different from other HVAC marketing agencies?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Obieo was built by Hunter Lapeyre, who owns and operates a trades business. We understand seasonal demand cycles, emergency service calls, and what drives homeowners to choose one HVAC company over another.',
+      },
+    },
+  ],
+}
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,6 +91,18 @@ export default function HVACLandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0c0a09]">
+      {/* JSON-LD Schema - static content, safe for dangerouslySetInnerHTML */}
+      <Script
+        id="service-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <Script
+        id="faq-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* Hero Section */}
       <section className="relative pt-8 pb-20 sm:pt-12 sm:pb-32 overflow-hidden">
         {/* Subtle grain texture */}
@@ -49,8 +124,8 @@ export default function HVACLandingPage() {
 
           {/* Main Headline */}
           <h1 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] tracking-tight">
-            SEO That Actually Works For{' '}
-            <span className="text-cyan-400">HVAC Companies</span>
+            HVAC Marketing That Works{' '}
+            <span className="text-cyan-400">In Every Season</span>
           </h1>
 
           {/* Subhead */}
@@ -230,8 +305,142 @@ export default function HVACLandingPage() {
         </div>
       </section>
 
+      {/* What is HVAC Marketing Section - GEO Optimized */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            What is HVAC Marketing?
+          </h2>
+
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              <strong className="text-white">HVAC marketing</strong> is the strategic process of promoting heating, ventilation, and air conditioning services to homeowners and businesses who need installation, repair, or maintenance. Unlike generic digital marketing, effective HVAC marketing accounts for extreme seasonality—summer AC rush, winter heating emergencies, and the challenging shoulder seasons in between.
+            </p>
+            <p>
+              Search volume for &quot;hvac marketing agencies&quot; has grown <strong className="text-white">+504% year-over-year</strong>, reflecting how many HVAC contractors are frustrated with agencies that don&apos;t understand their business cycles. The most successful HVAC marketing strategies combine local SEO (ranking for &quot;AC repair near me&quot;), Google Business Profile optimization, and content that captures both emergency searches and planned maintenance inquiries.
+            </p>
+            <p>
+              At Obieo, we specialize in HVAC SEO because we understand that your busiest months fund your slow months—and smart marketing can smooth out those valleys. Our approach builds year-round visibility so you&apos;re not scrambling when temperatures are mild.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Generic SEO Doesn't Work Section */}
+      <section className="py-16 sm:py-24 bg-[#0c0a09]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            Why Generic SEO Doesn&apos;t Work for HVAC Companies
+          </h2>
+
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              Most SEO agencies treat HVAC companies like any other local business. They write generic blog posts, build some backlinks, and send you a confusing monthly report. But HVAC has unique challenges that require specialized knowledge.
+            </p>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckIcon />
+                <div>
+                  <p className="text-white font-medium">Extreme Seasonality</p>
+                  <p className="text-white/60 text-sm mt-1">Your phone rings off the hook in July and January, but April and October? You need marketing that builds momentum for those slow months.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckIcon />
+                <div>
+                  <p className="text-white font-medium">Emergency vs. Planned Services</p>
+                  <p className="text-white/60 text-sm mt-1">&quot;AC not cooling&quot; has completely different intent than &quot;HVAC tune-up cost.&quot; You need content that captures both.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckIcon />
+                <div>
+                  <p className="text-white font-medium">Maintenance Agreement Upsells</p>
+                  <p className="text-white/60 text-sm mt-1">The real money is in recurring maintenance contracts. Your SEO should drive these high-LTV customers, not just one-time repairs.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckIcon />
+                <div>
+                  <p className="text-white font-medium">Indoor Air Quality Expansion</p>
+                  <p className="text-white/60 text-sm mt-1">IAQ, duct cleaning, and air purification are growing markets. Generic agencies miss these keyword opportunities entirely.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight mb-8">
+            Frequently Asked Questions About HVAC Marketing
+          </h2>
+
+          <div className="space-y-4">
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                How much does HVAC marketing cost?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                HVAC marketing services typically range from $2,000 to $6,000 per month depending on your market size and the services included. At Obieo, we offer transparent pricing with no long-term contracts required.
+              </div>
+            </details>
+
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                How long until I see results from HVAC SEO?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Most HVAC companies see measurable improvements in 60-90 days, with significant ranking gains within 3-6 months. Seasonal keywords may fluctuate, but building year-round visibility is the key to sustainable growth.
+              </div>
+            </details>
+
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                How do I get more HVAC leads during slow seasons?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Focus on maintenance agreement marketing, indoor air quality services, and off-season promotions. SEO builds visibility so when someone&apos;s system breaks in the shoulder season, you&apos;re the first call.
+              </div>
+            </details>
+
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                What HVAC keywords should I target?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Target emergency keywords (AC repair, furnace not working), seasonal keywords (AC tune-up, heating maintenance), and local keywords (HVAC + your city). We research the highest-value keywords for your specific market.
+              </div>
+            </details>
+
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                What makes Obieo different from other HVAC marketing agencies?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Obieo was built by Hunter Lapeyre, who owns and operates a trades business. We understand seasonal demand cycles, emergency service calls, and what drives homeowners to choose one HVAC company over another.
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      {/* Related Industries */}
+      <RelatedIndustries currentSlug="hvac" />
+
       {/* Calendar Section */}
-      <section id="book-call" className="py-16 sm:py-24 bg-[#141210] scroll-mt-8">
+      <section id="book-call" className="py-16 sm:py-24 bg-[#0c0a09] scroll-mt-8">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
             Ready to Dominate HVAC Search in Your Area?

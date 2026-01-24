@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/studio/', '/api/', '/_next/static/chunks/'],
     },
-    sitemap: 'https://obieo.com/sitemap.xml',
+    sitemap: 'https://www.obieo.com/sitemap.xml',
   }
 }

@@ -63,8 +63,41 @@ export default async function CaseStudyPage({ params }: PageProps) {
 
   if (!project) notFound()
 
+  // Dynamic JSON-LD Schema for Case Study
+  const caseStudySchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: project.title,
+    description: project.tagline,
+    url: `https://obieo.com/work/${slug}`,
+    author: {
+      '@type': 'Organization',
+      name: 'Obieo',
+      url: 'https://obieo.com',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Obieo',
+      url: 'https://obieo.com',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://obieo.com/logo.png',
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://obieo.com/work/${slug}`,
+    },
+  }
+
   return (
     <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(caseStudySchema) }}
+      />
+
       {/* Hero */}
       <Section size="lg" className="pt-32">
         <Container>

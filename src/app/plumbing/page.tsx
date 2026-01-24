@@ -3,6 +3,69 @@
 import Script from 'next/script'
 import { useState } from 'react'
 import { PipeFlow } from '@/components/roi-widgets/PipeFlow'
+import { RelatedIndustries } from '@/components/RelatedIndustries'
+
+// JSON-LD Schema for SEO
+const serviceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'Plumber SEO Services',
+  provider: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  description: 'Specialized SEO services for plumbing companies that help you rank higher on Google for emergency plumbing searches and local keywords.',
+  areaServed: 'United States',
+  serviceType: 'SEO Services',
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'How much does plumber SEO cost?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Plumber SEO services typically range from $1,500 to $4,500 per month depending on your market size and competition. At Obieo, we offer transparent pricing with no long-term contracts required.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How long until I see results from plumber SEO?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Most plumbing companies see measurable improvements in local rankings within 60-90 days, with significant gains in 3-6 months. Emergency service keywords often see faster results due to high search intent.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Why is local SEO important for plumbers?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Local SEO is critical for plumbers because 97% of consumers search online for local services. When pipes burst at 2am, homeowners search "plumber near me" - if you\'re not ranking, you\'re losing that emergency call to your competitor.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What plumbing keywords should I target?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Focus on emergency keywords (emergency plumber, 24/7 plumber), service keywords (drain cleaning, water heater repair), and local keywords (plumber + your city). We research the highest-value keywords for your specific market.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How is Obieo different from other plumbing marketing agencies?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Obieo was built by Hunter Lapeyre, who owns and operates a trades business. We understand 24/7 service demand, emergency search intent, and what makes homeowners trust a plumber enough to let them in their home.',
+      },
+    },
+  ],
+}
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,6 +91,16 @@ export default function PlumbingLandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0c0a09]">
+      {/* JSON-LD Schema Markup for SEO - static content defined above, safe to use dangerouslySetInnerHTML */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* Hero Section */}
       <section className="relative pt-8 pb-20 sm:pt-12 sm:pb-32 overflow-hidden">
         {/* Subtle grain texture */}
@@ -47,11 +120,10 @@ export default function PlumbingLandingPage() {
             </span>
           </div>
 
-          {/* Main Headline */}
+          {/* Main Headline - Optimized for "seo for plumbers" and "local seo for plumbers" */}
           <h1 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] tracking-tight">
-            SEO That Turns On The{' '}
-            <span className="text-blue-400">Lead Flow</span>{' '}
-            For Plumbers
+            <span className="text-blue-400">SEO for Plumbers</span>{' '}
+            That Actually Gets Emergency Calls
           </h1>
 
           {/* Subhead */}
@@ -231,8 +303,150 @@ export default function PlumbingLandingPage() {
         </div>
       </section>
 
+      {/* What is Plumber SEO - GEO Optimized Section */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            What is SEO for Plumbers?
+          </h2>
+
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              <strong className="text-white">SEO for plumbers</strong> is the practice of optimizing a plumbing company&apos;s
+              online presence to rank higher in Google search results when homeowners search for plumbing services.
+              This includes appearing for emergency searches like &quot;plumber near me&quot; and &quot;24 hour plumber,&quot;
+              as well as service-specific searches like &quot;drain cleaning + [city]&quot; or &quot;water heater repair.&quot;
+            </p>
+
+            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+              <h3 className="text-white font-semibold mb-4">Key Components of Local SEO for Plumbers:</h3>
+              <ul className="space-y-3">
+                {[
+                  'Google Business Profile optimization for local pack rankings',
+                  'Emergency keyword targeting (24/7 plumber, same-day service)',
+                  'Review generation and reputation management',
+                  'Service area page optimization for each city you serve',
+                  'Technical website optimization (mobile-first, fast loading)',
+                  'AI search visibility (GEO) for ChatGPT, Perplexity, and voice search',
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <CheckIcon />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <p>
+              <strong className="text-white">Local SEO for plumbers</strong> has grown <strong className="text-white">+414% year-over-year</strong> as
+              more homeowners turn to Google to find emergency plumbing services. If you&apos;re not ranking when someone&apos;s
+              pipes burst at 2am, that call is going to your competitor.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Specialized SEO Section */}
+      <section className="py-16 sm:py-24 bg-[#0c0a09]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            Why Generic SEO Doesn&apos;t Work for Plumbing Companies
+          </h2>
+
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              Most SEO agencies treat plumbers like any other local business. But plumbing has unique challenges
+              that require specialized knowledge:
+            </p>
+
+            <div className="grid gap-4">
+              {[
+                {
+                  title: '24/7 Emergency Search Intent',
+                  desc: 'Pipes don\'t burst 9-5. You need to rank for emergency searches at 2am when the competition isn\'t paying attention.',
+                },
+                {
+                  title: 'In-Home Trust Factor',
+                  desc: 'Homeowners are letting a stranger into their house. Reviews, photos, and credentials matter more than any other industry.',
+                },
+                {
+                  title: 'Service-Specific Keywords',
+                  desc: 'Drain cleaning, sewer line repair, water heater installation - each service needs its own keyword strategy.',
+                },
+                {
+                  title: 'Multi-Location Complexity',
+                  desc: 'Most plumbers serve 10+ cities. Each service area needs optimized content without creating duplicate pages.',
+                },
+              ].map((item, i) => (
+                <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-5">
+                  <h3 className="text-white font-semibold mb-2">{item.title}</h3>
+                  <p className="text-white/60">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section - Schema Markup Already Added */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight text-center mb-12">
+            Frequently Asked Questions About Plumber SEO
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              {
+                q: 'How much does plumber SEO cost?',
+                a: 'Plumber SEO services typically range from $1,500 to $4,500 per month depending on your market size and competition. At Obieo, we offer transparent pricing with no long-term contracts required.',
+              },
+              {
+                q: 'How long until I see results from plumber SEO?',
+                a: 'Most plumbing companies see measurable improvements in local rankings within 60-90 days, with significant gains in 3-6 months. Emergency service keywords often see faster results due to high search intent.',
+              },
+              {
+                q: 'Why is local SEO important for plumbers?',
+                a: 'Local SEO is critical for plumbers because 97% of consumers search online for local services. When pipes burst at 2am, homeowners search "plumber near me" - if you\'re not ranking, you\'re losing that emergency call to your competitor.',
+              },
+              {
+                q: 'What plumbing keywords should I target?',
+                a: 'Focus on emergency keywords (emergency plumber, 24/7 plumber), service keywords (drain cleaning, water heater repair), and local keywords (plumber + your city). We research the highest-value keywords for your specific market.',
+              },
+              {
+                q: 'How is Obieo different from other plumbing marketing agencies?',
+                a: 'Obieo was built by Hunter Lapeyre, who owns and operates a trades business. We understand 24/7 service demand, emergency search intent, and what makes homeowners trust a plumber enough to let them in their home.',
+              },
+            ].map((faq, i) => (
+              <details
+                key={i}
+                className="group bg-white/5 border border-white/10 rounded-xl overflow-hidden"
+              >
+                <summary className="flex items-center justify-between p-5 cursor-pointer list-none">
+                  <h3 className="text-white font-medium pr-4">{faq.q}</h3>
+                  <svg
+                    className="w-5 h-5 text-white/60 flex-shrink-0 transition-transform group-open:rotate-180"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div className="px-5 pb-5 text-white/70">
+                  {faq.a}
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Related Industries */}
+      <RelatedIndustries currentSlug="plumbing" />
+
       {/* Calendar Section */}
-      <section id="book-call" className="py-16 sm:py-24 bg-[#141210] scroll-mt-8">
+      <section id="book-call" className="py-16 sm:py-24 bg-[#0c0a09] scroll-mt-8">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
             Ready to Get More Plumbing Calls?

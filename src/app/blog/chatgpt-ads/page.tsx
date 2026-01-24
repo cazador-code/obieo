@@ -3,6 +3,65 @@ import Link from 'next/link'
 import { Section, Container } from '@/components/ui'
 import { FadeInSection } from '@/components/animations'
 
+// JSON-LD Schema for SEO
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: "ChatGPT Is Adding Ads. Here's What It Means for You",
+  description: 'OpenAI announced ads in ChatGPT. For businesses, being the organic answer AI cites just became 10x more valuable.',
+  image: 'https://obieo.com/og-chatgpt-ads.jpg',
+  datePublished: '2025-01-10',
+  dateModified: '2025-01-10',
+  author: {
+    '@type': 'Person',
+    name: 'Hunter Lapeyre',
+    url: 'https://obieo.com/about',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://obieo.com/logo.png',
+    },
+  },
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': 'https://obieo.com/blog/chatgpt-ads',
+  },
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Is ChatGPT adding ads?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes, OpenAI announced plans to add advertising to ChatGPT. This means organic citations in AI responses will become more valuable as users learn to distinguish between paid and organic recommendations.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How will ChatGPT ads affect businesses?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Businesses that AI naturally cites as trusted sources will stand out more against paid ads. AEO (Answer Engine Optimization) becomes critical for appearing as organic recommendations rather than paid placements.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is the difference between AI ads and organic AI citations?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Organic AI citations are unpaid recommendations based on content quality, authority, and relevance. Ads are paid placements. Users typically trust organic recommendations more, making AEO valuable for long-term visibility.',
+      },
+    },
+  ],
+}
+
 export const metadata: Metadata = {
   title: "ChatGPT Is Adding Ads. Here's What It Means for You | Obieo",
   description: "OpenAI announced ads in ChatGPT. For businesses, being the organic answer AI cites just became 10x more valuable. Here's what to do about it.",
@@ -120,6 +179,16 @@ function InlineLink({ href, external = false, children }: { href: string; extern
 export default function ChatGPTAdsPage() {
   return (
     <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* Hero */}
       <Section size="lg" className="pt-32 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">

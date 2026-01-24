@@ -21,35 +21,44 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Obieo | Websites for Home Service Businesses",
+  title: "Obieo | SEO & AI Search Optimization for Home Service Businesses",
   description:
-    "We build websites that turn clicks into customers for home service businesses. SEO-optimized, conversion-focused websites that generate leads.",
+    "SEO and AI search optimization built by a contractor, for contractors. Get found on Google and AI search engines like ChatGPT. Roofing, HVAC, plumbing, electrical & more.",
   keywords: [
-    "home service website",
-    "contractor website",
-    "roofing website",
-    "HVAC website",
-    "plumbing website",
+    "contractor SEO",
+    "home service SEO",
+    "roofing SEO",
+    "HVAC SEO",
+    "plumbing SEO",
+    "electrical SEO",
     "local SEO",
+    "AI search optimization",
+    "GEO optimization",
   ],
-  authors: [{ name: "Obieo" }],
+  authors: [{ name: "Hunter Lapeyre", url: "https://obieo.com/about" }],
+  creator: "Obieo",
+  publisher: "Obieo",
   openGraph: {
-    title: "Obieo | Websites for Home Service Businesses",
+    title: "Obieo | SEO & AI Search Optimization for Contractors",
     description:
-      "We build websites that turn clicks into customers for home service businesses.",
-    url: "https://www.obieo.com",
+      "SEO built by a contractor, for contractors. Get found on Google and AI search engines.",
+    url: "https://obieo.com",
     siteName: "Obieo",
     type: "website",
+    locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Obieo | Websites for Home Service Businesses",
+    title: "Obieo | SEO & AI Search for Contractors",
     description:
-      "We build websites that turn clicks into customers for home service businesses.",
+      "SEO built by a contractor, for contractors. Get found on Google and AI search engines.",
   },
   robots: {
     index: true,
     follow: true,
+  },
+  alternates: {
+    canonical: "https://obieo.com",
   },
 };
 

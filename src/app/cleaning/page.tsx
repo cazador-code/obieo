@@ -3,6 +3,7 @@
 import Script from 'next/script'
 import { useState } from 'react'
 import { BeforeAfterExit } from '@/components/roi-widgets/BeforeAfterExit'
+import { RelatedIndustries } from '@/components/RelatedIndustries'
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -22,12 +23,79 @@ const ArrowIcon = () => (
   </svg>
 )
 
+// JSON-LD Schema for SEO
+const serviceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'Cleaning Company SEO Services',
+  provider: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  description:
+    'Specialized SEO and AI search optimization services for cleaning companies. Get found by homeowners searching for house cleaning, commercial cleaning, and maid services in your area.',
+  areaServed: 'United States',
+  serviceType: 'Marketing Services',
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'How much does SEO cost for a cleaning company?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'SEO investment for cleaning companies typically ranges from $1,500-$5,000/month depending on competition level and service areas. The ROI comes from recurring clients - even one new weekly cleaning client can generate $5,000-$15,000 annually in lifetime value.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How long does it take to see SEO results for a cleaning business?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Most cleaning companies see initial ranking improvements within 30-60 days, with significant lead generation starting around 90 days. Local service businesses often see faster results than national brands because local competition is more manageable.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What keywords should cleaning companies target for SEO?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'High-value cleaning keywords include "house cleaning near me", "maid service [city]", "commercial cleaning [city]", "deep cleaning services", and "move out cleaning". Focus on service-specific terms combined with your location for best results.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Is SEO worth it for small cleaning businesses?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes - SEO is especially valuable for cleaning companies because clients often become recurring customers. Unlike one-time services, a single client from SEO can generate revenue for years through weekly or bi-weekly cleanings, making the customer acquisition cost extremely efficient.',
+      },
+    },
+  ],
+}
+
 export default function CleaningLandingPage() {
   const [ebitdaIncrease, setEbitdaIncrease] = useState(75000)
   const multiplier = 3 // Cleaning companies typically sell at lower multiples
 
   return (
     <div className="min-h-screen bg-[#0c0a09]">
+      {/* JSON-LD Schema */}
+      <Script
+        id="service-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <Script
+        id="faq-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* Hero Section */}
       <section className="relative pt-8 pb-20 sm:pt-12 sm:pb-32 overflow-hidden">
         {/* Subtle grain texture */}
@@ -229,6 +297,9 @@ export default function CleaningLandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Related Industries */}
+      <RelatedIndustries currentSlug="cleaning" />
 
       {/* Calendar Section */}
       <section id="book-call" className="py-16 sm:py-24 bg-[#141210] scroll-mt-8">

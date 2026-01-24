@@ -1,6 +1,27 @@
 import type { Metadata } from 'next'
 import { Section, Container } from '@/components/ui'
 
+// JSON-LD Schema for Disclaimer Page
+const disclaimerSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Disclaimer',
+  description: 'Legal disclaimer for Obieo services and website. No guarantees of results, earnings, or specific outcomes.',
+  url: 'https://obieo.com/disclaimer',
+  dateModified: '2026-01-04',
+  inLanguage: 'en-US',
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+}
+
 export const metadata: Metadata = {
   title: 'Disclaimer | Obieo',
   description: 'Legal disclaimer for Obieo services and website.',
@@ -8,7 +29,14 @@ export const metadata: Metadata = {
 
 export default function DisclaimerPage() {
   return (
-    <Section size="lg" className="pt-32">
+    <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(disclaimerSchema) }}
+      />
+
+      <Section size="lg" className="pt-32">
       <Container size="md">
         <h1 className="text-4xl font-bold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-4">
           Disclaimer
@@ -90,5 +118,6 @@ export default function DisclaimerPage() {
         </div>
       </Container>
     </Section>
+    </>
   )
 }

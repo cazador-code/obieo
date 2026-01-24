@@ -2,6 +2,27 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Quiz } from '@/components/quiz'
 
+// JSON-LD Schema for Quiz Page
+const quizSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'AI Visibility Quiz',
+  description: 'Free 2-minute assessment to get your personalized website score and see what\'s holding your business back online.',
+  url: 'https://obieo.com/quiz',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web Browser',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+  provider: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+}
+
 export const metadata: Metadata = {
   title: 'Free Website Score | Obieo',
   description: 'Take our free 2-minute assessment to get your personalized website score and see what\'s holding your business back online.',
@@ -9,8 +30,15 @@ export const metadata: Metadata = {
 
 export default function QuizPage() {
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] pt-20">
-      {/* Minimal header */}
+    <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(quizSchema) }}
+      />
+
+      <div className="min-h-screen bg-[var(--bg-primary)] pt-20">
+        {/* Minimal header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--bg-primary)] border-b border-[var(--border)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link
@@ -43,6 +71,7 @@ export default function QuizPage() {
           <Quiz />
         </div>
       </main>
-    </div>
+      </div>
+    </>
   )
 }

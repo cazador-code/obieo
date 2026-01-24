@@ -4,6 +4,64 @@ import { Section, Container, Button } from '@/components/ui'
 import { FadeInSection } from '@/components/animations'
 import CalendlyButton from '@/components/CalendlyButton'
 
+// JSON-LD Schema for Process Page
+const howToSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: 'How Obieo Builds SEO-Optimized Websites for Home Service Businesses',
+  description: 'From discovery to launch in 30 days. Learn how Obieo builds SEO-optimized websites that generate leads for home service businesses.',
+  totalTime: 'P30D',
+  step: [
+    {
+      '@type': 'HowToStep',
+      name: 'Discovery',
+      text: 'Strategy call to understand your business, market, and goals. Includes competitor analysis, keyword research, and content strategy.',
+      position: 1,
+    },
+    {
+      '@type': 'HowToStep',
+      name: 'Build',
+      text: 'Custom design and development with SEO baked in. Fast-loading, mobile-first, and conversion-optimized.',
+      position: 2,
+    },
+    {
+      '@type': 'HowToStep',
+      name: 'Launch',
+      text: 'Website goes live with technical SEO foundations. Includes Google Business Profile optimization and local schema markup.',
+      position: 3,
+    },
+    {
+      '@type': 'HowToStep',
+      name: 'Grow',
+      text: 'Ongoing monitoring, optimization, and monthly performance reports. Continuous improvement based on data.',
+      position: 4,
+    },
+  ],
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'How long does it take to build an SEO website?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Obieo delivers SEO-optimized websites in approximately 30 days: Week 1 for discovery and strategy, Weeks 2-3 for design and development, and Week 4 for launch and optimization.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is included in the website launch?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Launch includes Google Business Profile optimization, Google Analytics and Search Console setup, technical SEO implementation, and local schema markup to help search engines understand your business.',
+      },
+    },
+  ],
+}
+
 export const metadata: Metadata = {
   title: 'Our Process | Obieo',
   description:
@@ -72,6 +130,16 @@ const processSteps = [
 export default function ProcessPage() {
   return (
     <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* Hero */}
       <Section size="lg" className="pt-32 pb-16">
         <Container>

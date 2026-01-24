@@ -2,6 +2,58 @@ import CalendlyButton from "@/components/CalendlyButton";
 import { ArrowRightIcon } from "@/components/ui";
 import type { Metadata } from "next";
 
+// JSON-LD Schema for About Page
+const personSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Hunter Lapeyre',
+  jobTitle: 'Founder & SEO Strategist',
+  url: 'https://obieo.com/about',
+  worksFor: [
+    {
+      '@type': 'Organization',
+      name: 'Obieo',
+      url: 'https://obieo.com',
+    },
+    {
+      '@type': 'Organization',
+      name: 'Lapeyre Roofing',
+      url: 'https://lapeyreroofing.com',
+    },
+  ],
+  knowsAbout: [
+    'SEO for Home Service Businesses',
+    'Answer Engine Optimization (AEO)',
+    'Local SEO',
+    'Roofing Industry',
+    'Home Services Marketing',
+  ],
+  description: 'Hunter Lapeyre owns and operates Lapeyre Roofing and founded Obieo to provide SEO services specifically for home service businesses. He brings real industry experience to digital marketing.',
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Who runs Obieo?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Obieo is run by Hunter Lapeyre, who also owns and operates Lapeyre Roofing. This dual experience gives him unique insight into what actually works for home service businesses.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What makes Obieo different from other SEO agencies?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Unlike typical agencies, Obieo is run by someone who owns a home service business. Hunter Lapeyre understands seasonality, emergency calls, local reputation, and the trust factor because he lives it every day with his roofing company.',
+      },
+    },
+  ],
+}
+
 export const metadata: Metadata = {
   title: "About — Obieo | Hunter Lapeyre",
   description:
@@ -18,7 +70,18 @@ const differentiators = [
 
 export default function AboutPage() {
   return (
-    <div className="pt-16 sm:pt-20">
+    <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
+      <div className="pt-16 sm:pt-20">
         {/* Hero */}
         <section className="bg-[var(--bg-secondary)] py-16 sm:py-24">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -141,7 +204,8 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
-    </div>
+      </div>
+    </>
   );
 }
 

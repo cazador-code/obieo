@@ -3,6 +3,69 @@
 import Script from 'next/script'
 import { useState } from 'react'
 import { GrowthMeter } from '@/components/roi-widgets/GrowthMeter'
+import { RelatedIndustries } from '@/components/RelatedIndustries'
+
+// JSON-LD Schema for SEO
+const serviceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'Landscaping SEO Services',
+  provider: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  description: 'Specialized SEO services for landscaping companies that help you rank higher on Google and generate more lawn care, hardscaping, and outdoor living project leads.',
+  areaServed: 'United States',
+  serviceType: 'Marketing Services',
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'How much does landscaping SEO cost?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Landscaping SEO services typically range from $1,500 to $4,500 per month depending on your market size and competition. At Obieo, we offer transparent pricing with no long-term contracts required.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How long until I see results from landscaping SEO?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Most landscaping companies see measurable improvements in 60-90 days, with significant ranking gains within 3-6 months. Seasonal keywords like "spring lawn care" require planning ahead of peak seasons.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What landscaping keywords should I target?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Target service keywords (lawn care service, landscape design, hardscaping), seasonal terms (spring cleanup, fall leaf removal), and local keywords (landscaper + your city). We research the highest-value keywords for your market.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Can SEO help me get higher-value hardscaping projects?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes. SEO can target project-based searches like "patio installation," "outdoor kitchen builder," and "retaining wall contractor." These searches indicate customers ready to invest in larger outdoor living projects.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What makes Obieo different from other landscaping marketing agencies?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Obieo was built by someone who owns and operates a trades business. We understand seasonality, the difference between lawn maintenance and design-build projects, and what drives homeowners to choose one landscaper over another.',
+      },
+    },
+  ],
+}
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,6 +91,17 @@ export default function LandscapingLandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0c0a09]">
+      {/* JSON-LD Schema - static schema content defined in this file */}
+      <Script
+        id="service-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <Script
+        id="faq-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       {/* Hero Section */}
       <section className="relative pt-8 pb-20 sm:pt-12 sm:pb-32 overflow-hidden">
         {/* Subtle grain texture */}
@@ -230,8 +304,142 @@ export default function LandscapingLandingPage() {
         </div>
       </section>
 
+      {/* What is Landscaping SEO Section - GEO Optimized */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            What is Landscaping SEO?
+          </h2>
+
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              <strong className="text-white">Landscaping SEO</strong> is the process of optimizing your lawn care or landscape design business to appear at the top of Google when homeowners search for outdoor services. This includes maintenance searches like &quot;lawn care service near me,&quot; design queries like &quot;landscape design company,&quot; and project-specific terms like &quot;patio installation&quot; and &quot;outdoor kitchen builder.&quot;
+            </p>
+            <p>
+              The landscaping industry ranges from $50/week lawn cuts to $100,000+ outdoor living transformations. Effective SEO positions you to capture the type of work you want—whether that&apos;s building a reliable recurring revenue base with maintenance contracts or landing high-margin hardscaping and design-build projects.
+            </p>
+            <p>
+              At Obieo, we specialize in landscaping SEO because we understand seasonality, the difference between mow-blow-go and design-build, and what drives homeowners to choose one landscaper over another.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Generic SEO Doesn't Work Section */}
+      <section className="py-16 sm:py-24 bg-[#0c0a09]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            Why Generic SEO Doesn&apos;t Work for Landscapers
+          </h2>
+
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              Most marketing agencies don&apos;t understand landscaping. They write generic blog posts, ignore seasonality, and don&apos;t distinguish between a $200/month lawn care customer and a $50,000 hardscaping project.
+            </p>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckIcon />
+                <div>
+                  <p className="text-white font-medium">Extreme Seasonality</p>
+                  <p className="text-white/60 text-sm mt-1">Spring rush, summer maintenance, fall cleanups—we plan content to capture demand before each season peaks.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckIcon />
+                <div>
+                  <p className="text-white font-medium">Maintenance vs. Project Work</p>
+                  <p className="text-white/60 text-sm mt-1">Recurring lawn care has different value than one-time hardscaping. We target keywords based on what you want to grow.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckIcon />
+                <div>
+                  <p className="text-white font-medium">Commercial vs. Residential</p>
+                  <p className="text-white/60 text-sm mt-1">Commercial maintenance contracts vs. residential design—each requires different keyword strategies and content.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckIcon />
+                <div>
+                  <p className="text-white font-medium">Portfolio-Driven Sales</p>
+                  <p className="text-white/60 text-sm mt-1">Landscape design is visual. We help you rank for image searches and showcase your work where buyers are looking.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight mb-8">
+            Frequently Asked Questions About Landscaping SEO
+          </h2>
+
+          <div className="space-y-4">
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                How much does landscaping SEO cost?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Landscaping SEO services typically range from $1,500 to $4,500 per month depending on your market size and competition. At Obieo, we offer transparent pricing with no long-term contracts required.
+              </div>
+            </details>
+
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                How long until I see results from landscaping SEO?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Most landscaping companies see measurable improvements in 60-90 days, with significant ranking gains within 3-6 months. Seasonal keywords like &quot;spring lawn care&quot; require planning ahead of peak seasons.
+              </div>
+            </details>
+
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                What landscaping keywords should I target?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Target service keywords (lawn care service, landscape design, hardscaping), seasonal terms (spring cleanup, fall leaf removal), and local keywords (landscaper + your city). We research the highest-value keywords for your market.
+              </div>
+            </details>
+
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                Can SEO help me get higher-value hardscaping projects?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Yes. SEO can target project-based searches like &quot;patio installation,&quot; &quot;outdoor kitchen builder,&quot; and &quot;retaining wall contractor.&quot; These searches indicate customers ready to invest in larger outdoor living projects.
+              </div>
+            </details>
+
+            <details className="group bg-white/5 rounded-lg border border-white/10">
+              <summary className="flex items-center justify-between p-4 cursor-pointer text-white font-medium">
+                What makes Obieo different from other landscaping marketing agencies?
+                <span className="ml-2 text-white/40 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 text-white/70">
+                Obieo was built by someone who owns and operates a trades business. We understand seasonality, the difference between lawn maintenance and design-build projects, and what drives homeowners to choose one landscaper over another.
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      {/* Related Industries */}
+      <RelatedIndustries currentSlug="landscaping" />
+
       {/* Calendar Section */}
-      <section id="book-call" className="py-16 sm:py-24 bg-[#141210] scroll-mt-8">
+      <section id="book-call" className="py-16 sm:py-24 bg-[#0c0a09] scroll-mt-8">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
             Ready to Grow Your Landscaping Business?

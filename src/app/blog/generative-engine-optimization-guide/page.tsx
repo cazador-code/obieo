@@ -3,6 +3,65 @@ import Link from 'next/link'
 import { Section, Container } from '@/components/ui'
 import { FadeInSection } from '@/components/animations'
 
+// JSON-LD Schema for SEO
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'The Complete Guide to Generative Engine Optimization (GEO)',
+  description: 'GEO is how you get cited by AI search engines like ChatGPT and Perplexity. Learn the llms.txt protocol, citation patterns, and implementation strategies that work.',
+  image: 'https://obieo.com/og-geo-guide.jpg',
+  datePublished: '2025-01-15',
+  dateModified: '2025-01-15',
+  author: {
+    '@type': 'Person',
+    name: 'Hunter Lapeyre',
+    url: 'https://obieo.com/about',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://obieo.com/logo.png',
+    },
+  },
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': 'https://obieo.com/blog/generative-engine-optimization-guide',
+  },
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What is Generative Engine Optimization (GEO)?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'GEO is the practice of optimizing your website and content to be cited by AI-powered search engines like ChatGPT, Perplexity, and Google AI Overviews. It focuses on structured data, factual density, and citation-worthy content.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is the llms.txt protocol?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'llms.txt is a proposed standard file (similar to robots.txt) that helps AI models understand your website. It provides structured information about your business, services, and key content for better AI comprehension.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How is GEO different from traditional SEO?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Traditional SEO focuses on ranking in search results, while GEO focuses on being cited by AI systems. GEO emphasizes factual accuracy, clear definitions, structured data, and third-party validation over keyword optimization.',
+      },
+    },
+  ],
+}
+
 export const metadata: Metadata = {
   title: "The Complete Guide to Generative Engine Optimization (GEO) | Obieo",
   description: "GEO is how you get cited by AI search engines like ChatGPT and Perplexity. Learn the llms.txt protocol, citation patterns, and implementation strategies that work.",
@@ -181,6 +240,16 @@ function TableOfContents() {
 export default function GEOGuidePage() {
   return (
     <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* Hero */}
       <Section size="lg" className="pt-32 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">

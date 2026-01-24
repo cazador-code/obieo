@@ -1,6 +1,27 @@
 import type { Metadata } from 'next'
 import { Section, Container } from '@/components/ui'
 
+// JSON-LD Schema for Terms and Conditions Page
+const termsSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Terms and Conditions',
+  description: 'Terms and conditions for using Obieo services. Covers refund policy, billing authorization, cancellation, and legal protections.',
+  url: 'https://obieo.com/terms-and-conditions',
+  dateModified: '2026-01-04',
+  inLanguage: 'en-US',
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+}
+
 export const metadata: Metadata = {
   title: 'Terms and Conditions | Obieo',
   description: 'Terms and conditions for using Obieo services.',
@@ -8,7 +29,14 @@ export const metadata: Metadata = {
 
 export default function TermsAndConditionsPage() {
   return (
-    <Section size="lg" className="pt-32">
+    <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(termsSchema) }}
+      />
+
+      <Section size="lg" className="pt-32">
       <Container size="md">
         <h1 className="text-4xl font-bold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-4">
           Terms & Conditions
@@ -88,5 +116,6 @@ export default function TermsAndConditionsPage() {
         </div>
       </Container>
     </Section>
+    </>
   )
 }

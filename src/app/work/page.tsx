@@ -7,6 +7,25 @@ import { WorkCTA } from '@/components/WorkCTA'
 import { sanityFetch, urlFor } from '@/sanity/client'
 import { projectsQuery, featuredProjectQuery } from '@/sanity/queries'
 
+// JSON-LD Schema for Work/Portfolio Page
+const workPageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Our Work - Case Studies & Portfolio',
+  description: 'See how we help home service businesses grow with websites that convert. Real results from real clients.',
+  url: 'https://obieo.com/work',
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  provider: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+}
+
 export const metadata: Metadata = {
   title: 'Our Work | Obieo',
   description: 'See how we help home service businesses grow with websites that convert.',
@@ -47,6 +66,12 @@ export default async function WorkPage() {
 
   return (
     <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(workPageSchema) }}
+      />
+
       {/* Hero */}
       <Section size="lg" className="pt-32">
         <Container>

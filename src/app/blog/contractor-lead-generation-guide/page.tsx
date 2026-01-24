@@ -3,6 +3,65 @@ import Link from 'next/link'
 import { Section, Container } from '@/components/ui'
 import { FadeInSection } from '@/components/animations'
 
+// JSON-LD Schema for SEO
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: "Contractor Lead Generation: Why You're Stuck at $3M",
+  description: 'Discover why most contractors plateau between $1.5-3M revenue. Learn the lead source hierarchy and how SEO compounds while PPC stays flat.',
+  image: 'https://obieo.com/og-lead-gen-guide.jpg',
+  datePublished: '2025-01-05',
+  dateModified: '2025-01-05',
+  author: {
+    '@type': 'Person',
+    name: 'Hunter Lapeyre',
+    url: 'https://obieo.com/about',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://obieo.com/logo.png',
+    },
+  },
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': 'https://obieo.com/blog/contractor-lead-generation-guide',
+  },
+}
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Why do contractors plateau at $3M in revenue?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Most contractors plateau because they rely on expensive, non-compounding lead sources like PPC and paid leads. Breaking through requires transitioning to owned lead sources like SEO and referrals that build equity over time.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is the best lead source for contractors?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Referrals are the highest-converting lead source, but SEO provides the best long-term ROI because it compounds over time. Unlike paid ads that stop when you stop paying, SEO builds lasting organic visibility.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How does SEO compare to PPC for contractors?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'PPC provides immediate leads but costs stay flat or increase over time. SEO takes longer to build but costs decrease as organic rankings improve. After 12-18 months, SEO typically delivers leads at 3-5x better ROI than PPC.',
+      },
+    },
+  ],
+}
+
 export const metadata: Metadata = {
   title: "Contractor Lead Generation: Why You're Stuck at $3M | Obieo",
   description: "Discover why most contractors plateau between $1.5-3M revenue. Learn the lead source hierarchy and how SEO compounds while PPC stays flat. Real numbers inside.",
@@ -174,6 +233,16 @@ function InlineLink({ href, external = false, children }: { href: string; extern
 export default function ContractorLeadGenerationGuidePage() {
   return (
     <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* Hero */}
       <Section size="lg" className="pt-32 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">

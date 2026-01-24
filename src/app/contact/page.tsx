@@ -1,6 +1,31 @@
 import CalendlyButton from "@/components/CalendlyButton";
 import type { Metadata } from "next";
 
+// JSON-LD Schema for Contact Page
+const contactPageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ContactPage',
+  name: 'Contact Obieo',
+  description: 'Book a free 20-minute call to discuss your SEO needs or email Hunter directly.',
+  url: 'https://obieo.com/contact',
+  mainEntity: {
+    '@type': 'LocalBusiness',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+    email: 'hunter@obieo.com',
+    telephone: '+1-XXX-XXX-XXXX',
+    founder: {
+      '@type': 'Person',
+      name: 'Hunter Lapeyre',
+    },
+    areaServed: {
+      '@type': 'Country',
+      name: 'United States',
+    },
+    serviceType: ['SEO', 'Answer Engine Optimization', 'Web Design'],
+  },
+}
+
 export const metadata: Metadata = {
   title: "Contact — Obieo | Book a Free Audit Call",
   description:
@@ -27,8 +52,15 @@ const labelClasses = "block text-sm font-medium text-slate-700 mb-2";
 
 export default function ContactPage() {
   return (
-    <div className="pt-16 sm:pt-20">
-      {/* Hero */}
+    <>
+      {/* JSON-LD Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(contactPageSchema) }}
+      />
+
+      <div className="pt-16 sm:pt-20">
+        {/* Hero */}
       <section className="bg-gradient-to-b from-cream-100 to-cream-50 py-16 sm:py-24">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
@@ -228,6 +260,7 @@ export default function ContactPage() {
           </form>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }

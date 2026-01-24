@@ -3,6 +3,54 @@
 import Script from 'next/script'
 import { useState } from 'react'
 import { ValueLever } from '@/components/roi-widgets/ValueLever'
+import { RelatedIndustries } from '@/components/RelatedIndustries'
+
+// JSON-LD Schema - static hardcoded content for SEO, safe for dangerouslySetInnerHTML
+const serviceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'Garage Door Company SEO Services',
+  description: 'Specialized SEO services for garage door companies that drive emergency repair calls and installation leads through local search optimization.',
+  provider: {
+    '@type': 'Organization',
+    name: 'Obieo',
+    url: 'https://obieo.com',
+  },
+  areaServed: 'United States',
+  serviceType: 'Search Engine Optimization',
+}
+
+// FAQ Schema - static hardcoded content for SEO, safe for dangerouslySetInnerHTML
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What is garage door SEO?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Garage door SEO is search engine optimization specifically designed for garage door companies. It focuses on ranking for emergency repair searches, installation keywords, and local service queries that homeowners use when their garage door breaks or needs replacement.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How long does garage door SEO take to show results?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Most garage door companies see measurable improvements in 30-90 days. Emergency repair keywords often move faster because they have clearer local intent. Full market dominance typically takes 6-12 months depending on competition.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Why do garage door companies need specialized SEO?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Garage door businesses have unique search patterns: emergency repairs at odd hours, seasonal installation demand, and specific service-based keywords. Generic SEO agencies miss these nuances and waste budget on irrelevant traffic.',
+      },
+    },
+  ],
+}
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,6 +76,18 @@ export default function GarageDoorsLandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0c0a09]">
+      {/* JSON-LD Schema - static hardcoded content defined above */}
+      <Script
+        id="service-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <Script
+        id="faq-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* Hero Section */}
       <section className="relative pt-8 pb-20 sm:pt-12 sm:pb-32 overflow-hidden">
         {/* Subtle grain texture */}
@@ -230,8 +290,91 @@ export default function GarageDoorsLandingPage() {
         </div>
       </section>
 
+      {/* SEO Content Section - What is Garage Door SEO */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            What is Garage Door SEO?
+          </h2>
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              <strong className="text-white">Garage door SEO</strong> is search engine optimization specifically designed for garage door repair and installation companies. It focuses on ranking for the high-intent searches homeowners make when their garage door breaks, gets stuck, or needs replacement.
+            </p>
+            <p>
+              Unlike generic SEO, garage door marketing requires understanding <strong className="text-white">emergency search behavior</strong>. When someone&apos;s car is trapped at 10pm, they&apos;re not browsing—they&apos;re calling the first company they find. SEO for garage door companies ensures that company is you.
+            </p>
+            <p>
+              Effective garage door SEO targets keywords like &quot;garage door repair near me,&quot; &quot;emergency garage door service,&quot; &quot;garage door spring replacement,&quot; and &quot;new garage door installation&quot;—the searches that lead to actual service calls, not tire kickers.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* SEO Content Section - Why Generic SEO Doesn't Work */}
+      <section className="py-16 sm:py-24 bg-[#0c0a09]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+            Why Generic SEO Doesn&apos;t Work for Garage Door Companies
+          </h2>
+          <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
+            <p>
+              Most SEO agencies treat garage door companies like any other local business. They write blog posts about &quot;how to maintain your garage door&quot; and wonder why you&apos;re not getting calls. Here&apos;s what they miss:
+            </p>
+            <ul className="space-y-3 list-disc list-inside">
+              <li><strong className="text-white">Emergency intent dominates:</strong> 60%+ of garage door searches are urgent—someone is locked out or their door won&apos;t close</li>
+              <li><strong className="text-white">24/7 availability matters:</strong> Search behavior spikes in evenings and weekends when other businesses are closed</li>
+              <li><strong className="text-white">Upsell potential is huge:</strong> A spring repair visit often leads to a full door replacement sale</li>
+              <li><strong className="text-white">Local competition is fierce:</strong> National franchises dominate without proper local SEO strategy</li>
+            </ul>
+            <p>
+              A garage door SEO specialist understands these patterns and builds a strategy that captures emergency searches while also ranking for planned installation projects.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-16 sm:py-24 bg-[#141210]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight mb-8">
+            Frequently Asked Questions
+          </h2>
+          <div className="space-y-6">
+            {[
+              {
+                q: 'What is garage door SEO?',
+                a: 'Garage door SEO is search engine optimization specifically designed for garage door companies. It focuses on ranking for emergency repair searches, installation keywords, and local service queries that homeowners use when their garage door breaks or needs replacement.',
+              },
+              {
+                q: 'How long does garage door SEO take to show results?',
+                a: 'Most garage door companies see measurable improvements in 30-90 days. Emergency repair keywords often move faster because they have clearer local intent. Full market dominance typically takes 6-12 months depending on competition.',
+              },
+              {
+                q: 'Why do garage door companies need specialized SEO?',
+                a: 'Garage door businesses have unique search patterns: emergency repairs at odd hours, seasonal installation demand, and specific service-based keywords. Generic SEO agencies miss these nuances and waste budget on irrelevant traffic.',
+              },
+            ].map((faq, i) => (
+              <details key={i} className="group bg-white/5 border border-white/10 rounded-lg">
+                <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
+                  <h3 className="text-lg font-semibold text-white pr-4">{faq.q}</h3>
+                  <span className="text-orange-400 group-open:rotate-180 transition-transform">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </span>
+                </summary>
+                <p className="px-6 pb-6 text-white/70">{faq.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Related Industries */}
+      <RelatedIndustries currentSlug="garage-doors" />
+
       {/* Calendar Section */}
-      <section id="book-call" className="py-16 sm:py-24 bg-[#141210] scroll-mt-8">
+      <section id="book-call" className="py-16 sm:py-24 bg-[#0c0a09] scroll-mt-8">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
             Ready to Open New Doors?
