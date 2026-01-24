@@ -1,5 +1,148 @@
 # Obieo - Claude Code Instructions
 
+## Project Overview
+
+**Obieo** is a Next.js marketing website for a solo SEO/AEO (Answer Engine Optimization) agency targeting home service businesses (plumbers, electricians, roofers, etc.).
+
+**Key Features:**
+- AI Visibility Quiz (lead capture with scoring)
+- ROI Calculator (multi-step with animated widgets)
+- Industry landing pages (10+ verticals)
+- Blog & Case Studies (Sanity CMS)
+- Prospect Audit Tool (Claude Agent SDK)
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js 16.1 (App Router), React 19, TypeScript 5 |
+| Styling | Tailwind CSS v4, PostCSS |
+| Animations | Framer Motion, GSAP, Lenis (smooth scroll) |
+| CMS | Sanity (headless) |
+| Email | Resend API |
+| AI | Claude Agent SDK (Anthropic) |
+| Database | Vercel KV (Redis) for rate limiting |
+| Tracking | GTM, Facebook Pixel + CAPI |
+| CRM | GoHighLevel (webhook) |
+| Deployment | Vercel |
+
+---
+
+## Directory Structure
+
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── api/               # API routes (leads, audit)
+│   ├── blog/              # Blog pages
+│   ├── industries/        # Industry landing pages
+│   ├── quiz/              # AI Visibility Quiz
+│   ├── roi-calculator/    # ROI Calculator
+│   └── studio/            # Sanity Studio
+├── components/
+│   ├── home/              # Homepage sections
+│   ├── quiz/              # Quiz components
+│   ├── roi-calculator/    # Calculator components
+│   ├── roi-widgets/       # Animated ROI visualizations
+│   ├── ui/                # Headless UI primitives
+│   └── animations/        # Reusable animations
+├── sanity/
+│   ├── schemas/           # Content type definitions
+│   ├── queries.ts         # GROQ queries
+│   └── client.ts          # Sanity client (lazy-loaded)
+├── lib/                   # Utilities (rate-limit.ts)
+└── hooks/                 # Custom hooks (useGsap.ts)
+```
+
+---
+
+## Development Patterns
+
+### Component Organization
+- Barrel exports via `index.ts` files
+- Small, focused components with clear responsibilities
+- Context API for global state (BookingModalContext)
+
+### Sanity CMS
+- **Client is lazy-loaded** - returns `[]` if not configured
+- GROQ queries in `src/sanity/queries.ts`
+- Schemas in `src/sanity/schemas/`
+- ISR caching: 0s dev, 60s prod
+
+### Security (Always Follow)
+- **HTML escape** user input in emails (use existing `escapeHtml` function)
+- **Validate URLs** - no localhost/internal IPs in production
+- **Rate limit** API routes using `@/lib/rate-limit`
+- **Sanitize** any AI prompt inputs
+
+### Animations
+- Framer Motion for component animations
+- GSAP via `useGsap` hook for complex sequences
+- ROI widgets use custom canvas/SVG animations
+
+---
+
+## Common Tasks
+
+### Adding a New Industry Page
+1. Create `src/app/industries/[industry-name]/page.tsx`
+2. Follow existing industry page structure (see `/industries/cleaning`)
+3. Add to navigation in `Header.tsx` if needed
+
+### Adding ROI Widget
+1. Create component in `src/components/roi-widgets/`
+2. Export from `roi-widgets/index.ts`
+3. Follow existing patterns (PaintFill, PipeFlow, etc.)
+
+### Working with Sanity
+```typescript
+import { getSanityClient } from '@/sanity/client'
+import { groq } from 'next-sanity'
+
+const query = groq`*[_type == "project"] | order(publishedAt desc)`
+const data = await getSanityClient().fetch(query)
+```
+
+### API Rate Limiting
+```typescript
+import { rateLimit } from '@/lib/rate-limit'
+
+const { success } = await rateLimit(request, { limit: 5, window: 60 })
+if (!success) return new Response('Rate limited', { status: 429 })
+```
+
+---
+
+## Environment Variables
+
+**Required for full functionality:**
+```env
+NEXT_PUBLIC_SANITY_PROJECT_ID=
+NEXT_PUBLIC_SANITY_DATASET=production
+SANITY_API_TOKEN=
+ANTHROPIC_API_KEY=
+RESEND_API_KEY=
+GHL_WEBHOOK_URL=
+```
+
+**Optional:**
+```env
+FB_CONVERSIONS_API_TOKEN=
+NOTIFICATION_EMAIL=hunter@obieo.com
+VERCEL_KV_REST_API_URL=
+VERCEL_KV_REST_API_TOKEN=
+```
+
+---
+
+## Testing
+
+**Note:** No testing framework is configured. If adding tests, recommend Vitest + Testing Library.
+
+---
+
 ## Prospect Intel Audit
 
 When given a URL to audit (or asked to run a prospect audit), follow this workflow **without asking clarifying questions**:
@@ -140,8 +283,11 @@ node scripts/send-audit-email.mjs \
 
 ---
 
-## Other Notes
+## Gotchas & Tips
 
-### Environment
-- Email sending requires `RESEND_API_KEY` in `.env.local`
-- All audit emails go to `hunter@obieo.com`
+1. **Sanity optional** - App works without Sanity configured (queries return `[]`)
+2. **Rate limiting on Vercel KV** - Won't work locally without KV env vars
+3. **Facebook CAPI** - Server-side tracking requires `FB_CONVERSIONS_API_TOKEN`
+4. **ROI widgets are canvas-heavy** - Test performance on mobile
+5. **No tests** - Be extra careful with refactoring
+6. **Industry pages are template-based** - Keep structure consistent across all 10+
