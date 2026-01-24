@@ -119,16 +119,91 @@ async function sendAuditEmail(leadInfo, reportContent) {
   return result;
 }
 
-// Read the existing audit report
-const reportContent = readFileSync('.claude/audit-report-realhomeid.md', 'utf-8');
+// Parse CLI arguments
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const parsed = {};
 
-sendAuditEmail({
-  name: 'Real Home Solutions',
-  email: 'rhsinfo208@gmail.com',
-  company: 'Real Home Solutions LLC',
-  website: 'https://realhomeid.org/',
-  source: 'Manual Audit'
-}, reportContent).then(() => {
+  for (let i = 0; i < args.length; i++) {
+    switch (args[i]) {
+      case '-c':
+      case '--company':
+        parsed.company = args[++i];
+        break;
+      case '-w':
+      case '--website':
+        parsed.website = args[++i];
+        break;
+      case '-r':
+      case '--report':
+        parsed.report = args[++i];
+        break;
+      case '-s':
+      case '--source':
+        parsed.source = args[++i];
+        break;
+      case '-e':
+      case '--email':
+        parsed.email = args[++i];
+        break;
+      case '-n':
+      case '--name':
+        parsed.name = args[++i];
+        break;
+      case '-h':
+      case '--help':
+        console.log(`
+Usage: node send-audit-email.mjs [options]
+
+Options:
+  -c, --company <name>    Company name (required)
+  -w, --website <url>     Website URL (required)
+  -r, --report <path>     Path to report markdown file (required)
+  -s, --source <source>   Lead source (default: "Claude Code Audit")
+  -e, --email <email>     Lead email (optional)
+  -n, --name <name>       Lead name (optional, defaults to company name)
+  -h, --help              Show this help message
+
+Examples:
+  node send-audit-email.mjs -c "Roof MD" -w "https://roofmd.com" -r ".claude/audit-report-roof-md.md"
+  node send-audit-email.mjs -c "Acme Co" -w "https://acme.com" -r "report.md" -s "Manual Audit" -e "john@acme.com"
+        `);
+        process.exit(0);
+    }
+  }
+
+  return parsed;
+}
+
+const args = parseArgs();
+
+// Validate required arguments
+if (!args.company || !args.website || !args.report) {
+  console.error('Error: Missing required arguments. Use -h for help.');
+  console.error('Required: -c <company> -w <website> -r <report>');
+  process.exit(1);
+}
+
+// Read the audit report
+let reportContent;
+try {
+  reportContent = readFileSync(args.report, 'utf-8');
+} catch (err) {
+  console.error(`Error: Could not read report file: ${args.report}`);
+  console.error(err.message);
+  process.exit(1);
+}
+
+// Build lead info with defaults
+const leadInfo = {
+  name: args.name || args.company,
+  email: args.email || 'N/A',
+  company: args.company,
+  website: args.website,
+  source: args.source || 'Claude Code Audit'
+};
+
+sendAuditEmail(leadInfo, reportContent).then(() => {
   console.log('Done!');
   process.exit(0);
 }).catch(err => {
