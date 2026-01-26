@@ -298,3 +298,37 @@ node scripts/send-audit-email.mjs \
 4. **ROI widgets are canvas-heavy** - Test performance on mobile
 5. **No tests** - Be extra careful with refactoring
 6. **Industry pages are template-based** - Keep structure consistent across all 10+
+
+---
+
+## Security Checklist
+
+**Before completing any task, verify:**
+
+- [ ] No hardcoded secrets, API keys, or passwords in code
+- [ ] User inputs are validated and sanitized (see Security patterns above)
+- [ ] URLs are validated against SSRF (no localhost/internal IPs)
+- [ ] TypeScript compiles without errors (`npx tsc --noEmit`)
+- [ ] No new security vulnerabilities introduced
+
+### Security Scanning Tools
+
+Run these commands to check for issues:
+
+```bash
+# Check for leaked secrets
+npx gitleaks detect --source .
+
+# Check for vulnerable dependencies
+npm audit
+
+# TypeScript type checking
+npx tsc --noEmit
+
+# Lint for code quality issues
+npm run lint
+```
+
+### Automated PR Reviews (Optional)
+
+To enable automatic security reviews on pull requests, add [Claude Code GitHub Action](https://github.com/anthropics/claude-code-action) to `.github/workflows/`.
