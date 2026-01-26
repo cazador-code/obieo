@@ -20,35 +20,35 @@ interface StatsTableProps {
 export function StatsTable({ stats, title = 'Key Industry Statistics' }: StatsTableProps) {
   return (
     <section id="statistics" className="mb-12">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">{title}</h2>
+      <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-primary)] mb-6">{title}</h2>
 
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-gray-50">
-              <th className="text-left px-4 py-3 font-semibold text-gray-700 border-b">
+            <tr className="bg-[var(--bg-secondary)]">
+              <th className="text-left px-4 py-3 font-semibold text-[var(--text-secondary)] border-b border-[var(--border)]">
                 Metric
               </th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-700 border-b">
+              <th className="text-left px-4 py-3 font-semibold text-[var(--text-secondary)] border-b border-[var(--border)]">
                 Value
               </th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-700 border-b">
+              <th className="text-left px-4 py-3 font-semibold text-[var(--text-secondary)] border-b border-[var(--border)]">
                 Source
               </th>
             </tr>
           </thead>
           <tbody>
             {stats.map((stat, index) => (
-              <tr key={index} className="border-b last:border-b-0">
-                <td className="px-4 py-3 text-gray-800">{stat.metric}</td>
-                <td className="px-4 py-3 font-semibold text-gray-900">{stat.value}</td>
-                <td className="px-4 py-3 text-sm text-gray-600">
+              <tr key={index} className="border-b border-[var(--border-light)] last:border-b-0">
+                <td className="px-4 py-3 text-[var(--text-primary)]">{stat.metric}</td>
+                <td className="px-4 py-3 font-semibold text-[var(--accent)]">{stat.value}</td>
+                <td className="px-4 py-3 text-sm text-[var(--text-muted)]">
                   {stat.url ? (
                     <a
                       href={stat.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
+                      className="text-[var(--accent)] hover:underline"
                     >
                       {stat.source} ({stat.year})
                     </a>

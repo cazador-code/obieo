@@ -52,7 +52,7 @@ export function FAQSection({ industryName, faqs }: FAQSectionProps) {
 
   return (
     <section id="faq" className="mb-12">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">
+      <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-primary)] mb-6">
         Frequently Asked Questions About {industryName} SEO
       </h2>
 
@@ -62,8 +62,8 @@ export function FAQSection({ industryName, faqs }: FAQSectionProps) {
           onClick={() => setActiveCategory('all')}
           className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
             activeCategory === 'all'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-[var(--accent)] text-white'
+              : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]'
           }`}
         >
           All ({faqs.length})
@@ -77,8 +77,8 @@ export function FAQSection({ industryName, faqs }: FAQSectionProps) {
               onClick={() => setActiveCategory(cat)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 activeCategory === cat
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-[var(--accent)] text-white'
+                  : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]'
               }`}
             >
               {categoryLabels[cat]} ({count})
@@ -94,13 +94,13 @@ export function FAQSection({ industryName, faqs }: FAQSectionProps) {
           const isOpen = openIndex === globalIndex
 
           return (
-            <div key={globalIndex} className="border border-gray-200 rounded-lg overflow-hidden">
+            <div key={globalIndex} className="border border-[var(--border)] rounded-lg overflow-hidden bg-[var(--bg-card)]">
               <button
                 onClick={() => setOpenIndex(isOpen ? null : globalIndex)}
-                className="w-full flex items-center justify-between px-6 py-4 text-left bg-white hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-[var(--bg-secondary)] transition-colors"
               >
-                <span className="font-medium text-gray-900 pr-4">{faq.question}</span>
-                <span className="flex-shrink-0 text-gray-500">
+                <span className="font-medium text-[var(--text-primary)] pr-4">{faq.question}</span>
+                <span className="flex-shrink-0 text-[var(--text-muted)]">
                   {isOpen ? (
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -114,8 +114,8 @@ export function FAQSection({ industryName, faqs }: FAQSectionProps) {
               </button>
 
               {isOpen && (
-                <div className="px-6 pb-4 bg-gray-50">
-                  <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
+                <div className="px-6 pb-4 bg-[var(--bg-secondary)]">
+                  <p className="text-[var(--text-secondary)] leading-relaxed">{faq.answer}</p>
                 </div>
               )}
             </div>

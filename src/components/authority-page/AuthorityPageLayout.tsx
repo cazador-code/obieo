@@ -45,26 +45,26 @@ export function AuthorityPageLayout({ data }: AuthorityPageLayoutProps) {
       {/* JSON-LD Schema Scripts */}
       <SchemaScripts data={data} />
 
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-[var(--bg-primary)]">
         {/* Hero Section */}
-        <header className="bg-gradient-to-b from-gray-50 to-white py-12 md:py-16">
+        <header className="bg-[var(--bg-secondary)] py-12 md:py-16 pt-24 md:pt-28">
           <div className="max-w-4xl mx-auto px-4">
             {/* Breadcrumb */}
-            <nav className="text-sm text-gray-500 mb-6">
-              <Link href="/" className="hover:text-gray-700">Home</Link>
+            <nav className="text-sm text-[var(--text-muted)] mb-6">
+              <Link href="/" className="hover:text-[var(--accent)] transition-colors">Home</Link>
               <span className="mx-2">/</span>
-              <Link href="/industries" className="hover:text-gray-700">Industries</Link>
+              <Link href="/industries" className="hover:text-[var(--accent)] transition-colors">Industries</Link>
               <span className="mx-2">/</span>
-              <span className="text-gray-900">{data.name} SEO</span>
+              <span className="text-[var(--text-primary)]">{data.name} SEO</span>
             </nav>
 
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+            <h1 className="font-[family-name:var(--font-display)] text-3xl md:text-4xl lg:text-5xl font-bold text-[var(--text-primary)] mb-4 tracking-tight">
               {data.title}
             </h1>
 
-            <p className="text-lg text-gray-600 mb-6">{data.description}</p>
+            <p className="text-lg text-[var(--text-secondary)] mb-6">{data.description}</p>
 
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-[var(--text-muted)]">
               Last updated: {new Date(data.lastUpdated).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
@@ -139,7 +139,7 @@ export function AuthorityPageLayout({ data }: AuthorityPageLayoutProps) {
           />
 
           {/* Related Industries */}
-          <div className="bg-gray-900 rounded-xl -mx-4 px-4 py-8 md:-mx-8 md:px-8">
+          <div className="bg-[#1a1612] rounded-xl -mx-4 px-4 py-8 md:-mx-8 md:px-8">
             <RelatedIndustries
               currentSlug={data.slug}
               heading={`Related to ${data.name}`}

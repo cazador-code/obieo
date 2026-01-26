@@ -14,27 +14,11 @@ interface AuthorityCTAProps {
 export function AuthorityCTA({
   industryName,
   landingPageSlug,
-  accentColor,
 }: AuthorityCTAProps) {
-  const colorClasses: Record<string, { bg: string; hover: string }> = {
-    red: { bg: 'bg-red-600', hover: 'hover:bg-red-700' },
-    blue: { bg: 'bg-blue-600', hover: 'hover:bg-blue-700' },
-    violet: { bg: 'bg-violet-600', hover: 'hover:bg-violet-700' },
-    green: { bg: 'bg-green-600', hover: 'hover:bg-green-700' },
-    orange: { bg: 'bg-orange-600', hover: 'hover:bg-orange-700' },
-    amber: { bg: 'bg-amber-600', hover: 'hover:bg-amber-700' },
-    emerald: { bg: 'bg-emerald-600', hover: 'hover:bg-emerald-700' },
-    cyan: { bg: 'bg-cyan-600', hover: 'hover:bg-cyan-700' },
-    pink: { bg: 'bg-pink-600', hover: 'hover:bg-pink-700' },
-    indigo: { bg: 'bg-indigo-600', hover: 'hover:bg-indigo-700' },
-  }
-
-  const colors = colorClasses[accentColor] || colorClasses.blue
-
   return (
     <section id="cta" className="mb-12">
-      <div className={`${colors.bg} rounded-xl p-8 md:p-12 text-center`}>
-        <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+      <div className="bg-[var(--accent)] rounded-xl p-8 md:p-12 text-center">
+        <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-bold text-white mb-4">
           Ready to Dominate {industryName} Search Results?
         </h2>
 
@@ -46,7 +30,7 @@ export function AuthorityCTA({
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href={landingPageSlug}
-            className={`inline-flex items-center justify-center px-8 py-4 bg-white text-gray-900 font-semibold rounded-lg ${colors.hover.replace('hover:bg-', 'hover:text-')} transition-colors`}
+            className="inline-flex items-center justify-center px-8 py-4 bg-white text-[var(--accent)] font-semibold rounded-lg hover:bg-white/90 transition-colors"
           >
             Get Your Free SEO Audit
             <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

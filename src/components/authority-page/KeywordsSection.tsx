@@ -20,35 +20,35 @@ export function KeywordsSection({ industryName, keywords }: KeywordsProps) {
       title: 'Emergency Keywords',
       description: 'High-intent keywords from customers needing immediate help',
       items: keywords.emergency,
-      color: 'bg-red-100 text-red-800',
+      tagClass: 'bg-red-500/10 text-red-600 border border-red-500/20',
     },
     {
       title: 'Location Keywords',
       description: 'Geo-modified keywords for local search visibility',
       items: keywords.location,
-      color: 'bg-blue-100 text-blue-800',
+      tagClass: 'bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20',
     },
     {
       title: 'Service Keywords',
       description: 'Specific service types customers search for',
       items: keywords.service,
-      color: 'bg-green-100 text-green-800',
+      tagClass: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20',
     },
     {
       title: 'Long-Tail Keywords',
       description: 'Specific queries with lower competition and higher intent',
       items: keywords.longTail,
-      color: 'bg-purple-100 text-purple-800',
+      tagClass: 'bg-violet-500/10 text-violet-600 border border-violet-500/20',
     },
   ]
 
   return (
     <section id="keywords" className="mb-12">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">
+      <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-primary)] mb-6">
         Essential {industryName} Keywords
       </h2>
 
-      <p className="text-gray-700 mb-6">
+      <p className="text-[var(--text-secondary)] mb-6">
         The most valuable keywords for {industryName.toLowerCase()} companies fall into four
         categories based on search intent. Understanding these categories helps prioritize
         your content and SEO efforts.
@@ -56,15 +56,15 @@ export function KeywordsSection({ industryName, keywords }: KeywordsProps) {
 
       <div className="grid md:grid-cols-2 gap-6">
         {categories.map((category) => (
-          <div key={category.title} className="border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{category.title}</h3>
-            <p className="text-sm text-gray-600 mb-4">{category.description}</p>
+          <div key={category.title} className="border border-[var(--border)] rounded-lg p-6 bg-[var(--bg-card)]">
+            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">{category.title}</h3>
+            <p className="text-sm text-[var(--text-muted)] mb-4">{category.description}</p>
 
             <div className="flex flex-wrap gap-2">
               {category.items.map((keyword, index) => (
                 <span
                   key={index}
-                  className={`inline-block px-3 py-1 rounded-full text-sm ${category.color}`}
+                  className={`inline-block px-3 py-1 rounded-full text-sm ${category.tagClass}`}
                 >
                   {keyword}
                 </span>

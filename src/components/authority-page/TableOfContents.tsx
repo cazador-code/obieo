@@ -40,8 +40,8 @@ export function TableOfContents({ items }: TableOfContentsProps) {
   }, [items])
 
   return (
-    <nav className="bg-gray-50 rounded-lg p-6 mb-8" aria-label="Table of contents">
-      <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-4">
+    <nav className="bg-[var(--bg-secondary)] rounded-lg p-6 mb-8" aria-label="Table of contents">
+      <h2 className="text-sm font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-4">
         In This Guide
       </h2>
       <ul className="space-y-2">
@@ -51,8 +51,8 @@ export function TableOfContents({ items }: TableOfContentsProps) {
               href={`#${item.id}`}
               className={`block text-sm transition-colors ${
                 activeId === item.id
-                  ? 'text-blue-600 font-medium'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-[var(--accent)] font-medium'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--accent)]'
               }`}
             >
               {item.label}
