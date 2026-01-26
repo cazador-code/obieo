@@ -108,9 +108,13 @@ export default function ProspectAuditPage() {
     setIsSubmitting(true);
 
     try {
+      const authToken = localStorage.getItem(STORED_AUTH_KEY);
       const response = await fetch('/api/internal/prospect-audit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
         body: JSON.stringify({ ...formData, website: websiteUrl }),
       });
 

@@ -1,7 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import { Resend } from 'resend';
+import { jwtVerify } from 'jose';
 import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+
+// Security: JWT verification for protected endpoint
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error('JWT_SECRET must be set and at least 32 characters');
+  }
+  return new TextEncoder().encode(secret);
+}
+
+async function verifyAuthToken(token: string): Promise<boolean> {
+  try {
+    const secret = getJwtSecret();
+    await jwtVerify(token, secret);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // Configure for longer execution time (Vercel Pro supports up to 300s)
 export const maxDuration = 300;
@@ -184,6 +204,24 @@ Be thorough but concise. This report will be emailed to the sales team for demo 
 **IMPORTANT:** Do NOT include any report metadata like "Report Generated", "Demo Source", "Lead Source", timestamps, or similar footer information. The email system will add this metadata automatically from the lead data.`;
 
 export async function POST(request: NextRequest) {
+  // Security: Verify JWT authentication before processing
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return NextResponse.json(
+      { error: 'Unauthorized - missing or invalid authorization header' },
+      { status: 401 }
+    );
+  }
+
+  const token = authHeader.slice(7); // Remove 'Bearer ' prefix
+  const isAuthenticated = await verifyAuthToken(token);
+  if (!isAuthenticated) {
+    return NextResponse.json(
+      { error: 'Unauthorized - invalid or expired token' },
+      { status: 401 }
+    );
+  }
+
   // Rate limiting - this endpoint is expensive ($2/request)
   const ip = getClientIp(request);
   const { success, remaining } = await auditLimiter.limit(ip);
