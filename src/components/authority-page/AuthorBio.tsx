@@ -14,15 +14,15 @@ export function AuthorBio({ industryName }: AuthorBioProps) {
   return (
     <section id="author" className="mb-12">
       <div className="bg-[var(--bg-secondary)] rounded-lg p-6 md:p-8 border border-[var(--border)]">
-        <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
           {/* Author Image */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 w-[120px] text-center">
             <Image
               src="/images/hunter-headshot.jpg"
-              alt="Hunter Lapeyre - Obieo Founder"
+              alt="Hunter Lapeyre"
               width={120}
               height={120}
-              className="rounded-full"
+              className="rounded-full mx-auto"
             />
           </div>
 
