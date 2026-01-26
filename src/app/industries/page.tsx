@@ -2,23 +2,43 @@ import Link from "next/link";
 import CalendlyButton from "@/components/CalendlyButton";
 import type { Metadata } from "next";
 
-// JSON-LD Schema for SEO
-const itemListSchema = {
+// JSON-LD Schema for SEO - Services (landing pages)
+const servicesListSchema = {
   '@context': 'https://schema.org',
   '@type': 'ItemList',
   name: 'Home Service Industries Served by Obieo',
   description: 'Specialized SEO and AEO services for roofing, HVAC, plumbing, electrical, pest control, landscaping, cleaning, garage doors, painting, and flooring companies.',
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Roofing SEO', url: 'https://obieo.com/roofing' },
-    { '@type': 'ListItem', position: 2, name: 'HVAC SEO', url: 'https://obieo.com/hvac' },
-    { '@type': 'ListItem', position: 3, name: 'Plumbing SEO', url: 'https://obieo.com/plumbing' },
-    { '@type': 'ListItem', position: 4, name: 'Electrical SEO', url: 'https://obieo.com/electrical' },
-    { '@type': 'ListItem', position: 5, name: 'Pest Control SEO', url: 'https://obieo.com/pest-control' },
-    { '@type': 'ListItem', position: 6, name: 'Landscaping SEO', url: 'https://obieo.com/landscaping' },
+    { '@type': 'ListItem', position: 1, name: 'Roofing SEO Services', url: 'https://obieo.com/roofing' },
+    { '@type': 'ListItem', position: 2, name: 'HVAC SEO Services', url: 'https://obieo.com/hvac' },
+    { '@type': 'ListItem', position: 3, name: 'Plumbing SEO Services', url: 'https://obieo.com/plumbing' },
+    { '@type': 'ListItem', position: 4, name: 'Electrical SEO Services', url: 'https://obieo.com/electrical' },
+    { '@type': 'ListItem', position: 5, name: 'Pest Control SEO Services', url: 'https://obieo.com/pest-control' },
+    { '@type': 'ListItem', position: 6, name: 'Landscaping SEO Services', url: 'https://obieo.com/landscaping' },
     { '@type': 'ListItem', position: 7, name: 'Cleaning Services SEO', url: 'https://obieo.com/cleaning' },
-    { '@type': 'ListItem', position: 8, name: 'Garage Door SEO', url: 'https://obieo.com/garage-doors' },
-    { '@type': 'ListItem', position: 9, name: 'Painting SEO', url: 'https://obieo.com/painting' },
-    { '@type': 'ListItem', position: 10, name: 'Flooring SEO', url: 'https://obieo.com/flooring' },
+    { '@type': 'ListItem', position: 8, name: 'Garage Door SEO Services', url: 'https://obieo.com/garage-doors' },
+    { '@type': 'ListItem', position: 9, name: 'Painting SEO Services', url: 'https://obieo.com/painting' },
+    { '@type': 'ListItem', position: 10, name: 'Flooring SEO Services', url: 'https://obieo.com/flooring' },
+  ],
+}
+
+// JSON-LD Schema for SEO - Guides (authority pages)
+const guidesListSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Industry SEO Guides by Obieo',
+  description: 'Comprehensive SEO, GEO, and AEO guides for home service industries including strategies, pain points, and actionable tactics.',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Roofing SEO Guide', url: 'https://obieo.com/industries/roofing' },
+    { '@type': 'ListItem', position: 2, name: 'HVAC SEO Guide', url: 'https://obieo.com/industries/hvac' },
+    { '@type': 'ListItem', position: 3, name: 'Plumbing SEO Guide', url: 'https://obieo.com/industries/plumbing' },
+    { '@type': 'ListItem', position: 4, name: 'Electrical SEO Guide', url: 'https://obieo.com/industries/electrical' },
+    { '@type': 'ListItem', position: 5, name: 'Pest Control SEO Guide', url: 'https://obieo.com/industries/pest-control' },
+    { '@type': 'ListItem', position: 6, name: 'Landscaping SEO Guide', url: 'https://obieo.com/industries/landscaping' },
+    { '@type': 'ListItem', position: 7, name: 'Cleaning Services SEO Guide', url: 'https://obieo.com/industries/cleaning' },
+    { '@type': 'ListItem', position: 8, name: 'Garage Door SEO Guide', url: 'https://obieo.com/industries/garage-doors' },
+    { '@type': 'ListItem', position: 9, name: 'Painting SEO Guide', url: 'https://obieo.com/industries/painting' },
+    { '@type': 'ListItem', position: 10, name: 'Flooring SEO Guide', url: 'https://obieo.com/industries/flooring' },
   ],
 }
 
@@ -181,10 +201,14 @@ const ArrowIcon = () => (
 export default function IndustriesPage() {
   return (
     <>
-      {/* JSON-LD Schema */}
+      {/* JSON-LD Schema - static content, safe to use dangerouslySetInnerHTML */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(servicesListSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(guidesListSchema) }}
       />
       <script
         type="application/ld+json"
@@ -213,17 +237,16 @@ export default function IndustriesPage() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
               {industries.map((industry) => (
-                <Link
+                <div
                   key={industry.slug}
-                  href={`/${industry.slug}`}
-                  className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] p-6 sm:p-8 hover:shadow-lg hover:border-[var(--accent)]/30 transition-all group block"
+                  className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] p-6 sm:p-8 hover:shadow-lg transition-all"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-[var(--accent)]/10 text-[var(--accent)] rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-[var(--accent)]/20 transition-colors">
+                    <div className="w-14 h-14 bg-[var(--accent)]/10 text-[var(--accent)] rounded-xl flex items-center justify-center flex-shrink-0">
                       {industry.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h2 className="font-[family-name:var(--font-display)] text-xl sm:text-2xl font-bold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
+                      <h2 className="font-[family-name:var(--font-display)] text-xl sm:text-2xl font-bold text-[var(--text-primary)]">
                         {industry.name}
                       </h2>
                       <p className="mt-2 text-[var(--text-secondary)] leading-relaxed">
@@ -248,13 +271,28 @@ export default function IndustriesPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-center text-[var(--accent)] text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                    Learn more
-                    <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
+                  {/* Dual linking: Landing page (conversion) + Authority page (education) */}
+                  <div className="mt-6 pt-4 border-t border-[var(--border-light)] flex flex-col sm:flex-row gap-3">
+                    <Link
+                      href={`/${industry.slug}`}
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium rounded-lg transition-all text-sm"
+                    >
+                      Get SEO Services
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </Link>
+                    <Link
+                      href={`/industries/${industry.slug}`}
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--bg-secondary)] hover:bg-[var(--accent)]/10 text-[var(--text-secondary)] hover:text-[var(--accent)] font-medium rounded-lg border border-[var(--border)] transition-all text-sm"
+                    >
+                      Read SEO Guide
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                    </Link>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           </div>
