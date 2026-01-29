@@ -24,9 +24,12 @@ const calculatorSchema = {
 }
 
 export const metadata: Metadata = {
-  title: 'SEO ROI Calculator | Obieo',
+  title: 'SEO ROI Calculator for Home Service Businesses',
   description:
     'Calculate the potential ROI of SEO for your home service business. See how many extra leads, revenue, and company value you could gain.',
+  alternates: {
+    canonical: '/roi-calculator',
+  },
 }
 
 export default function ROICalculatorPage() {

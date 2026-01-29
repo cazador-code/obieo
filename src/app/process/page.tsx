@@ -63,9 +63,12 @@ const faqSchema = {
 }
 
 export const metadata: Metadata = {
-  title: 'Our Process | Obieo',
+  title: 'Our Process — Discovery to Launch in 30 Days',
   description:
     'From discovery to launch in 30 days. Learn how Obieo builds SEO-optimized websites that generate leads for home service businesses.',
+  alternates: {
+    canonical: '/process',
+  },
 }
 
 const processSteps = [

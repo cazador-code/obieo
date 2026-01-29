@@ -160,6 +160,9 @@ export function generateAuthorityPageMetadata(data: IndustryAuthorityData): Meta
   return {
     title: data.title,
     description: data.description,
+    alternates: {
+      canonical: `/industries/${data.slug}`,
+    },
     openGraph: {
       title: data.title,
       description: data.description,

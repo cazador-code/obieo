@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import {
   Hero,
   FeaturedCaseStudy,
@@ -11,20 +12,26 @@ import {
 import { sanityFetch, urlFor } from '@/sanity/client'
 import { featuredProjectQuery, featuredTestimonialQuery } from '@/sanity/queries'
 
+export const metadata: Metadata = {
+  alternates: {
+    canonical: '/',
+  },
+}
+
 // JSON-LD Schema for Homepage - Elite Version (Score: 9/10)
 const professionalServiceSchema = {
   '@context': 'https://schema.org',
   '@type': 'ProfessionalService',
-  '@id': 'https://obieo.com/#organization',
+  '@id': 'https://www.obieo.com/#organization',
   name: 'Obieo',
-  url: 'https://obieo.com',
+  url: 'https://www.obieo.com',
   logo: {
     '@type': 'ImageObject',
-    url: 'https://obieo.com/logo.png',
+    url: 'https://www.obieo.com/logo.png',
     width: 512,
     height: 512,
   },
-  image: 'https://obieo.com/og-image.png',
+  image: 'https://www.obieo.com/og-default.png',
   description: 'SEO and AI search optimization agency for home service businesses. Built by a contractor, for contractors. We help roofers, HVAC companies, plumbers, and electricians get found on Google and AI search engines like ChatGPT.',
   slogan: 'Get found on Google and AI search',
   foundingDate: '2024',
@@ -160,7 +167,7 @@ const professionalServiceSchema = {
   contactPoint: {
     '@type': 'ContactPoint',
     contactType: 'sales',
-    url: 'https://obieo.com/contact',
+    url: 'https://www.obieo.com/contact',
     availableLanguage: 'English',
   },
   // Industries served
@@ -177,17 +184,12 @@ const professionalServiceSchema = {
 const websiteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
-  '@id': 'https://obieo.com/#website',
+  '@id': 'https://www.obieo.com/#website',
   name: 'Obieo',
-  url: 'https://obieo.com',
+  url: 'https://www.obieo.com',
   description: 'SEO and AI search optimization for home service businesses',
   publisher: {
-    '@id': 'https://obieo.com/#organization',
-  },
-  potentialAction: {
-    '@type': 'SearchAction',
-    target: 'https://obieo.com/blog?q={search_term_string}',
-    'query-input': 'required name=search_term_string',
+    '@id': 'https://www.obieo.com/#organization',
   },
 }
 

@@ -9,38 +9,38 @@ const blogSchema = {
   '@type': 'Blog',
   name: 'The Obieo Blog',
   description: 'Insights on SEO, lead generation, and growth strategies for home service businesses. Real tactics tested on our own roofing company.',
-  url: 'https://obieo.com/blog',
+  url: 'https://www.obieo.com/blog',
   publisher: {
     '@type': 'Organization',
     name: 'Obieo',
     logo: {
       '@type': 'ImageObject',
-      url: 'https://obieo.com/logo.png',
+      url: 'https://www.obieo.com/logo.png',
     },
   },
   blogPost: [
     {
       '@type': 'BlogPosting',
       headline: 'The Complete Guide to Generative Engine Optimization (GEO)',
-      url: 'https://obieo.com/blog/generative-engine-optimization-guide',
+      url: 'https://www.obieo.com/blog/generative-engine-optimization-guide',
       datePublished: '2025-01-15',
     },
     {
       '@type': 'BlogPosting',
       headline: 'Why Your Competitors Will Be Invisible in 2 Years',
-      url: 'https://obieo.com/blog/ai-search-contractors',
+      url: 'https://www.obieo.com/blog/ai-search-contractors',
       datePublished: '2024-12-01',
     },
     {
       '@type': 'BlogPosting',
       headline: 'Contractor Lead Generation: Why Your Home Service Business Is Stuck at $3 Million',
-      url: 'https://obieo.com/blog/contractor-lead-generation-guide',
+      url: 'https://www.obieo.com/blog/contractor-lead-generation-guide',
       datePublished: '2025-01-05',
     },
     {
       '@type': 'BlogPosting',
       headline: "ChatGPT Is Adding Ads. Here's What It Means for You",
-      url: 'https://obieo.com/blog/chatgpt-ads',
+      url: 'https://www.obieo.com/blog/chatgpt-ads',
       datePublished: '2025-01-10',
     },
   ],
@@ -75,8 +75,11 @@ const posts = [
 ]
 
 export const metadata: Metadata = {
-  title: 'Blog | Obieo',
+  title: 'Blog — SEO & Lead Generation Insights',
   description: 'Insights on SEO, lead generation, and growth strategies for home service businesses. Real tactics tested on our own roofing company.',
+  alternates: {
+    canonical: '/blog',
+  },
 }
 
 export default function BlogPage() {

@@ -13,22 +13,25 @@ const workPageSchema = {
   '@type': 'CollectionPage',
   name: 'Our Work - Case Studies & Portfolio',
   description: 'See how we help home service businesses grow with websites that convert. Real results from real clients.',
-  url: 'https://obieo.com/work',
+  url: 'https://www.obieo.com/work',
   isPartOf: {
     '@type': 'WebSite',
     name: 'Obieo',
-    url: 'https://obieo.com',
+    url: 'https://www.obieo.com',
   },
   provider: {
     '@type': 'Organization',
     name: 'Obieo',
-    url: 'https://obieo.com',
+    url: 'https://www.obieo.com',
   },
 }
 
 export const metadata: Metadata = {
-  title: 'Our Work | Obieo',
-  description: 'See how we help home service businesses grow with websites that convert.',
+  title: 'Our Work — Case Studies & Results',
+  description: 'See how we help home service businesses grow with websites that convert. Real results from real clients.',
+  alternates: {
+    canonical: '/work',
+  },
 }
 
 interface Project {

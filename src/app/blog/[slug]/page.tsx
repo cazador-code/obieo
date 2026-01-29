@@ -40,11 +40,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     defaultValue: null,
   })
 
-  if (!post) return { title: 'Post Not Found | Obieo' }
+  if (!post) return { title: 'Post Not Found' }
 
   return {
-    title: post.metaTitle || `${post.title} | Obieo Blog`,
+    title: post.metaTitle || post.title,
     description: post.metaDescription || post.excerpt,
+    alternates: {
+      canonical: `/blog/${slug}`,
+    },
   }
 }
 
@@ -103,13 +106,13 @@ export default async function BlogPostPage({ params }: PageProps) {
     '@type': 'Article',
     headline: post.title,
     description: post.metaDescription || post.excerpt,
-    url: `https://obieo.com/blog/${slug}`,
+    url: `https://www.obieo.com/blog/${slug}`,
     datePublished: post.publishedAt,
     dateModified: post.publishedAt,
     author: {
       '@type': 'Person',
       name: 'Hunter Lapeyre',
-      url: 'https://obieo.com/about',
+      url: 'https://www.obieo.com/about',
       jobTitle: 'Founder & SEO Consultant',
       worksFor: {
         '@type': 'Organization',
@@ -119,15 +122,15 @@ export default async function BlogPostPage({ params }: PageProps) {
     publisher: {
       '@type': 'Organization',
       name: 'Obieo',
-      url: 'https://obieo.com',
+      url: 'https://www.obieo.com',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://obieo.com/logo.png',
+        url: 'https://www.obieo.com/logo.png',
       },
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': `https://obieo.com/blog/${slug}`,
+      '@id': `https://www.obieo.com/blog/${slug}`,
     },
   }
 

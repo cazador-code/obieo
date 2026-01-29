@@ -24,8 +24,11 @@ const quizSchema = {
 }
 
 export const metadata: Metadata = {
-  title: 'Free AI Visibility Check | Obieo',
+  title: 'Free AI Visibility Check',
   description: 'See if your business appears in AI search results. Get a free analysis of your visibility on ChatGPT, Perplexity, and other AI platforms.',
+  alternates: {
+    canonical: '/quiz',
+  },
 }
 
 export default function QuizPage() {

@@ -9,25 +9,25 @@ const articleSchema = {
   '@type': 'Article',
   headline: "ChatGPT Is Adding Ads. Here's What It Means for You",
   description: 'OpenAI announced ads in ChatGPT. For businesses, being the organic answer AI cites just became 10x more valuable.',
-  image: 'https://obieo.com/og-chatgpt-ads.jpg',
+  image: 'https://www.obieo.com/og-chatgpt-ads.jpg',
   datePublished: '2025-01-10',
   dateModified: '2025-01-10',
   author: {
     '@type': 'Person',
     name: 'Hunter Lapeyre',
-    url: 'https://obieo.com/about',
+    url: 'https://www.obieo.com/about',
   },
   publisher: {
     '@type': 'Organization',
     name: 'Obieo',
     logo: {
       '@type': 'ImageObject',
-      url: 'https://obieo.com/logo.png',
+      url: 'https://www.obieo.com/logo.png',
     },
   },
   mainEntityOfPage: {
     '@type': 'WebPage',
-    '@id': 'https://obieo.com/blog/chatgpt-ads',
+    '@id': 'https://www.obieo.com/blog/chatgpt-ads',
   },
 }
 
@@ -63,8 +63,11 @@ const faqSchema = {
 }
 
 export const metadata: Metadata = {
-  title: "ChatGPT Is Adding Ads. Here's What It Means for You | Obieo",
+  title: "ChatGPT Is Adding Ads. Here's What It Means for You",
   description: "OpenAI announced ads in ChatGPT. For businesses, being the organic answer AI cites just became 10x more valuable. Here's what to do about it.",
+  alternates: {
+    canonical: '/blog/chatgpt-ads',
+  },
   openGraph: {
     title: "ChatGPT Is Adding Ads. Here's What It Means for Your Business",
     description: "OpenAI is putting ads in ChatGPT. The businesses AI naturally recommends will now stand out even more. Learn why AEO matters.",

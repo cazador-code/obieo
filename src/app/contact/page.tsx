@@ -7,13 +7,12 @@ const contactPageSchema = {
   '@type': 'ContactPage',
   name: 'Contact Obieo',
   description: 'Book a free 20-minute call to discuss your SEO needs or email Hunter directly.',
-  url: 'https://obieo.com/contact',
+  url: 'https://www.obieo.com/contact',
   mainEntity: {
     '@type': 'LocalBusiness',
     name: 'Obieo',
-    url: 'https://obieo.com',
+    url: 'https://www.obieo.com',
     email: 'hunter@obieo.com',
-    telephone: '+1-XXX-XXX-XXXX',
     founder: {
       '@type': 'Person',
       name: 'Hunter Lapeyre',
@@ -27,9 +26,12 @@ const contactPageSchema = {
 }
 
 export const metadata: Metadata = {
-  title: "Contact — Obieo | Book a Free Audit Call",
+  title: "Contact Us — Book a Free SEO Audit Call",
   description:
     "Book a free 20-minute call to discuss your SEO needs. Or email Hunter directly.",
+  alternates: {
+    canonical: '/contact',
+  },
 };
 
 const callExpectations = [

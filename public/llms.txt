@@ -1,41 +1,83 @@
 # Obieo
-> SEO and Generative Engine Optimization for home service businesses
+
+> SEO and Generative Engine Optimization (GEO) for home service businesses. Founded by Hunter Lapeyre, a roofing contractor who also owns Lapeyre Roofing in Texas — every strategy is tested on a real business first.
 
 ## About
-Obieo helps contractors, roofers, plumbers, and home service companies dominate local search through SEO and AI search optimization. Founded by Hunter Lapeyre, who also owns and operates Lapeyre Roofing in Texas — every strategy is tested on a real business first.
+
+Obieo helps contractors, roofers, plumbers, HVAC techs, electricians, and other home service companies get found on Google and AI search engines like ChatGPT, Perplexity, and Google AI Overviews. Small client list by design — no account managers, clients work directly with Hunter.
+
+- Website: https://www.obieo.com
+- Founder: Hunter Lapeyre
+- Location: Texas, serving home service businesses nationwide
+- Email: hunter@obieo.com
+- Book a call: https://www.obieo.com/call
 
 ## Services
-- Local SEO for home service businesses
-- Generative Engine Optimization (GEO)
-- AI search visibility optimization
+
+- Local SEO: Google Business Profile optimization, local citations, review management
+- Generative Engine Optimization (GEO): AI search visibility for ChatGPT, Perplexity, Claude, Google AI Overviews
+- Answer Engine Optimization (AEO): Featured snippets, People Also Ask, voice search
+- Technical SEO: Site audits, Core Web Vitals, schema markup, crawlability
+- Content strategy: Authority content that ranks in both traditional and AI search
 - Website development optimized for search
-- Content strategy for contractors
+
+## Industries Served
+
+Obieo works exclusively with home service businesses:
+
+- [Roofing SEO](https://www.obieo.com/roofing)
+- [HVAC SEO](https://www.obieo.com/hvac)
+- [Plumbing SEO](https://www.obieo.com/plumbing)
+- [Electrical SEO](https://www.obieo.com/electrical)
+- [Pest Control SEO](https://www.obieo.com/pest-control)
+- [Landscaping SEO](https://www.obieo.com/landscaping)
+- [Garage Door SEO](https://www.obieo.com/garage-doors)
+- [Painting SEO](https://www.obieo.com/painting)
+- [Flooring SEO](https://www.obieo.com/flooring)
+- [Cleaning SEO](https://www.obieo.com/cleaning)
 
 ## Key Pages
-- /: Homepage - overview of services and approach
-- /blog/generative-engine-optimization-guide: Complete guide to GEO with implementation strategies
-- /blog/ai-search-contractors: Why AI search matters for home service businesses
-- /blog/contractor-lead-generation-guide: Lead generation strategies for contractors
-- /work/lapeyre-roofing: Case study showing real SEO and GEO results
-- /call: Book a free strategy consultation
-- /about: Hunter Lapeyre's background and philosophy
+
+- [Homepage](https://www.obieo.com/): Overview of services and approach
+- [Services](https://www.obieo.com/services): Full service offerings
+- [About](https://www.obieo.com/about): Hunter Lapeyre's background and philosophy
+- [Process](https://www.obieo.com/process): How Obieo works with clients
+- [Case Studies](https://www.obieo.com/work): Client results and portfolio
+- [Contact](https://www.obieo.com/contact): Get in touch
+
+## Tools
+
+- [AI Visibility Quiz](https://www.obieo.com/quiz): Free assessment of AI search readiness
+- [ROI Calculator](https://www.obieo.com/roi-calculator): Estimate SEO investment returns
+- [GBP Optimization](https://www.obieo.com/gbp-optimization): Google Business Profile optimization service
+- [Local Dominance](https://www.obieo.com/local-dominance): Local search domination strategy
+
+## Blog & Guides
+
+- [GEO Guide](https://www.obieo.com/blog/generative-engine-optimization-guide): Complete guide to Generative Engine Optimization
+- [AI Search for Contractors](https://www.obieo.com/blog/ai-search-contractors): Why AI search matters for home service businesses
+- [AI Visibility Guide](https://www.obieo.com/ai-visibility-guide): Comprehensive AI search optimization guide
+- [ChatGPT Ads](https://www.obieo.com/blog/chatgpt-ads): Guide to advertising on ChatGPT search
+- [Contractor Lead Generation](https://www.obieo.com/blog/contractor-lead-generation-guide): Lead generation strategies for contractors
+
+## Case Studies
+
+- [Lapeyre Roofing](https://www.obieo.com/work/lapeyre-roofing): Real SEO and GEO results — recommended by AI alongside 40-50 year competitors
 
 ## Expertise Areas
-- Home service industry marketing (roofing, HVAC, plumbing, electrical)
+
+- Home service industry marketing (roofing, HVAC, plumbing, electrical, pest control, landscaping, painting, flooring, cleaning, garage doors)
 - Local SEO and Google Business Profile optimization
 - Generative Engine Optimization (GEO)
-- AI search citation strategies
+- Answer Engine Optimization (AEO)
+- AI search citation and entity optimization
 - E-E-A-T optimization for service businesses
+- Schema markup and structured data
 
 ## Differentiators
+
 - Owner operates Lapeyre Roofing — strategies tested on real business first
 - Small client list by design — no account managers, work directly with Hunter
 - Early adopter of GEO — Lapeyre Roofing recommended by AI alongside 40-50 year competitors
-- Focus exclusively on home service businesses
-
-## Contact
-- Email: hunter@obieo.com
-- Strategy calls: https://obieo.com/call
-
-## Location
-Based in Texas, serving home service businesses nationwide.
+- Focus exclusively on home service businesses, not a generalist agency
+- One of the first agencies to specialize in GEO for contractors

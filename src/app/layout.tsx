@@ -21,7 +21,11 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Obieo | SEO & AI Search Optimization for Home Service Businesses",
+  metadataBase: new URL("https://www.obieo.com"),
+  title: {
+    default: "Obieo | SEO & AI Search Optimization for Home Service Businesses",
+    template: "%s | Obieo",
+  },
   description:
     "SEO and AI search optimization built by a contractor, for contractors. Get found on Google and AI search engines like ChatGPT. Roofing, HVAC, plumbing, electrical & more.",
   keywords: [
@@ -35,30 +39,46 @@ export const metadata: Metadata = {
     "AI search optimization",
     "GEO optimization",
   ],
-  authors: [{ name: "Hunter Lapeyre", url: "https://obieo.com/about" }],
+  authors: [{ name: "Hunter Lapeyre", url: "https://www.obieo.com/about" }],
   creator: "Obieo",
   publisher: "Obieo",
   openGraph: {
     title: "Obieo | SEO & AI Search Optimization for Contractors",
     description:
       "SEO built by a contractor, for contractors. Get found on Google and AI search engines.",
-    url: "https://obieo.com",
+    url: "https://www.obieo.com",
     siteName: "Obieo",
     type: "website",
     locale: "en_US",
+    images: [
+      {
+        url: "/og-default.png",
+        width: 1200,
+        height: 630,
+        alt: "Obieo - SEO & AI Search Optimization for Home Service Businesses",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Obieo | SEO & AI Search for Contractors",
     description:
       "SEO built by a contractor, for contractors. Get found on Google and AI search engines.",
+    images: ["/og-default.png"],
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
   alternates: {
-    canonical: "https://obieo.com",
+    canonical: "https://www.obieo.com",
   },
 };
 

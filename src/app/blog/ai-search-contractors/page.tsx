@@ -9,25 +9,25 @@ const articleSchema = {
   '@type': 'Article',
   headline: 'Why Your Competitors Will Be Invisible in 2 Years',
   description: 'AI is changing how homeowners find contractors. Most home service businesses have no idea. Here is your window to get ahead — with proof it works.',
-  image: 'https://obieo.com/og-ai-search.jpg',
+  image: 'https://www.obieo.com/og-ai-search.jpg',
   datePublished: '2024-12-01',
   dateModified: '2024-12-01',
   author: {
     '@type': 'Person',
     name: 'Hunter Lapeyre',
-    url: 'https://obieo.com/about',
+    url: 'https://www.obieo.com/about',
   },
   publisher: {
     '@type': 'Organization',
     name: 'Obieo',
     logo: {
       '@type': 'ImageObject',
-      url: 'https://obieo.com/logo.png',
+      url: 'https://www.obieo.com/logo.png',
     },
   },
   mainEntityOfPage: {
     '@type': 'WebPage',
-    '@id': 'https://obieo.com/blog/ai-search-contractors',
+    '@id': 'https://www.obieo.com/blog/ai-search-contractors',
   },
 }
 
@@ -63,8 +63,11 @@ const faqSchema = {
 }
 
 export const metadata: Metadata = {
-  title: "Why Your Competitors Will Be Invisible in 2 Years | Obieo",
+  title: "Why Your Competitors Will Be Invisible in 2 Years",
   description: "AI is changing how homeowners find contractors. Most home service businesses have no idea. Here's your window to get ahead — with proof it works.",
+  alternates: {
+    canonical: '/blog/ai-search-contractors',
+  },
   openGraph: {
     title: 'Why Your Competitors Will Be Invisible in 2 Years',
     description: "The way homeowners find contractors is shifting from Google to AI. Here's how to position your business before competitors catch on.",

@@ -10,7 +10,7 @@ const serviceSchema = {
   provider: {
     '@type': 'Organization',
     name: 'Obieo',
-    url: 'https://obieo.com',
+    url: 'https://www.obieo.com',
   },
   description:
     'Professional SEO and AEO services designed for home service businesses. One-time SEO Launchpad to fix foundations or ongoing Local Dominance retainer for compounding growth.',
@@ -80,9 +80,12 @@ const faqSchema = {
 }
 
 export const metadata: Metadata = {
-  title: "Services — Obieo | SEO & AEO for Home Service Businesses",
+  title: "SEO & AEO Services for Home Service Businesses",
   description:
     "SEO Launchpad (one-time) or Local Dominance Retainer (monthly). SEO and AEO services designed for home service businesses.",
+  alternates: {
+    canonical: '/services',
+  },
 };
 
 const launchpadIncludes = [

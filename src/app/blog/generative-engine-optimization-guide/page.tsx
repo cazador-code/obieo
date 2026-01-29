@@ -9,25 +9,25 @@ const articleSchema = {
   '@type': 'Article',
   headline: 'The Complete Guide to Generative Engine Optimization (GEO)',
   description: 'GEO is how you get cited by AI search engines like ChatGPT and Perplexity. Learn the llms.txt protocol, citation patterns, and implementation strategies that work.',
-  image: 'https://obieo.com/og-geo-guide.jpg',
+  image: 'https://www.obieo.com/og-geo-guide.jpg',
   datePublished: '2025-01-15',
   dateModified: '2025-01-15',
   author: {
     '@type': 'Person',
     name: 'Hunter Lapeyre',
-    url: 'https://obieo.com/about',
+    url: 'https://www.obieo.com/about',
   },
   publisher: {
     '@type': 'Organization',
     name: 'Obieo',
     logo: {
       '@type': 'ImageObject',
-      url: 'https://obieo.com/logo.png',
+      url: 'https://www.obieo.com/logo.png',
     },
   },
   mainEntityOfPage: {
     '@type': 'WebPage',
-    '@id': 'https://obieo.com/blog/generative-engine-optimization-guide',
+    '@id': 'https://www.obieo.com/blog/generative-engine-optimization-guide',
   },
 }
 
@@ -63,8 +63,11 @@ const faqSchema = {
 }
 
 export const metadata: Metadata = {
-  title: "The Complete Guide to Generative Engine Optimization (GEO) | Obieo",
+  title: "The Complete Guide to Generative Engine Optimization (GEO)",
   description: "GEO is how you get cited by AI search engines like ChatGPT and Perplexity. Learn the llms.txt protocol, citation patterns, and implementation strategies that work.",
+  alternates: {
+    canonical: '/blog/generative-engine-optimization-guide',
+  },
   openGraph: {
     title: 'The Complete Guide to Generative Engine Optimization (GEO)',
     description: 'AI Overviews appeared in 52% of searches in early 2025. Learn how to optimize for AI-powered search before your competitors do.',
@@ -586,7 +589,7 @@ Founded by Hunter Lapeyre, who also owns Lapeyre Roofing.
 - Contractor marketing strategy
 
 ## Contact
-hunter@obieo.com`}</CodeBlock>
+hunter@www.obieo.com`}</CodeBlock>
 
               <KeyInsight title="First-Mover Advantage">
                 With only 0.3% of top sites implementing llms.txt, early adoption positions you as an AI-native brand. As AI search grows, this standard will likely become as important as robots.txt.

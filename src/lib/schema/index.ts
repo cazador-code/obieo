@@ -14,7 +14,7 @@ import type {
   HowToSchema,
 } from '@/data/industries/types'
 
-const SITE_URL = 'https://obieo.com'
+const SITE_URL = 'https://www.obieo.com'
 const AUTHOR_NAME = 'Hunter Lapeyre'
 const AUTHOR_LINKEDIN = 'https://www.linkedin.com/in/hunterlapeyre'
 const COMPANY_NAME = 'Obieo'

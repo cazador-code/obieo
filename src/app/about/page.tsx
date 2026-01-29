@@ -8,12 +8,12 @@ const personSchema = {
   '@type': 'Person',
   name: 'Hunter Lapeyre',
   jobTitle: 'Founder & SEO Strategist',
-  url: 'https://obieo.com/about',
+  url: 'https://www.obieo.com/about',
   worksFor: [
     {
       '@type': 'Organization',
       name: 'Obieo',
-      url: 'https://obieo.com',
+      url: 'https://www.obieo.com',
     },
     {
       '@type': 'Organization',
@@ -55,9 +55,12 @@ const faqSchema = {
 }
 
 export const metadata: Metadata = {
-  title: "About — Obieo | Hunter Lapeyre",
+  title: "About Hunter Lapeyre — Contractor Turned SEO Strategist",
   description:
     "I'm Hunter Lapeyre. I run Obieo and Lapeyre Roofing. That's why I understand home service businesses better than any agency.",
+  alternates: {
+    canonical: '/about',
+  },
 };
 
 const differentiators = [

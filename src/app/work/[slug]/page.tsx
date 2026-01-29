@@ -44,11 +44,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     defaultValue: null,
   })
 
-  if (!project) return { title: 'Project Not Found | Obieo' }
+  if (!project) return { title: 'Project Not Found' }
 
   return {
-    title: `${project.title} | Our Work | Obieo`,
+    title: `${project.title} — Case Study`,
     description: project.tagline,
+    alternates: {
+      canonical: `/work/${slug}`,
+    },
   }
 }
 
@@ -69,24 +72,24 @@ export default async function CaseStudyPage({ params }: PageProps) {
     '@type': 'Article',
     headline: project.title,
     description: project.tagline,
-    url: `https://obieo.com/work/${slug}`,
+    url: `https://www.obieo.com/work/${slug}`,
     author: {
       '@type': 'Organization',
       name: 'Obieo',
-      url: 'https://obieo.com',
+      url: 'https://www.obieo.com',
     },
     publisher: {
       '@type': 'Organization',
       name: 'Obieo',
-      url: 'https://obieo.com',
+      url: 'https://www.obieo.com',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://obieo.com/logo.png',
+        url: 'https://www.obieo.com/logo.png',
       },
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': `https://obieo.com/work/${slug}`,
+      '@id': `https://www.obieo.com/work/${slug}`,
     },
   }
 

@@ -9,25 +9,25 @@ const articleSchema = {
   '@type': 'Article',
   headline: "Contractor Lead Generation: Why You're Stuck at $3M",
   description: 'Discover why most contractors plateau between $1.5-3M revenue. Learn the lead source hierarchy and how SEO compounds while PPC stays flat.',
-  image: 'https://obieo.com/og-lead-gen-guide.jpg',
+  image: 'https://www.obieo.com/og-lead-gen-guide.jpg',
   datePublished: '2025-01-05',
   dateModified: '2025-01-05',
   author: {
     '@type': 'Person',
     name: 'Hunter Lapeyre',
-    url: 'https://obieo.com/about',
+    url: 'https://www.obieo.com/about',
   },
   publisher: {
     '@type': 'Organization',
     name: 'Obieo',
     logo: {
       '@type': 'ImageObject',
-      url: 'https://obieo.com/logo.png',
+      url: 'https://www.obieo.com/logo.png',
     },
   },
   mainEntityOfPage: {
     '@type': 'WebPage',
-    '@id': 'https://obieo.com/blog/contractor-lead-generation-guide',
+    '@id': 'https://www.obieo.com/blog/contractor-lead-generation-guide',
   },
 }
 
@@ -63,8 +63,11 @@ const faqSchema = {
 }
 
 export const metadata: Metadata = {
-  title: "Contractor Lead Generation: Why You're Stuck at $3M | Obieo",
+  title: "Contractor Lead Generation: Why You're Stuck at $3M",
   description: "Discover why most contractors plateau between $1.5-3M revenue. Learn the lead source hierarchy and how SEO compounds while PPC stays flat. Real numbers inside.",
+  alternates: {
+    canonical: '/blog/contractor-lead-generation-guide',
+  },
 }
 
 // Editorial Components

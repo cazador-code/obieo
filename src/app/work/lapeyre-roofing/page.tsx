@@ -12,13 +12,13 @@ const caseStudySchema = {
   '@type': 'Article',
   headline: 'How I Fired My SEO Agency and Jumped 5 Spots in 30 Days',
   description: 'After spending tens of thousands on an agency that made me feel like a number, I took control of my roofing company\'s SEO. The results: +5 ranking positions and 66% more search impressions in month one.',
-  url: 'https://obieo.com/work/lapeyre-roofing',
+  url: 'https://www.obieo.com/work/lapeyre-roofing',
   datePublished: '2025-01-01',
   dateModified: '2025-01-01',
   author: {
     '@type': 'Person',
     name: 'Hunter Lapeyre',
-    url: 'https://obieo.com/about',
+    url: 'https://www.obieo.com/about',
     jobTitle: 'Founder & SEO Consultant',
     worksFor: {
       '@type': 'Organization',
@@ -28,16 +28,16 @@ const caseStudySchema = {
   publisher: {
     '@type': 'Organization',
     name: 'Obieo',
-    url: 'https://obieo.com',
+    url: 'https://www.obieo.com',
     logo: {
       '@type': 'ImageObject',
-      url: 'https://obieo.com/logo.png',
+      url: 'https://www.obieo.com/logo.png',
     },
   },
-  image: 'https://obieo.com/case-studies/lapeyre-roofing/mockup.svg',
+  image: 'https://www.obieo.com/case-studies/lapeyre-roofing/mockup.svg',
   mainEntityOfPage: {
     '@type': 'WebPage',
-    '@id': 'https://obieo.com/work/lapeyre-roofing',
+    '@id': 'https://www.obieo.com/work/lapeyre-roofing',
   },
   about: {
     '@type': 'Organization',
@@ -47,8 +47,11 @@ const caseStudySchema = {
 }
 
 export const metadata: Metadata = {
-  title: 'How I Fired My SEO Agency and Jumped 5 Spots in 30 Days | Obieo',
+  title: 'How I Fired My SEO Agency and Jumped 5 Spots in 30 Days',
   description: 'After spending tens of thousands on an agency that made me feel like a number, I took control of my roofing company\'s SEO. The results: +5 ranking positions and 66% more search impressions in month one.',
+  alternates: {
+    canonical: '/work/lapeyre-roofing',
+  },
   openGraph: {
     title: 'How I Fired My SEO Agency and Jumped 5 Spots in 30 Days',
     description: 'A roofing company owner\'s story of breaking free from expensive agencies and getting real results.',

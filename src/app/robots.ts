@@ -5,8 +5,16 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/studio/', '/api/', '/_next/static/chunks/'],
+      disallow: [
+        '/studio/',
+        '/api/',
+        '/internal/',
+        '/thank-you',
+        '/roofing/thank-you',
+        '/_next/static/chunks/',
+      ],
     },
     sitemap: 'https://www.obieo.com/sitemap.xml',
+    host: 'https://www.obieo.com',
   }
 }
