@@ -1,4 +1,5 @@
 import CalendlyButton from "@/components/CalendlyButton";
+import ContactForm from "@/components/ContactForm";
 import type { Metadata } from "next";
 
 // JSON-LD Schema for Contact Page
@@ -39,16 +40,6 @@ const callExpectations = [
   "If it seems like a fit, we talk next steps",
 ];
 
-const formFields = [
-  { id: "name", label: "Name", type: "text", placeholder: "John Smith", half: true },
-  { id: "company", label: "Company", type: "text", placeholder: "Smith Roofing", half: true },
-  { id: "email", label: "Email", type: "email", placeholder: "john@smithroofing.com", half: true },
-  { id: "phone", label: "Phone (optional)", type: "tel", placeholder: "(555) 123-4567", half: true },
-  { id: "website", label: "Your Website (if you have one)", type: "url", placeholder: "https://smithroofing.com", half: false },
-];
-
-const inputClasses = "w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-terracotta-500 focus:ring-2 focus:ring-terracotta-500/20 transition-colors outline-none";
-const labelClasses = "block text-sm font-medium text-slate-700 mb-2";
 
 export default function ContactPage() {
   return (
@@ -181,83 +172,7 @@ export default function ContactPage() {
             </p>
           </div>
 
-          <form className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 space-y-6">
-            {/* Half-width fields in rows */}
-            <div className="grid sm:grid-cols-2 gap-6">
-              {formFields.filter(f => f.half).slice(0, 2).map((field) => (
-                <div key={field.id}>
-                  <label htmlFor={field.id} className={labelClasses}>
-                    {field.label}
-                  </label>
-                  <input
-                    type={field.type}
-                    id={field.id}
-                    name={field.id}
-                    className={inputClasses}
-                    placeholder={field.placeholder}
-                  />
-                </div>
-              ))}
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-6">
-              {formFields.filter(f => f.half).slice(2, 4).map((field) => (
-                <div key={field.id}>
-                  <label htmlFor={field.id} className={labelClasses}>
-                    {field.label}
-                  </label>
-                  <input
-                    type={field.type}
-                    id={field.id}
-                    name={field.id}
-                    className={inputClasses}
-                    placeholder={field.placeholder}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* Full-width fields */}
-            {formFields.filter(f => !f.half).map((field) => (
-              <div key={field.id}>
-                <label htmlFor={field.id} className={labelClasses}>
-                  {field.label}
-                </label>
-                <input
-                  type={field.type}
-                  id={field.id}
-                  name={field.id}
-                  className={inputClasses}
-                  placeholder={field.placeholder}
-                />
-              </div>
-            ))}
-
-            <div>
-              <label htmlFor="message" className={labelClasses}>
-                What can I help with?
-              </label>
-              <textarea
-                id="message"
-                name="message"
-                rows={4}
-                className={`${inputClasses} resize-none`}
-                placeholder="Tell me a bit about your business and what you're looking for..."
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full px-6 py-3.5 bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold rounded-lg transition-all"
-            >
-              Send Message
-            </button>
-
-            <p className="text-xs text-slate-500 text-center">
-              This form is a placeholder. Connect it to Formspree, Netlify
-              Forms, or similar.
-            </p>
-          </form>
+          <ContactForm />
         </div>
       </section>
       </div>

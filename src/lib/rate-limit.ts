@@ -21,6 +21,12 @@ export const auditLimiter = new Ratelimit({
   prefix: 'ratelimit:audit',
 });
 
+export const contactLimiter = new Ratelimit({
+  redis: kv,
+  limiter: Ratelimit.slidingWindow(3, '1 m'), // 3 requests per minute
+  prefix: 'ratelimit:contact',
+});
+
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');
   return forwarded?.split(',')[0].trim() ?? 'anonymous';
