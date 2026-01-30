@@ -150,6 +150,65 @@ VERCEL_KV_REST_API_TOKEN=
 
 ---
 
+## MCP Server Setup
+
+These MCP servers are used for marketing, analytics, and automation tasks. They consume significant context, so only add them when needed.
+
+### Always-on (lightweight)
+These are managed by plugins or are essential — no action needed:
+- `episodic-memory` — plugin-managed
+- `superpowers-chrome` — plugin-managed
+- `greptile` — plugin-managed
+
+### Project-level (`.mcp.json` in repo root)
+Already configured in this repo's `.mcp.json`:
+```json
+{
+  "mcpServers": {
+    "gtm": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://gtm-mcp.stape.ai/mcp"]
+    },
+    "analytics-mcp": {
+      "command": "pipx",
+      "args": ["run", "analytics-mcp"]
+    }
+  }
+}
+```
+
+### User-level (`~/.mcp.json`)
+Google Search Console is configured in `~/.mcp.json`:
+```json
+{
+  "mcpServers": {
+    "gsc": {
+      "command": "/Users/hunterlapeyre/.mcp-gsc/.venv/bin/python",
+      "args": ["/Users/hunterlapeyre/.mcp-gsc/gsc_server.py"]
+    }
+  }
+}
+```
+
+### On-demand (add/remove as needed)
+These are added via `claude mcp add` and consume heavy context. Add when doing CRM or automation work:
+
+```bash
+# GoHighLevel CRM (~25 tools)
+claude mcp add gohighlevel --transport http https://services.leadconnectorhq.com/mcp/
+
+# n8n Workflow Automation (~15 tools)
+claude mcp add n8n-mcp -- npx n8n-mcp
+```
+
+To remove when done:
+```bash
+claude mcp remove gohighlevel
+claude mcp remove n8n-mcp
+```
+
+---
+
 ## Prospect Intel Audit
 
 When given a URL to audit (or asked to run a prospect audit), follow this workflow **without asking clarifying questions**:
