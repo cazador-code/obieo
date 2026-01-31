@@ -62,9 +62,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('SMS send error:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('SMS send error:', message, error)
     return NextResponse.json(
-      { error: 'Failed to send verification code. Please try again.' },
+      { error: 'Failed to send verification code. Please try again.', debug: message },
       { status: 500 }
     )
   }
