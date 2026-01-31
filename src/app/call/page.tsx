@@ -1,8 +1,27 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import OTPInput from '@/components/call/OTPInput'
 
 const GHL_BOOKING_URL = 'https://api.leadconnectorhq.com/widget/booking/0sf1QEe5x3p5eHFHPJLW'
+
+type Step = 'companyName' | 'hasWebsite' | 'websiteUrl' | 'name' | 'email' | 'phone' | 'otp'
+type Status = 'idle' | 'sendingCode' | 'verifyingCode' | 'submitting' | 'redirecting'
+
+const STEPS_WITH_WEBSITE: Step[] = ['companyName', 'hasWebsite', 'websiteUrl', 'name', 'email', 'phone', 'otp']
+const STEPS_WITHOUT_WEBSITE: Step[] = ['companyName', 'hasWebsite', 'name', 'email', 'phone', 'otp']
+
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 10)
+  if (digits.length <= 3) return digits
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+}
+
+function rawDigits(phone: string): string {
+  return phone.replace(/\D/g, '')
+}
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -22,12 +41,30 @@ const ArrowIcon = () => (
   </svg>
 )
 
-const INPUT_CLASS = 'w-full px-4 py-3.5 bg-[#f5f2ed] border border-[#e8e4dc] rounded-lg text-[#1a1612] placeholder:text-[#8a8279] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-colors'
+const BackArrow = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+  </svg>
+)
+
+const INPUT_CLASS = 'w-full px-4 py-3.5 bg-[#f5f2ed] border-2 border-[#e8e4dc] rounded-lg text-[#1a1612] placeholder:text-[#8a8279] focus-visible:outline-none focus:outline-none focus:border-[var(--accent)] transition-colors text-lg'
+
+const slideVariants = {
+  enter: (direction: number) => ({ x: direction > 0 ? 80 : -80, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (direction: number) => ({ x: direction > 0 ? -80 : 80, opacity: 0 }),
+}
 
 function BookingForm() {
-  const [step, setStep] = useState(0)
-  const [submitting, setSubmitting] = useState(false)
+  const [currentStep, setCurrentStep] = useState<Step>('companyName')
+  const [direction, setDirection] = useState(1)
+  const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState('')
+  const [otpError, setOtpError] = useState('')
+  const [otpCode, setOtpCode] = useState('')
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const [sentPhone, setSentPhone] = useState('')
+
   const [form, setForm] = useState({
     companyName: '',
     hasWebsite: '' as '' | 'yes' | 'no',
@@ -37,100 +74,232 @@ function BookingForm() {
     phone: '',
   })
 
-  const companyRef = useRef<HTMLInputElement>(null)
-  const websiteRef = useRef<HTMLInputElement>(null)
-  const nameRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const totalSteps = 3
+  const steps = form.hasWebsite === 'yes' ? STEPS_WITH_WEBSITE : STEPS_WITHOUT_WEBSITE
+  const stepIndex = steps.indexOf(currentStep)
+  const totalSteps = steps.length
+  const progress = ((stepIndex + 1) / totalSteps) * 100
+
+  // Focus input when step changes
+  useEffect(() => {
+    const timer = setTimeout(() => inputRef.current?.focus(), 150)
+    return () => clearTimeout(timer)
+  }, [currentStep])
+
+  // Cleanup cooldown interval
+  useEffect(() => {
+    return () => { if (cooldownRef.current) clearInterval(cooldownRef.current) }
+  }, [])
 
   const update = useCallback((field: keyof typeof form, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }))
     setError('')
   }, [])
 
-  const next = useCallback(() => {
-    // Step 1: Contact info
-    if (step === 0) {
-      if (!form.name.trim()) { setError('Please enter your name'); nameRef.current?.focus(); return }
-      if (!form.email.trim() || !form.email.includes('@')) { setError('Please enter a valid email'); return }
-    }
-    // Step 2: Company name
-    if (step === 1 && !form.companyName.trim()) {
-      setError('Please enter your company name')
-      companyRef.current?.focus()
-      return
-    }
+  const goTo = useCallback((step: Step, dir: number) => {
+    setDirection(dir)
     setError('')
-    setStep(prev => Math.min(prev + 1, totalSteps - 1))
-    setTimeout(() => {
-      if (step === 0) companyRef.current?.focus()
-    }, 100)
-  }, [step, form])
-
-  const prev = useCallback(() => {
-    setError('')
-    setStep(s => Math.max(s - 1, 0))
+    setCurrentStep(step)
   }, [])
 
-  const submit = useCallback(async () => {
-    if (!form.hasWebsite) { setError('Please select an option'); return }
-    if (form.hasWebsite === 'yes' && !form.websiteUrl.trim()) {
-      setError('Please enter your website URL')
-      websiteRef.current?.focus()
+  const goBack = useCallback(() => {
+    if (stepIndex <= 0) return
+    const prevStep = steps[stepIndex - 1]
+    goTo(prevStep, -1)
+  }, [stepIndex, steps, goTo])
+
+  const startCooldown = useCallback(() => {
+    setResendCooldown(30)
+    if (cooldownRef.current) clearInterval(cooldownRef.current)
+    cooldownRef.current = setInterval(() => {
+      setResendCooldown(prev => {
+        if (prev <= 1) {
+          if (cooldownRef.current) clearInterval(cooldownRef.current)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }, [])
+
+  const sendCode = useCallback(async () => {
+    const digits = rawDigits(form.phone)
+    if (digits.length !== 10) {
+      setError('Please enter a valid 10-digit phone number')
       return
     }
 
-    setSubmitting(true)
+    setStatus('sendingCode')
     setError('')
 
     try {
-      await fetch('/api/leads', {
+      const res = await fetch('/api/sms/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          email: form.email.trim(),
-          website: form.hasWebsite === 'yes' ? form.websiteUrl.trim() : '',
-          score: 0,
-          source: 'call-page',
-          answers: {
-            companyName: form.companyName.trim(),
-            hasWebsite: form.hasWebsite,
-            websiteUrl: form.hasWebsite === 'yes' ? form.websiteUrl.trim() : '',
-          },
-          phone: form.phone.trim(),
-        }),
+        body: JSON.stringify({ phone: form.phone }),
       })
-    } catch {
-      // Don't block redirect if lead capture fails
-    }
+      const data = await res.json()
 
-    const params = new URLSearchParams({
-      source: 'call-page',
-      name: form.name.trim(),
-      email: form.email.trim(),
-      ...(form.phone.trim() && { phone: form.phone.trim() }),
-    })
-    window.location.href = `${GHL_BOOKING_URL}?${params.toString()}`
-  }, [form])
+      if (!res.ok) {
+        setError(data.error || 'Failed to send code. Please try again.')
+        setStatus('idle')
+        return
+      }
+
+      setSentPhone(form.phone)
+      setOtpCode('')
+      setOtpError('')
+      startCooldown()
+      setStatus('idle')
+      goTo('otp', 1)
+    } catch {
+      setError('Something went wrong. Please try again.')
+      setStatus('idle')
+    }
+  }, [form.phone, goTo, startCooldown])
+
+  const verifyCode = useCallback(async (code: string) => {
+    setStatus('verifyingCode')
+    setOtpError('')
+
+    try {
+      const res = await fetch('/api/sms/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: sentPhone, code }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setOtpError(data.error || 'Something went wrong. Please try again.')
+        setStatus('idle')
+        return
+      }
+
+      if (data.verified) {
+        setStatus('submitting')
+
+        // Fire-and-forget lead capture
+        fetch('/api/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: form.name.trim(),
+            email: form.email.trim(),
+            website: form.hasWebsite === 'yes' ? form.websiteUrl.trim() : '',
+            score: 0,
+            source: 'call-page',
+            answers: {
+              companyName: form.companyName.trim(),
+              hasWebsite: form.hasWebsite,
+              websiteUrl: form.hasWebsite === 'yes' ? form.websiteUrl.trim() : '',
+            },
+            phone: rawDigits(sentPhone),
+          }),
+        }).catch(() => {})
+
+        // Brief success state then redirect
+        setStatus('redirecting')
+        setTimeout(() => {
+          const params = new URLSearchParams({
+            source: 'call-page',
+            name: form.name.trim(),
+            email: form.email.trim(),
+            phone: rawDigits(sentPhone),
+          })
+          window.location.href = `${GHL_BOOKING_URL}?${params.toString()}`
+        }, 500)
+      } else {
+        setOtpError(data.error || 'Incorrect code. Please try again.')
+        setStatus('idle')
+      }
+    } catch {
+      setOtpError('Something went wrong. Please try again.')
+      setStatus('idle')
+    }
+  }, [sentPhone, form])
+
+  const resendCode = useCallback(async () => {
+    if (resendCooldown > 0) return
+    setOtpCode('')
+    setOtpError('')
+    setStatus('sendingCode')
+
+    try {
+      const res = await fetch('/api/sms/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: sentPhone }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setOtpError(data.error || 'Failed to resend code.')
+        setStatus('idle')
+        return
+      }
+
+      startCooldown()
+      setStatus('idle')
+    } catch {
+      setOtpError('Something went wrong. Please try again.')
+      setStatus('idle')
+    }
+  }, [sentPhone, resendCooldown, startCooldown])
+
+  const advance = useCallback(() => {
+    setError('')
+
+    switch (currentStep) {
+      case 'companyName':
+        if (!form.companyName.trim()) { setError('Please enter your company name'); return }
+        goTo('hasWebsite', 1)
+        break
+      case 'websiteUrl':
+        if (!form.websiteUrl.trim()) { setError('Please enter your website URL'); return }
+        goTo('name', 1)
+        break
+      case 'name':
+        if (!form.name.trim()) { setError('Please enter your name'); return }
+        goTo('email', 1)
+        break
+      case 'email': {
+        const emailVal = form.email.trim()
+        if (!emailVal || !emailVal.includes('@') || !emailVal.includes('.')) {
+          setError('Please enter a valid email')
+          return
+        }
+        goTo('phone', 1)
+        break
+      }
+      case 'phone':
+        sendCode()
+        break
+      default:
+        break
+    }
+  }, [currentStep, form, goTo, sendCode])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault()
-      if (step < totalSteps - 1) next()
-      else submit()
+      if (currentStep !== 'hasWebsite' && currentStep !== 'otp') {
+        advance()
+      }
     }
-  }, [step, next, submit])
+  }, [currentStep, advance])
 
-  const progress = ((step + 1) / totalSteps) * 100
-  const buttonLabels = ['Next: Company Info', 'Next: Website Check']
+  // When user goes back from OTP and changes phone, detect it
+  const phoneChanged = sentPhone && form.phone !== sentPhone
 
   return (
-    <div className="max-w-md mx-auto bg-[#fdfcfa] rounded-2xl p-6 sm:p-8 shadow-2xl shadow-black/30 border border-[#e8e4dc]" onKeyDown={handleKeyDown}>
+    <div className="max-w-lg mx-auto bg-[#fdfcfa] rounded-2xl p-6 sm:p-8 shadow-2xl shadow-black/30 border border-[#e8e4dc]" onKeyDown={handleKeyDown}>
       {/* Progress bar */}
       <div className="mb-8">
         <div className="flex justify-between text-xs text-[#8a8279] mb-2">
-          <span>Step {step + 1} of {totalSteps}</span>
+          <span>Step {stepIndex + 1} of {totalSteps}</span>
           <span>{Math.round(progress)}%</span>
         </div>
         <div className="h-1.5 bg-[#e8e4dc] rounded-full overflow-hidden">
@@ -141,150 +310,110 @@ function BookingForm() {
         </div>
       </div>
 
-      {/* Step content */}
-      <div className="min-h-[280px]">
-        {/* Step 1: Contact Info (capture lead first) */}
-        {step === 0 && (
-          <div>
-            <label className="block text-lg font-semibold text-[#1a1612] mb-2">
-              Let&apos;s get you on the calendar
-            </label>
-            <p className="text-[#5c5549] text-sm mb-5">Takes 30 seconds. We&apos;ll send a calendar invite right away.</p>
-            <div className="space-y-3">
+      {/* Back arrow */}
+      {stepIndex > 0 && currentStep !== 'otp' && status === 'idle' && (
+        <button
+          type="button"
+          onClick={goBack}
+          className="flex items-center gap-1 text-sm text-[#8a8279] hover:text-[#5c5549] transition-colors mb-4 -mt-2"
+        >
+          <BackArrow />
+          Back
+        </button>
+      )}
+
+      {/* Step content with animation */}
+      <div className="min-h-[180px] relative overflow-hidden">
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={currentStep}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+          >
+            {/* Step 1: Company Name */}
+            {currentStep === 'companyName' && (
               <div>
-                <label className="block text-sm text-[#5c5549] mb-1.5">Full Name</label>
+                <label className="block text-xl font-semibold text-[#1a1612] mb-2">
+                  What&apos;s your company name?
+                </label>
+                <p className="text-[#5c5549] text-sm mb-5">So we can research your market before the call.</p>
                 <input
-                  ref={nameRef}
+                  ref={inputRef}
                   type="text"
-                  value={form.name}
-                  onChange={e => update('name', e.target.value)}
-                  placeholder="e.g. John Smith"
+                  value={form.companyName}
+                  onChange={e => update('companyName', e.target.value)}
+                  placeholder="e.g. Johnson Plumbing"
                   autoFocus
-                  autoComplete="name"
                   className={INPUT_CLASS}
                 />
+                <p className="mt-3 text-xs text-[#8a8279]">Press Enter to continue</p>
               </div>
-              <div>
-                <label className="block text-sm text-[#5c5549] mb-1.5">Email</label>
-                <input
-                  type="email"
-                  inputMode="email"
-                  value={form.email}
-                  onChange={e => update('email', e.target.value)}
-                  placeholder="john@company.com"
-                  autoComplete="email"
-                  className={INPUT_CLASS}
-                />
-                <p className="mt-1.5 text-xs text-[#8a8279]">Only used to send your calendar invite.</p>
-              </div>
-              <div>
-                <label className="block text-sm text-[#5c5549] mb-1.5">Phone <span className="text-[#8a8279]">(optional)</span></label>
-                <input
-                  type="tel"
-                  inputMode="tel"
-                  value={form.phone}
-                  onChange={e => update('phone', e.target.value)}
-                  placeholder="(555) 123-4567"
-                  autoComplete="tel"
-                  className={INPUT_CLASS}
-                />
-              </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        {/* Step 2: Company Name */}
-        {step === 1 && (
-          <div>
-            <label className="block text-lg font-semibold text-[#1a1612] mb-2">
-              What&apos;s your company name?
-            </label>
-            <p className="text-[#5c5549] text-sm mb-4">So we can research your market before the call.</p>
-            <input
-              ref={companyRef}
-              type="text"
-              value={form.companyName}
-              onChange={e => update('companyName', e.target.value)}
-              placeholder="e.g. Johnson Plumbing"
-              autoFocus
-              className={INPUT_CLASS}
-            />
-          </div>
-        )}
+            {/* Step 2: Has website? */}
+            {currentStep === 'hasWebsite' && (
+              <div>
+                <label className="block text-xl font-semibold text-[#1a1612] mb-2">
+                  Do you currently have a website?
+                </label>
+                <p className="text-[#5c5549] text-sm mb-5">We&apos;ll audit it before our call (free).</p>
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      update('hasWebsite', 'yes')
+                      setTimeout(() => goTo('websiteUrl', 1), 200)
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-lg border text-left transition-all text-lg ${
+                      form.hasWebsite === 'yes'
+                        ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[#1a1612]'
+                        : 'border-[#e8e4dc] bg-[#f5f2ed] text-[#5c5549] hover:border-[#d97650]/40'
+                    }`}
+                  >
+                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                      form.hasWebsite === 'yes' ? 'border-[var(--accent)]' : 'border-[#8a8279]'
+                    }`}>
+                      {form.hasWebsite === 'yes' && <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />}
+                    </span>
+                    Yes, I have a website
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      update('hasWebsite', 'no')
+                      update('websiteUrl', '')
+                      setTimeout(() => goTo('name', 1), 200)
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-lg border text-left transition-all text-lg ${
+                      form.hasWebsite === 'no'
+                        ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[#1a1612]'
+                        : 'border-[#e8e4dc] bg-[#f5f2ed] text-[#5c5549] hover:border-[#d97650]/40'
+                    }`}
+                  >
+                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                      form.hasWebsite === 'no' ? 'border-[var(--accent)]' : 'border-[#8a8279]'
+                    }`}>
+                      {form.hasWebsite === 'no' && <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />}
+                    </span>
+                    No, not yet
+                  </button>
+                </div>
+              </div>
+            )}
 
-        {/* Step 3: Website */}
-        {step === 2 && (
-          <div>
-            <label className="block text-lg font-semibold text-[#1a1612] mb-2">
-              Do you currently have a website?
-            </label>
-            <p className="text-[#5c5549] text-sm mb-4">We&apos;ll audit it before our call (free).</p>
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => update('hasWebsite', 'yes')}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-lg border text-left transition-all ${
-                  form.hasWebsite === 'yes'
-                    ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[#1a1612]'
-                    : 'border-[#e8e4dc] bg-[#f5f2ed] text-[#5c5549] hover:border-[#d97650]/40'
-                }`}
-              >
-                <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                  form.hasWebsite === 'yes' ? 'border-[var(--accent)]' : 'border-[#8a8279]'
-                }`}>
-                  {form.hasWebsite === 'yes' && <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />}
-                </span>
-                Yes, I have a website
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  update('hasWebsite', 'no')
-                  update('websiteUrl', '')
-                  // Auto-submit after short delay since no URL needed
-                  setTimeout(() => {
-                    setSubmitting(true)
-                    fetch('/api/leads', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        name: form.name.trim(),
-                        email: form.email.trim(),
-                        website: '',
-                        score: 0,
-                        source: 'call-page',
-                        answers: { companyName: form.companyName.trim(), hasWebsite: 'no', websiteUrl: '' },
-                        phone: form.phone.trim(),
-                      }),
-                    }).catch(() => {})
-                    const params = new URLSearchParams({
-                      source: 'call-page',
-                      name: form.name.trim(),
-                      email: form.email.trim(),
-                      ...(form.phone.trim() && { phone: form.phone.trim() }),
-                    })
-                    window.location.href = `${GHL_BOOKING_URL}?${params.toString()}`
-                  }, 300)
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-lg border text-left transition-all ${
-                  form.hasWebsite === 'no'
-                    ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[#1a1612]'
-                    : 'border-[#e8e4dc] bg-[#f5f2ed] text-[#5c5549] hover:border-[#d97650]/40'
-                }`}
-              >
-                <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                  form.hasWebsite === 'no' ? 'border-[var(--accent)]' : 'border-[#8a8279]'
-                }`}>
-                  {form.hasWebsite === 'no' && <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />}
-                </span>
-                No, not yet
-              </button>
-            </div>
-            {form.hasWebsite === 'yes' && (
-              <div className="mt-4">
-                <label className="block text-sm text-[#5c5549] mb-1.5">Website URL</label>
+            {/* Step 3: Website URL (conditional) */}
+            {currentStep === 'websiteUrl' && (
+              <div>
+                <label className="block text-xl font-semibold text-[#1a1612] mb-2">
+                  What&apos;s your website URL?
+                </label>
+                <p className="text-[#5c5549] text-sm mb-5">We&apos;ll run a free audit before we talk.</p>
                 <input
-                  ref={websiteRef}
+                  ref={inputRef}
                   type="url"
                   inputMode="url"
                   value={form.websiteUrl}
@@ -293,20 +422,151 @@ function BookingForm() {
                   autoFocus
                   className={INPUT_CLASS}
                 />
+                <p className="mt-3 text-xs text-[#8a8279]">Press Enter to continue</p>
               </div>
             )}
-          </div>
-        )}
+
+            {/* Step 4: Full Name */}
+            {currentStep === 'name' && (
+              <div>
+                <label className="block text-xl font-semibold text-[#1a1612] mb-2">
+                  What&apos;s your name?
+                </label>
+                <p className="text-[#5c5549] text-sm mb-5">So we know who we&apos;re talking to.</p>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={form.name}
+                  onChange={e => update('name', e.target.value)}
+                  placeholder="e.g. John Smith"
+                  autoFocus
+                  autoComplete="name"
+                  className={INPUT_CLASS}
+                />
+                <p className="mt-3 text-xs text-[#8a8279]">Press Enter to continue</p>
+              </div>
+            )}
+
+            {/* Step 5: Email */}
+            {currentStep === 'email' && (
+              <div>
+                <label className="block text-xl font-semibold text-[#1a1612] mb-2">
+                  What&apos;s your email?
+                </label>
+                <p className="text-[#5c5549] text-sm mb-5">We&apos;ll send your calendar invite here.</p>
+                <input
+                  ref={inputRef}
+                  type="email"
+                  inputMode="email"
+                  value={form.email}
+                  onChange={e => update('email', e.target.value)}
+                  placeholder="john@company.com"
+                  autoFocus
+                  autoComplete="email"
+                  className={INPUT_CLASS}
+                />
+                <p className="mt-3 text-xs text-[#8a8279]">Press Enter to continue</p>
+              </div>
+            )}
+
+            {/* Step 6: Phone */}
+            {currentStep === 'phone' && (
+              <div>
+                <label className="block text-xl font-semibold text-[#1a1612] mb-2">
+                  What&apos;s your phone number?
+                </label>
+                <p className="text-[#5c5549] text-sm mb-5">We&apos;ll send a quick verification code via text.</p>
+                <input
+                  ref={inputRef}
+                  type="tel"
+                  inputMode="tel"
+                  value={form.phone}
+                  onChange={e => update('phone', formatPhone(e.target.value))}
+                  placeholder="(555) 123-4567"
+                  autoFocus
+                  autoComplete="tel"
+                  className={INPUT_CLASS}
+                />
+                {status === 'sendingCode' ? (
+                  <p className="mt-3 text-sm text-[#8a8279]">Sending code...</p>
+                ) : (
+                  <p className="mt-3 text-xs text-[#8a8279]">Press Enter to receive your code</p>
+                )}
+              </div>
+            )}
+
+            {/* Step 7: OTP Verification */}
+            {currentStep === 'otp' && (
+              <div>
+                {status === 'redirecting' ? (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                      <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p className="text-xl font-semibold text-[#1a1612]">Verified! Redirecting...</p>
+                  </div>
+                ) : (
+                  <>
+                    <label className="block text-xl font-semibold text-[#1a1612] mb-2 text-center">
+                      Enter verification code
+                    </label>
+                    <p className="text-[#5c5549] text-sm mb-6 text-center">
+                      Sent to {sentPhone}
+                    </p>
+                    <OTPInput
+                      value={otpCode}
+                      onChange={setOtpCode}
+                      onComplete={verifyCode}
+                      disabled={status === 'verifyingCode' || status === 'submitting'}
+                      error={otpError}
+                    />
+                    {status === 'verifyingCode' && (
+                      <p className="mt-4 text-sm text-[#8a8279] text-center">Verifying...</p>
+                    )}
+                    <div className="mt-6 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          goTo('phone', -1)
+                          setOtpCode('')
+                          setOtpError('')
+                        }}
+                        className="text-sm text-[#8a8279] hover:text-[#5c5549] transition-colors flex items-center gap-1"
+                      >
+                        <BackArrow /> Change number
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resendCode}
+                        disabled={resendCooldown > 0 || status === 'sendingCode'}
+                        className="text-sm text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors disabled:text-[#8a8279] disabled:cursor-not-allowed"
+                      >
+                        {status === 'sendingCode' ? 'Sending...' : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
-      {/* Error message */}
-      {error && (
+      {/* Error message (for non-OTP steps) */}
+      {error && currentStep !== 'otp' && (
         <p className="mt-3 text-sm text-red-400">{error}</p>
       )}
 
-      {/* Trust signals inside the form (near submit) */}
-      {step === totalSteps - 1 && form.hasWebsite === 'yes' && (
-        <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-[#8a8279]">
+      {/* Phone changed warning */}
+      {currentStep === 'phone' && phoneChanged && (
+        <p className="mt-2 text-xs text-amber-500">Phone number changed. A new code will be sent.</p>
+      )}
+
+      {/* Trust signals (shown on phone step) */}
+      {currentStep === 'phone' && (
+        <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-[#8a8279]">
           <span className="flex items-center gap-1.5">
             <CheckIcon />
             Free 20-min call
@@ -321,39 +581,6 @@ function BookingForm() {
           </span>
         </div>
       )}
-
-      {/* Navigation */}
-      <div className="mt-6 flex gap-3">
-        {step > 0 && (
-          <button
-            type="button"
-            onClick={prev}
-            className="px-6 py-3 border border-[#e8e4dc] text-[#5c5549] rounded-lg hover:bg-[#f5f2ed] transition-colors"
-          >
-            Back
-          </button>
-        )}
-        {step < totalSteps - 1 ? (
-          <button
-            type="button"
-            onClick={next}
-            className="flex-1 px-6 py-3.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg transition-all hover:scale-[1.01] shadow-lg shadow-[var(--accent)]/25"
-          >
-            {buttonLabels[step]}
-          </button>
-        ) : (
-          form.hasWebsite === 'yes' && (
-            <button
-              type="button"
-              onClick={submit}
-              disabled={submitting}
-              className="flex-1 px-6 py-3.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg transition-all hover:scale-[1.01] shadow-lg shadow-[var(--accent)]/25 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitting ? 'Redirecting to Calendar...' : 'Pick a Time'}
-            </button>
-          )
-        )}
-      </div>
     </div>
   )
 }
@@ -619,7 +846,7 @@ export default function CallLandingPage() {
           <div className="flex items-start justify-center gap-4 sm:gap-8 mb-10 text-center">
             <div className="flex-1 max-w-[140px]">
               <div className="w-10 h-10 rounded-full bg-[var(--accent)]/20 text-[var(--accent)] font-bold flex items-center justify-center mx-auto mb-2 text-sm">1</div>
-              <p className="text-white/60 text-xs sm:text-sm">Answer 3 quick questions</p>
+              <p className="text-white/60 text-xs sm:text-sm">Answer a few quick questions</p>
             </div>
             <div className="flex-1 max-w-[140px]">
               <div className="w-10 h-10 rounded-full bg-[var(--accent)]/20 text-[var(--accent)] font-bold flex items-center justify-center mx-auto mb-2 text-sm">2</div>

@@ -83,6 +83,13 @@ html {
   outline-offset: 2px;
 }
 
+/* Let form inputs handle their own focus styles via Tailwind */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

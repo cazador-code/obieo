@@ -21,6 +21,18 @@ export const auditLimiter = new Ratelimit({
   prefix: 'ratelimit:audit',
 });
 
+export const smsSendLimiter = new Ratelimit({
+  redis: kv,
+  limiter: Ratelimit.slidingWindow(3, '10 m'), // 3 requests per 10 minutes
+  prefix: 'ratelimit:sms-send',
+});
+
+export const smsVerifyLimiter = new Ratelimit({
+  redis: kv,
+  limiter: Ratelimit.slidingWindow(10, '10 m'), // 10 requests per 10 minutes
+  prefix: 'ratelimit:sms-verify',
+});
+
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');
   return forwarded?.split(',')[0].trim() ?? 'anonymous';
