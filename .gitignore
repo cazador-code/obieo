@@ -40,10 +40,26 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# internal notes
+# internal notes & session artifacts
 SCRATCH.md
 SECURITY-AUDIT.md
+docs/session-notes/
+docs/plans/
+docs/claude-capabilities-map.md
+
+# AI editor configs (skills symlinked from .agents/)
+.agents/
+.codex/
+.cursor/
+.opencode/
+.windsurf/
+
+# Claude Code generated artifacts
+.claude/audit-report-*.md
 
 # SEO Machine tool (separate repo)
 .seomachine/
 .env*.local
+
+# Remotion (video generation - WIP)
+remotion/

@@ -190,6 +190,13 @@ Google Search Console is configured in `~/.mcp.json`:
 }
 ```
 
+### Development tools (always-on, project-level)
+Configured via `claude mcp add` for this project:
+
+- **`next-devtools`** — Next.js 16 runtime diagnostics, build errors, route inspection, upgrade tooling
+- **`context7`** — Up-to-date, version-specific docs for any library (Next.js, React, Tailwind, etc.)
+- **`lighthouse`** — Google Lighthouse audits (Core Web Vitals, accessibility, SEO, security) with 13+ tools
+
 ### On-demand (add/remove as needed)
 These are added via `claude mcp add` and consume heavy context. Add when doing CRM or automation work:
 
@@ -206,6 +213,11 @@ To remove when done:
 claude mcp remove gohighlevel
 claude mcp remove n8n-mcp
 ```
+
+### Auto-invoke Rules
+- Use **Context7** for any library/framework documentation lookups (append `use context7` to queries about Next.js, React, Tailwind, Framer Motion, GSAP, or Sanity APIs)
+- Use **Lighthouse MCP** during prospect audits for Technical SEO scoring (replaces manual WebFetch-based speed analysis)
+- Use **Next DevTools** `init` at the start of development sessions when the dev server is running
 
 ---
 
@@ -239,12 +251,13 @@ Perform a comprehensive SEO/GEO/AEO audit following this structure:
    - Competitor rankings for their industry + location
 
 #### Phase 2: Technical SEO (Score 1-10)
+- Run **Lighthouse MCP** audit on the URL (mobile + desktop) for Core Web Vitals, performance, accessibility, and SEO scores
 - Title Tag optimization
 - Meta Description (150-160 chars)
 - H1 Tag quality
 - Header hierarchy (H1-H6)
 - Mobile friendliness signals
-- Page speed indicators
+- Page speed indicators (use Lighthouse data)
 - Schema markup presence
 
 #### Phase 3: Content Quality
