@@ -214,7 +214,7 @@ export function AIVisibilityResults({
           <svg className="w-6 h-6 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          AI Search Analysis: "{keyword}"
+          AI Search Analysis: &quot;{keyword}&quot;
         </h2>
 
         {/* Citation status */}
@@ -282,7 +282,7 @@ export function AIVisibilityResults({
         {analysis.aiVisibility.whyNotCited.length > 0 && (
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">
-              Why You're Not Appearing
+              Why You&apos;re Not Appearing
             </h3>
             <ul className="space-y-2">
               {analysis.aiVisibility.whyNotCited.map((reason, i) => (
@@ -368,7 +368,7 @@ export function AIVisibilityResults({
           Want to Fix This?
         </h2>
         <p className="text-[var(--text-secondary)] mb-6 max-w-lg mx-auto">
-          In a free 20-minute strategy call, I'll show you exactly how to get your business cited by AI search engines and start capturing leads your competitors are getting.
+          In a free 20-minute strategy call, I&apos;ll show you exactly how to get your business cited by AI search engines and start capturing leads your competitors are getting.
         </p>
 
         <div className="space-y-4">

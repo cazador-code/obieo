@@ -94,8 +94,8 @@ export function GrowthMeter({ ebitdaIncrease, multiplier = 4 }: Props) {
 
             {/* Grass */}
             {Array.from({ length: grassCount }).map((_, i) => {
-              const x = 20 + (i * 160) / grassCount + Math.random() * 10
-              const height = 15 + Math.random() * 20
+              const x = 20 + (i * 160) / grassCount + ((i * 7 + 3) % 10)
+              const height = 15 + ((i * 13 + 5) % 20)
               return <GrassBlade key={i} x={x} height={height} delay={i * 0.03} />
             })}
 

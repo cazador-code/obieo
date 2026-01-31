@@ -7,7 +7,7 @@ interface Props {
   multiplier?: number
 }
 
-function Shingle({ index, total, color }: { index: number; total: number; color: string }) {
+function Shingle({ index, color }: { index: number; total: number; color: string }) {
   const row = Math.floor(index / 8)
   const col = index % 8
   const isOffset = row % 2 === 1
@@ -43,8 +43,6 @@ function Shingle({ index, total, color }: { index: number; total: number; color:
 
 export function ShingleStack({ ebitdaIncrease, multiplier = 4 }: Props) {
   const valueMultiplied = ebitdaIncrease * multiplier
-  const maxValue = 500000 * multiplier
-
   // Calculate shingles based on value (max ~80 shingles for full roof)
   const percentage = Math.min(ebitdaIncrease / 500000, 1)
   const shingleCount = Math.floor(percentage * 80)

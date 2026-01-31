@@ -24,27 +24,6 @@ function PaintDrip({ x, delay, color }: { x: string; delay: number; color: strin
   )
 }
 
-function PaintBrush({ rotation }: { rotation: number }) {
-  return (
-    <motion.div
-      className="absolute -top-16 left-1/2 -translate-x-1/2 origin-bottom"
-      animate={{ rotate: rotation }}
-      transition={{ type: 'spring', stiffness: 100 }}
-    >
-      {/* Brush handle */}
-      <div className="w-4 h-20 bg-gradient-to-b from-amber-600 to-amber-700 rounded-t-lg mx-auto" />
-      {/* Metal ferrule */}
-      <div className="w-6 h-3 bg-slate-400 mx-auto -mt-0.5" />
-      {/* Bristles */}
-      <div className="w-8 h-6 bg-gradient-to-b from-amber-800 to-amber-900 rounded-b-lg mx-auto flex">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="flex-1 bg-amber-700 mx-px rounded-b" />
-        ))}
-      </div>
-    </motion.div>
-  )
-}
-
 export function PaintFill({ ebitdaIncrease, multiplier = 4 }: Props) {
   const valueMultiplied = ebitdaIncrease * multiplier
   const percentage = Math.min(ebitdaIncrease / 500000, 1)
@@ -154,8 +133,8 @@ export function PaintFill({ ebitdaIncrease, multiplier = 4 }: Props) {
                     className="absolute h-2 rounded-full"
                     style={{
                       backgroundColor: accentColor,
-                      width: `${30 + Math.random() * 40}%`,
-                      left: `${Math.random() * 50}%`,
+                      width: `${30 + ((i * 17 + 7) % 40)}%`,
+                      left: `${(i * 23 + 11) % 50}%`,
                       top: `${20 + i * 15}%`,
                       opacity: 0.5,
                     }}

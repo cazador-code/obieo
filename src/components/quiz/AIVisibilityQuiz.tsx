@@ -214,7 +214,7 @@ export function AIVisibilityQuiz() {
           Analyzing Your Website
         </h2>
         <p className="text-[var(--text-secondary)]">
-          Running AI visibility analysis for "{state.targetKeyword}"...
+          Running AI visibility analysis for &quot;{state.targetKeyword}&quot;...
         </p>
         <div className="mt-8 space-y-2 text-sm text-[var(--text-muted)]">
           <p>✓ Checking technical performance</p>
@@ -268,13 +268,13 @@ export function AIVisibilityQuiz() {
               </h2>
               <p className="text-[var(--text-secondary)]">
                 Most agencies charge <span className="text-[var(--text-primary)] font-semibold">$250+</span> for this exact analysis.
-                I'm giving it away because I want you to see what's actually possible.
+                I&apos;m giving it away because I want you to see what&apos;s actually possible.
               </p>
             </div>
 
             {/* What you'll get */}
             <div className="bg-[var(--bg-secondary)] rounded-xl p-5 space-y-3">
-              <p className="text-sm font-semibold text-[var(--text-primary)]">In 60 seconds, you'll discover:</p>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">In 60 seconds, you&apos;ll discover:</p>
               <ul className="space-y-2 text-sm text-[var(--text-secondary)]">
                 <li className="flex items-start gap-2">
                   <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -452,7 +452,7 @@ export function AIVisibilityQuiz() {
 
             <div className="space-y-4">
               <label className="text-sm font-medium text-[var(--text-primary)]">
-                What's your monthly lead goal?
+                What&apos;s your monthly lead goal?
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {leadGoalOptions.map((option) => (

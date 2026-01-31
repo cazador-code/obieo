@@ -8,7 +8,7 @@ interface Props {
   multiplier?: number
 }
 
-function Bug({ index, isZapped, onZap }: { index: number; isZapped: boolean; onZap: () => void }) {
+function Bug({ index, isZapped }: { index: number; isZapped: boolean }) {
   const positions = [
     { x: 20, y: 30 },
     { x: 70, y: 20 },
@@ -120,22 +120,19 @@ export function BugZapper({ ebitdaIncrease, multiplier = 4 }: Props) {
   const bugCount = Math.floor(percentage * 10)
 
   const [zappedBugs, setZappedBugs] = useState<number[]>([])
-  const [zapCount, setZapCount] = useState(0)
 
   // Auto-zap bugs based on value
   useEffect(() => {
-    setZappedBugs([])
-    setZapCount(0)
+    let count = 0
+    requestAnimationFrame(() => setZappedBugs([]))
 
     const interval = setInterval(() => {
-      setZapCount(prev => {
-        if (prev >= bugCount) {
-          clearInterval(interval)
-          return prev
-        }
-        setZappedBugs(current => [...current, prev])
-        return prev + 1
-      })
+      if (count >= bugCount) {
+        clearInterval(interval)
+        return
+      }
+      setZappedBugs(current => [...current, count])
+      count++
     }, 300)
 
     return () => clearInterval(interval)
@@ -174,7 +171,6 @@ export function BugZapper({ ebitdaIncrease, multiplier = 4 }: Props) {
                     key={i}
                     index={i}
                     isZapped={zappedBugs.includes(i)}
-                    onZap={() => setZappedBugs(prev => [...prev, i])}
                   />
                 ))}
               </svg>

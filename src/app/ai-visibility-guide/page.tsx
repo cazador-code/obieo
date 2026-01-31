@@ -271,7 +271,7 @@ export default function AIVisibilityGuidePage() {
             Is ChatGPT Recommending You or Your Competitors?
           </h1>
           <p className="text-lg sm:text-xl text-stone-600 mb-8 max-w-2xl mx-auto">
-            Homeowners are asking AI for recommendations. AI doesn't show 10 results. It picks 2-3 businesses. Here's how to check if you're one of them.
+            Homeowners are asking AI for recommendations. AI doesn&apos;t show 10 results. It picks 2-3 businesses. Here&apos;s how to check if you&apos;re one of them.
           </p>
         </div>
       </section>
@@ -280,20 +280,20 @@ export default function AIVisibilityGuidePage() {
       <section className="bg-white py-16 sm:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-bold text-stone-900 mb-6">
-            The Shift That's Already Happening
+            The Shift That&apos;s Already Happening
           </h2>
           <div className="prose prose-lg prose-stone max-w-none">
             <p>
-              When someone Googles "plumber near me," they see a list of options. They compare, click around, maybe check a few websites.
+              When someone Googles &quot;plumber near me,&quot; they see a list of options. They compare, click around, maybe check a few websites.
             </p>
             <p>
-              When someone asks ChatGPT "recommend a plumber in Phoenix," they get 2-3 names. That's it. The AI picks who it trusts, and the person calls those businesses.
+              When someone asks ChatGPT &quot;recommend a plumber in Phoenix,&quot; they get 2-3 names. That&apos;s it. The AI picks who it trusts, and the person calls those businesses.
             </p>
             <p>
-              <strong>If you're not one of those 2-3 names, you never had a chance.</strong>
+              <strong>If you&apos;re not one of those 2-3 names, you never had a chance.</strong>
             </p>
             <p>
-              This isn't about ads. These businesses aren't paying for placement. They're showing up because AI has decided they're the answer.
+              This isn&apos;t about ads. These businesses aren&apos;t paying for placement. They&apos;re showing up because AI has decided they&apos;re the answer.
             </p>
           </div>
 
@@ -333,7 +333,7 @@ export default function AIVisibilityGuidePage() {
                   </div>
                   <div className="flex-1">
                     <p className="font-mono text-sm bg-stone-100 px-3 py-2 rounded mb-2 text-stone-800">
-                      "{item.prompt}"
+                      &quot;{item.prompt}&quot;
                     </p>
                     <p className="text-sm text-stone-500 mb-2">
                       Example: <span className="text-stone-700">{item.example}</span>
@@ -352,7 +352,7 @@ export default function AIVisibilityGuidePage() {
               Pro Tip: Test Your Competitors Too
             </h3>
             <p className="text-stone-300">
-              Search for your top 3 competitors by name. See who AI recommends as alternatives. This shows you exactly who you're losing to in AI search.
+              Search for your top 3 competitors by name. See who AI recommends as alternatives. This shows you exactly who you&apos;re losing to in AI search.
             </p>
           </div>
         </div>
@@ -365,7 +365,7 @@ export default function AIVisibilityGuidePage() {
             Step 2: Understanding What You Find
           </h2>
           <p className="text-lg text-stone-600 mb-8">
-            After running those tests, you'll fall into one of three categories:
+            After running those tests, you&apos;ll fall into one of three categories:
           </p>
 
           <div className="grid gap-6">
@@ -391,10 +391,10 @@ export default function AIVisibilityGuidePage() {
             Step 3: How AI Decides Who to Recommend
           </h2>
           <p className="text-lg text-stone-400 mb-6">
-            When someone asks "recommend a plumber in Phoenix," AI doesn't just search. It reasons. It breaks down the query, looks for commercial signals, checks contextual relevance, and formulates a response with explanations.
+            When someone asks &quot;recommend a plumber in Phoenix,&quot; AI doesn&apos;t just search. It reasons. It breaks down the query, looks for commercial signals, checks contextual relevance, and formulates a response with explanations.
           </p>
           <p className="text-stone-400 mb-12">
-            AI pulls from three data sources: <span className="text-white">your website</span>, <span className="text-white">crawled data across the web</span>, and <span className="text-white">third-party platforms</span> (Google Business, Yelp, directories). Here's what it weighs:
+            AI pulls from three data sources: <span className="text-white">your website</span>, <span className="text-white">crawled data across the web</span>, and <span className="text-white">third-party platforms</span> (Google Business, Yelp, directories). Here&apos;s what it weighs:
           </p>
 
           <div className="grid sm:grid-cols-2 gap-6">
@@ -422,16 +422,16 @@ export default function AIVisibilityGuidePage() {
             Step 4: What You Can Do About It
           </h2>
           <p className="text-lg text-stone-600 mb-8">
-            Improving AI visibility isn't a quick fix. It requires building genuine authority signals across the web. Here's the honest breakdown:
+            Improving AI visibility isn&apos;t a quick fix. It requires building genuine authority signals across the web. Here&apos;s the honest breakdown:
           </p>
 
           {/* Completeness callout */}
           <div className="bg-stone-900 text-white rounded-xl p-6 mb-8">
             <p className="text-lg font-medium">
-              "Completeness beats cleverness. Businesses with more filled-in fields and complete information rank higher. Period."
+              &quot;Completeness beats cleverness. Businesses with more filled-in fields and complete information rank higher. Period.&quot;
             </p>
             <p className="text-stone-400 text-sm mt-2">
-              Most businesses already have the information they need. It's just buried, incomplete, or inconsistent across platforms.
+              Most businesses already have the information they need. It&apos;s just buried, incomplete, or inconsistent across platforms.
             </p>
           </div>
 
@@ -497,7 +497,7 @@ export default function AIVisibilityGuidePage() {
             Want a Deeper Analysis?
           </h2>
           <p className="text-lg text-terracotta-100 mb-8 max-w-2xl mx-auto">
-            We'll audit your AI visibility across ChatGPT, Claude, and Perplexity. We'll identify the specific gaps keeping you out of recommendations. No pitch, just data.
+            We&apos;ll audit your AI visibility across ChatGPT, Claude, and Perplexity. We&apos;ll identify the specific gaps keeping you out of recommendations. No pitch, just data.
           </p>
           <CalendlyButton
             source="ai-visibility-guide"

@@ -36,7 +36,7 @@ export function HeroCounter({
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (prefersReducedMotion) {
-      setDisplayValue(value)
+      requestAnimationFrame(() => setDisplayValue(value))
       return
     }
 

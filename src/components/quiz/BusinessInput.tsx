@@ -73,8 +73,8 @@ export function BusinessInput({
 
       setPredictions(
         suggestions
-          .filter((s: any) => s.placePrediction)
-          .map((s: any) => ({
+          .filter((s: { placePrediction?: { placeId: string; structuredFormat?: { mainText?: { text: string }; secondaryText?: { text: string } }; text?: { text: string } } }) => s.placePrediction)
+          .map((s: { placePrediction: { placeId: string; structuredFormat?: { mainText?: { text: string }; secondaryText?: { text: string } }; text?: { text: string } } }) => ({
             placeId: s.placePrediction.placeId,
             mainText: s.placePrediction.structuredFormat?.mainText?.text || '',
             secondaryText: s.placePrediction.structuredFormat?.secondaryText?.text || '',
@@ -114,7 +114,7 @@ export function BusinessInput({
       // Extract city and state from address components
       let city = ''
       let state = ''
-      place.addressComponents?.forEach((component: any) => {
+      place.addressComponents?.forEach((component: { types?: string[]; longText: string; shortText: string }) => {
         if (component.types?.includes('locality')) {
           city = component.longText
         }

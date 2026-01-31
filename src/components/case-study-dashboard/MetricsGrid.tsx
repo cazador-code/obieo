@@ -87,7 +87,7 @@ function MetricCard({ metric, index }: { metric: Metric; index: number }) {
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (prefersReducedMotion) {
-      setDisplayValue(metric.value)
+      requestAnimationFrame(() => setDisplayValue(metric.value))
       return
     }
 

@@ -52,7 +52,7 @@ function Check({
             </div>
           </div>
           <div className={`text-xs ${isBefore ? 'text-slate-400' : 'text-green-600'}`}>
-            #{Math.floor(Math.random() * 9000) + 1000}
+            #{Math.floor(((amount * 7 + 1013) % 9000)) + 1000}
           </div>
         </div>
 

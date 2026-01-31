@@ -303,7 +303,7 @@ function formatROIEmail(
   email: string,
   company: string,
   data: ROICalculatorData,
-  score: number
+  _score: number
 ): string {
   const extraLeads = Math.round(data.currentLeadsPerMonth * 0.3)
   const additionalJobs = extraLeads * (data.closeRate / 100)

@@ -211,8 +211,8 @@ export default function GBPOptimizationPage() {
               services in your area.
             </p>
             <p className="text-neutral-300 text-lg leading-relaxed mb-6">
-              When someone searches "plumber near me" or "HVAC repair [city name]," Google displays
-              a "Local Pack" or "Map Pack" of three businesses at the top of search results.
+              When someone searches &quot;plumber near me&quot; or &quot;HVAC repair [city name],&quot; Google displays
+              a &quot;Local Pack&quot; or &quot;Map Pack&quot; of three businesses at the top of search results.
               <strong> GBP optimization determines whether your business appears in this prime real estate</strong>—where
               44% of local searchers click.
             </p>

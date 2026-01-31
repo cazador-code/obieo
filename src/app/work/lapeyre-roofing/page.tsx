@@ -229,8 +229,8 @@ export default function LapeyreRoofingCaseStudy() {
           <FadeInSection delay={0.1}>
             <blockquote className="relative my-16 py-8 px-8 sm:px-12 border-l-4 border-[var(--accent)] bg-[var(--bg-secondary)] rounded-r-xl">
               <p className="text-2xl sm:text-3xl font-[family-name:var(--font-display)] text-[var(--text-primary)] leading-snug italic">
-                "Every month I got a report I didn't understand, sent by a person I'd never met,
-                about work I couldn't verify."
+                &quot;Every month I got a report I didn&apos;t understand, sent by a person I&apos;d never met,
+                about work I couldn&apos;t verify.&quot;
               </p>
               <footer className="mt-6 text-[var(--text-secondary)]">
                 — Hunter Lapeyre, Owner
@@ -249,13 +249,13 @@ export default function LapeyreRoofingCaseStudy() {
               </h2>
               <div className="prose prose-lg max-w-none text-[var(--text-secondary)] space-y-6">
                 <p className="leading-relaxed">
-                  It hit me during one of those monthly "strategy" calls. The account manager — my
+                  It hit me during one of those monthly &quot;strategy&quot; calls. The account manager — my
                   fourth in two years — was walking me through another PDF full of graphs. He
-                  couldn't tell me which services were actually generating leads. He didn't know
+                  couldn&apos;t tell me which services were actually generating leads. He didn&apos;t know
                   my service area. He mispronounced my company name.
                 </p>
                 <p className="leading-relaxed">
-                  <strong className="text-[var(--text-primary)]">I wasn't a client. I was a line item.</strong>
+                  <strong className="text-[var(--text-primary)]">I wasn&apos;t a client. I was a line item.</strong>
                 </p>
                 <p className="leading-relaxed">
                   The agency had 200+ clients. My account was managed by someone who managed 40 other
@@ -294,12 +294,12 @@ export default function LapeyreRoofingCaseStudy() {
                 </p>
                 <p className="leading-relaxed">
                   Most importantly, I understood something the agency never did:
-                  <strong className="text-[var(--text-primary)]"> homeowners don't want a vendor. They want someone
+                  <strong className="text-[var(--text-primary)]"> homeowners don&apos;t want a vendor. They want someone
                   they can trust with their biggest investment.</strong>
                 </p>
                 <p className="leading-relaxed">
                   Every word on my new site was written to build that trust. No stock photos. No
-                  generic "we're the best" claims. Just honest, specific information about how we
+                  generic &quot;we&apos;re the best&quot; claims. Just honest, specific information about how we
                   work and why.
                 </p>
               </div>
@@ -358,7 +358,7 @@ export default function LapeyreRoofingCaseStudy() {
             <div className="prose prose-lg prose-invert max-w-none space-y-6">
               <p className="text-white/80 leading-relaxed">
                 In one month, I accomplished more than the agency had in the previous year. Not
-                because I'm smarter than them — but because I actually
+                because I&apos;m smarter than them — but because I actually
                 <strong className="text-white"> gave a damn</strong> about the results.
               </p>
               <p className="text-white/80 leading-relaxed">
@@ -386,7 +386,7 @@ export default function LapeyreRoofingCaseStudy() {
             <div className="prose prose-lg max-w-none text-[var(--text-secondary)] space-y-6">
               <p className="text-xl leading-relaxed">
                 Six weeks after launching the new site, I asked Gemini:
-                <em className="text-[var(--text-primary)]"> "I need a roof replaced here in Austin, Texas. What are some companies I should call?"</em>
+                <em className="text-[var(--text-primary)]"> &quot;I need a roof replaced here in Austin, Texas. What are some companies I should call?&quot;</em>
               </p>
             </div>
           </FadeInSection>
@@ -412,7 +412,7 @@ export default function LapeyreRoofingCaseStudy() {
                   <p className="text-[var(--text-secondary)]">
                     Multiple recent discussions identify this company as a strong choice for insurance claim handling
                     (specifically with carriers like State Farm) and responsiveness. Users have noted them for being
-                    a <strong className="text-[var(--text-primary)]">"smaller company with good people"</strong> and for
+                    a <strong className="text-[var(--text-primary)]">&quot;smaller company with good people&quot;</strong> and for
                     effective communication during the claims process.
                   </p>
                 </div>
@@ -428,11 +428,11 @@ export default function LapeyreRoofingCaseStudy() {
                 Wilson Roofing. Companies with decades of brand recognition.
               </p>
               <p className="leading-relaxed">
-                This isn't just Google anymore. AI is changing how people find services. And the strategies that
+                This isn&apos;t just Google anymore. AI is changing how people find services. And the strategies that
                 work for AI search are different from traditional SEO.
               </p>
               <p className="text-xl leading-relaxed text-[var(--text-primary)]">
-                <strong>Most agencies haven't even started thinking about this. I've been optimizing for it from day one.</strong>
+                <strong>Most agencies haven&apos;t even started thinking about this. I&apos;ve been optimizing for it from day one.</strong>
               </p>
             </div>
           </FadeInSection>
@@ -453,11 +453,11 @@ export default function LapeyreRoofingCaseStudy() {
               <div className="prose prose-lg max-w-none text-[var(--text-secondary)] space-y-6">
                 <p className="leading-relaxed">
                   Most SEO agencies are built to scale. More clients, more revenue, more account
-                  managers managing more accounts. It works for their business model. It doesn't
+                  managers managing more accounts. It works for their business model. It doesn&apos;t
                   work for yours.
                 </p>
                 <p className="leading-relaxed">
-                  Here's what they don't understand about home service businesses:
+                  Here&apos;s what they don&apos;t understand about home service businesses:
                 </p>
               </div>
             </div>
@@ -526,13 +526,13 @@ export default function LapeyreRoofingCaseStudy() {
                 business owners from that experience.</strong>
               </p>
               <p className="leading-relaxed">
-                I keep my client list small — intentionally. I'm not trying to build a 200-client
+                I keep my client list small — intentionally. I&apos;m not trying to build a 200-client
                 agency. I want a handful of home service companies I can actually help. Companies
                 where I learn your specific market, understand your seasonality, and care about
-                your results like they're my own.
+                your results like they&apos;re my own.
               </p>
               <p className="leading-relaxed">
-                Because in a way, they are. I'm still running Lapeyre Roofing. I'm testing every
+                Because in a way, they are. I&apos;m still running Lapeyre Roofing. I&apos;m testing every
                 strategy on my own business before I recommend it to you. When something stops
                 working, I know before you do — because I see it in my own numbers first.
               </p>
@@ -550,7 +550,7 @@ export default function LapeyreRoofingCaseStudy() {
                 </div>
                 <h3 className="font-semibold text-[var(--text-primary)] mb-2">Work With Me Directly</h3>
                 <p className="text-[var(--text-secondary)] text-sm">
-                  No account managers. No hand-offs. You text me, email me, call me. I'm the one
+                  No account managers. No hand-offs. You text me, email me, call me. I&apos;m the one
                   doing the work.
                 </p>
               </div>
@@ -562,7 +562,7 @@ export default function LapeyreRoofingCaseStudy() {
                 </div>
                 <h3 className="font-semibold text-[var(--text-primary)] mb-2">Battle-Tested Strategies</h3>
                 <p className="text-[var(--text-secondary)] text-sm">
-                  Everything I recommend, I've tested on my own business first. Real data. Real
+                  Everything I recommend, I&apos;ve tested on my own business first. Real data. Real
                   results. No theory.
                 </p>
               </div>
@@ -574,7 +574,7 @@ export default function LapeyreRoofingCaseStudy() {
                 </div>
                 <h3 className="font-semibold text-[var(--text-primary)] mb-2">Small Client List</h3>
                 <p className="text-[var(--text-secondary)] text-sm">
-                  I don't want 50 clients. I want a handful I can actually help dominate their
+                  I don&apos;t want 50 clients. I want a handful I can actually help dominate their
                   local markets.
                 </p>
               </div>
@@ -586,7 +586,7 @@ export default function LapeyreRoofingCaseStudy() {
                 </div>
                 <h3 className="font-semibold text-[var(--text-primary)] mb-2">Ahead on AI Search</h3>
                 <p className="text-[var(--text-secondary)] text-sm">
-                  ChatGPT, Perplexity, AI Overviews — I've been optimizing for these since the
+                  ChatGPT, Perplexity, AI Overviews — I&apos;ve been optimizing for these since the
                   beginning. Most agencies are still catching up.
                 </p>
               </div>
@@ -603,7 +603,7 @@ export default function LapeyreRoofingCaseStudy() {
               Tired of Feeling Like a Number?
             </h2>
             <p className="text-xl text-white/70 mb-10 max-w-2xl mx-auto">
-              Let's talk. No sales pitch. No pressure. Just a conversation about your business
+              Let&apos;s talk. No sales pitch. No pressure. Just a conversation about your business
               and whether I can actually help.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
