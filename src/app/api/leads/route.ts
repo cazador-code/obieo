@@ -492,16 +492,74 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Handle Call Page leads
+    if (source === 'call-page') {
+      const answers = body.answers || {}
+      const safeCompany = escapeHtml(answers.companyName || '')
+      const safeName = escapeHtml(name || '')
+      const safeEmail = escapeHtml(email)
+      const safePhone = body.phone ? escapeHtml(body.phone) : ''
+
+      const emailResult = await resend.emails.send({
+        from: 'Obieo <noreply@leads.obieo.com>',
+        to: process.env.NOTIFICATION_EMAIL || 'hunter@obieo.com',
+        subject: `New Call Booking Lead: ${answers.companyName || name}`,
+        html: `
+          <h2>New Call Page Lead</h2>
+          <h3>Contact</h3>
+          <p><strong>Name:</strong> ${safeName}</p>
+          <p><strong>Email:</strong> ${safeEmail}</p>
+          ${safePhone ? `<p><strong>Phone:</strong> ${safePhone}</p>` : ''}
+          <h3>Business Info</h3>
+          <p><strong>Company:</strong> ${safeCompany}</p>
+          <p><strong>Has Website:</strong> ${escapeHtml(answers.hasWebsite || 'N/A')}</p>
+          ${answers.websiteUrl ? `<p><strong>Website:</strong> ${escapeHtml(answers.websiteUrl)}</p>` : ''}
+          ${answers.revenue ? `<p><strong>Revenue:</strong> ${escapeHtml(answers.revenue)}</p>` : ''}
+          <hr />
+          <p style="color: #666; font-size: 12px;">This lead submitted the booking form on obieo.com/call</p>
+        `,
+      })
+      console.log('Call page email sent:', emailResult)
+
+      // Send to GHL
+      if (GHL_WEBHOOK_URL) {
+        try {
+          const response = await fetch(GHL_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              name,
+              phone: body.phone || '',
+              company: answers.companyName || '',
+              website: website || answers.websiteUrl || '',
+              source: 'call-page',
+              call_has_website: answers.hasWebsite || '',
+            }),
+          })
+          if (response.ok) {
+            console.log('Call page lead sent to GHL successfully')
+          } else {
+            console.error('GHL webhook failed:', response.status)
+          }
+        } catch (error) {
+          console.error('Error sending call lead to GHL:', error)
+        }
+      }
+    }
+
     // Send to Facebook Conversions API (server-side tracking)
     const sourceUrls: Record<string, string> = {
       'quiz': 'quiz',
       'ai-visibility-quiz': 'quiz',
       'roi-calculator': 'roi-calculator',
+      'call-page': 'call',
     }
     const contentNames: Record<string, string> = {
       'quiz': 'Website Score Quiz',
       'ai-visibility-quiz': 'AI Visibility Quiz',
       'roi-calculator': 'ROI Calculator',
+      'call-page': 'Call Booking Form',
     }
     await sendToFacebookCAPI({
       email,

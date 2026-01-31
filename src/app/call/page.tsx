@@ -1,6 +1,8 @@
 'use client'
 
-import Script from 'next/script'
+import { useState, useRef, useCallback } from 'react'
+
+const GHL_BOOKING_URL = 'https://api.leadconnectorhq.com/widget/booking/0sf1QEe5x3p5eHFHPJLW'
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -20,6 +22,342 @@ const ArrowIcon = () => (
   </svg>
 )
 
+const INPUT_CLASS = 'w-full px-4 py-3.5 bg-[#f5f2ed] border border-[#e8e4dc] rounded-lg text-[#1a1612] placeholder:text-[#8a8279] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-colors'
+
+function BookingForm() {
+  const [step, setStep] = useState(0)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const [form, setForm] = useState({
+    companyName: '',
+    hasWebsite: '' as '' | 'yes' | 'no',
+    websiteUrl: '',
+    name: '',
+    email: '',
+    phone: '',
+  })
+
+  const companyRef = useRef<HTMLInputElement>(null)
+  const websiteRef = useRef<HTMLInputElement>(null)
+  const nameRef = useRef<HTMLInputElement>(null)
+
+  const totalSteps = 3
+
+  const update = useCallback((field: keyof typeof form, value: string) => {
+    setForm(prev => ({ ...prev, [field]: value }))
+    setError('')
+  }, [])
+
+  const next = useCallback(() => {
+    // Step 1: Contact info
+    if (step === 0) {
+      if (!form.name.trim()) { setError('Please enter your name'); nameRef.current?.focus(); return }
+      if (!form.email.trim() || !form.email.includes('@')) { setError('Please enter a valid email'); return }
+    }
+    // Step 2: Company name
+    if (step === 1 && !form.companyName.trim()) {
+      setError('Please enter your company name')
+      companyRef.current?.focus()
+      return
+    }
+    setError('')
+    setStep(prev => Math.min(prev + 1, totalSteps - 1))
+    setTimeout(() => {
+      if (step === 0) companyRef.current?.focus()
+    }, 100)
+  }, [step, form])
+
+  const prev = useCallback(() => {
+    setError('')
+    setStep(s => Math.max(s - 1, 0))
+  }, [])
+
+  const submit = useCallback(async () => {
+    if (!form.hasWebsite) { setError('Please select an option'); return }
+    if (form.hasWebsite === 'yes' && !form.websiteUrl.trim()) {
+      setError('Please enter your website URL')
+      websiteRef.current?.focus()
+      return
+    }
+
+    setSubmitting(true)
+    setError('')
+
+    try {
+      await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          website: form.hasWebsite === 'yes' ? form.websiteUrl.trim() : '',
+          score: 0,
+          source: 'call-page',
+          answers: {
+            companyName: form.companyName.trim(),
+            hasWebsite: form.hasWebsite,
+            websiteUrl: form.hasWebsite === 'yes' ? form.websiteUrl.trim() : '',
+          },
+          phone: form.phone.trim(),
+        }),
+      })
+    } catch {
+      // Don't block redirect if lead capture fails
+    }
+
+    const params = new URLSearchParams({
+      source: 'call-page',
+      name: form.name.trim(),
+      email: form.email.trim(),
+      ...(form.phone.trim() && { phone: form.phone.trim() }),
+    })
+    window.location.href = `${GHL_BOOKING_URL}?${params.toString()}`
+  }, [form])
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (step < totalSteps - 1) next()
+      else submit()
+    }
+  }, [step, next, submit])
+
+  const progress = ((step + 1) / totalSteps) * 100
+  const buttonLabels = ['Next: Company Info', 'Next: Website Check']
+
+  return (
+    <div className="max-w-md mx-auto bg-[#fdfcfa] rounded-2xl p-6 sm:p-8 shadow-2xl shadow-black/30 border border-[#e8e4dc]" onKeyDown={handleKeyDown}>
+      {/* Progress bar */}
+      <div className="mb-8">
+        <div className="flex justify-between text-xs text-[#8a8279] mb-2">
+          <span>Step {step + 1} of {totalSteps}</span>
+          <span>{Math.round(progress)}%</span>
+        </div>
+        <div className="h-1.5 bg-[#e8e4dc] rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[var(--accent)] rounded-full transition-all duration-300 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Step content */}
+      <div className="min-h-[280px]">
+        {/* Step 1: Contact Info (capture lead first) */}
+        {step === 0 && (
+          <div>
+            <label className="block text-lg font-semibold text-[#1a1612] mb-2">
+              Let&apos;s get you on the calendar
+            </label>
+            <p className="text-[#5c5549] text-sm mb-5">Takes 30 seconds. We&apos;ll send a calendar invite right away.</p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm text-[#5c5549] mb-1.5">Full Name</label>
+                <input
+                  ref={nameRef}
+                  type="text"
+                  value={form.name}
+                  onChange={e => update('name', e.target.value)}
+                  placeholder="e.g. John Smith"
+                  autoFocus
+                  autoComplete="name"
+                  className={INPUT_CLASS}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-[#5c5549] mb-1.5">Email</label>
+                <input
+                  type="email"
+                  inputMode="email"
+                  value={form.email}
+                  onChange={e => update('email', e.target.value)}
+                  placeholder="john@company.com"
+                  autoComplete="email"
+                  className={INPUT_CLASS}
+                />
+                <p className="mt-1.5 text-xs text-[#8a8279]">Only used to send your calendar invite.</p>
+              </div>
+              <div>
+                <label className="block text-sm text-[#5c5549] mb-1.5">Phone <span className="text-[#8a8279]">(optional)</span></label>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  value={form.phone}
+                  onChange={e => update('phone', e.target.value)}
+                  placeholder="(555) 123-4567"
+                  autoComplete="tel"
+                  className={INPUT_CLASS}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Company Name */}
+        {step === 1 && (
+          <div>
+            <label className="block text-lg font-semibold text-[#1a1612] mb-2">
+              What&apos;s your company name?
+            </label>
+            <p className="text-[#5c5549] text-sm mb-4">So we can research your market before the call.</p>
+            <input
+              ref={companyRef}
+              type="text"
+              value={form.companyName}
+              onChange={e => update('companyName', e.target.value)}
+              placeholder="e.g. Johnson Plumbing"
+              autoFocus
+              className={INPUT_CLASS}
+            />
+          </div>
+        )}
+
+        {/* Step 3: Website */}
+        {step === 2 && (
+          <div>
+            <label className="block text-lg font-semibold text-[#1a1612] mb-2">
+              Do you currently have a website?
+            </label>
+            <p className="text-[#5c5549] text-sm mb-4">We&apos;ll audit it before our call (free).</p>
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => update('hasWebsite', 'yes')}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-lg border text-left transition-all ${
+                  form.hasWebsite === 'yes'
+                    ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[#1a1612]'
+                    : 'border-[#e8e4dc] bg-[#f5f2ed] text-[#5c5549] hover:border-[#d97650]/40'
+                }`}
+              >
+                <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                  form.hasWebsite === 'yes' ? 'border-[var(--accent)]' : 'border-[#8a8279]'
+                }`}>
+                  {form.hasWebsite === 'yes' && <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />}
+                </span>
+                Yes, I have a website
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  update('hasWebsite', 'no')
+                  update('websiteUrl', '')
+                  // Auto-submit after short delay since no URL needed
+                  setTimeout(() => {
+                    setSubmitting(true)
+                    fetch('/api/leads', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        name: form.name.trim(),
+                        email: form.email.trim(),
+                        website: '',
+                        score: 0,
+                        source: 'call-page',
+                        answers: { companyName: form.companyName.trim(), hasWebsite: 'no', websiteUrl: '' },
+                        phone: form.phone.trim(),
+                      }),
+                    }).catch(() => {})
+                    const params = new URLSearchParams({
+                      source: 'call-page',
+                      name: form.name.trim(),
+                      email: form.email.trim(),
+                      ...(form.phone.trim() && { phone: form.phone.trim() }),
+                    })
+                    window.location.href = `${GHL_BOOKING_URL}?${params.toString()}`
+                  }, 300)
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-lg border text-left transition-all ${
+                  form.hasWebsite === 'no'
+                    ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[#1a1612]'
+                    : 'border-[#e8e4dc] bg-[#f5f2ed] text-[#5c5549] hover:border-[#d97650]/40'
+                }`}
+              >
+                <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                  form.hasWebsite === 'no' ? 'border-[var(--accent)]' : 'border-[#8a8279]'
+                }`}>
+                  {form.hasWebsite === 'no' && <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />}
+                </span>
+                No, not yet
+              </button>
+            </div>
+            {form.hasWebsite === 'yes' && (
+              <div className="mt-4">
+                <label className="block text-sm text-[#5c5549] mb-1.5">Website URL</label>
+                <input
+                  ref={websiteRef}
+                  type="url"
+                  inputMode="url"
+                  value={form.websiteUrl}
+                  onChange={e => update('websiteUrl', e.target.value)}
+                  placeholder="https://yourcompany.com"
+                  autoFocus
+                  className={INPUT_CLASS}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Error message */}
+      {error && (
+        <p className="mt-3 text-sm text-red-400">{error}</p>
+      )}
+
+      {/* Trust signals inside the form (near submit) */}
+      {step === totalSteps - 1 && form.hasWebsite === 'yes' && (
+        <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-[#8a8279]">
+          <span className="flex items-center gap-1.5">
+            <CheckIcon />
+            Free 20-min call
+          </span>
+          <span className="flex items-center gap-1.5">
+            <CheckIcon />
+            No contracts
+          </span>
+          <span className="flex items-center gap-1.5">
+            <CheckIcon />
+            Honest assessment
+          </span>
+        </div>
+      )}
+
+      {/* Navigation */}
+      <div className="mt-6 flex gap-3">
+        {step > 0 && (
+          <button
+            type="button"
+            onClick={prev}
+            className="px-6 py-3 border border-[#e8e4dc] text-[#5c5549] rounded-lg hover:bg-[#f5f2ed] transition-colors"
+          >
+            Back
+          </button>
+        )}
+        {step < totalSteps - 1 ? (
+          <button
+            type="button"
+            onClick={next}
+            className="flex-1 px-6 py-3.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg transition-all hover:scale-[1.01] shadow-lg shadow-[var(--accent)]/25"
+          >
+            {buttonLabels[step]}
+          </button>
+        ) : (
+          form.hasWebsite === 'yes' && (
+            <button
+              type="button"
+              onClick={submit}
+              disabled={submitting}
+              className="flex-1 px-6 py-3.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg transition-all hover:scale-[1.01] shadow-lg shadow-[var(--accent)]/25 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submitting ? 'Redirecting to Calendar...' : 'Pick a Time'}
+            </button>
+          )
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function CallLandingPage() {
   return (
     <div className="min-h-screen bg-[#0c0a09]">
@@ -38,24 +376,24 @@ export default function CallLandingPage() {
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-full mb-8">
             <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
             <span className="text-red-400 text-sm font-medium">
-              Attention home service business owners tired of generic agencies
+              3 client spots left — I do the work myself, so capacity is limited
             </span>
           </div>
 
           {/* Main Headline */}
           <h1 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] tracking-tight">
-            We Will Install The Same{' '}
-            <span className="text-[var(--accent)]">SEO System</span>{' '}
-            We Used To Scale Our Own Home Service Company
+            Your Competitors Are Getting the Calls{' '}
+            <span className="text-[var(--accent)]">You Should Be Getting.</span>{' '}
+            We Fix That.
           </h1>
 
           {/* Subhead - Founder Credibility */}
           <p className="mt-8 text-xl sm:text-2xl text-white/70 max-w-2xl mx-auto leading-relaxed">
-            Forget generic &quot;marketing.&quot; We are home service business owners who built a proprietary system to dominate local search. We don&apos;t guess. We just copy-paste what worked for us into your business.
+            I&apos;m not an agency. I&apos;m a home service owner who got tired of paying for SEO that didn&apos;t work. So I built something that did.
           </p>
 
           <p className="mt-6 text-lg text-white/50">
-            <strong className="text-white/80">+5 ranking positions</strong> and <strong className="text-white/80">66% more impressions</strong> in 30 days. On our own company.
+            <strong className="text-white/80">+5 ranking positions</strong> and <strong className="text-white/80">66% more impressions</strong> in 30 days. On my own company.
           </p>
 
           {/* Primary CTA */}
@@ -64,11 +402,11 @@ export default function CallLandingPage() {
               href="#book-call"
               className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg transition-all cursor-pointer text-lg shadow-lg shadow-[var(--accent)]/25 hover:shadow-[var(--accent)]/40 hover:scale-[1.02]"
             >
-              Book Your Free Strategy Call
+              Book Your Free 20-Min Strategy Call
               <ArrowIcon />
             </a>
             <p className="mt-3 text-sm text-white/40">
-              20 minutes. No pitch deck. Just real talk about your market.
+              No pitch deck. Just real talk about your market.
             </p>
           </div>
         </div>
@@ -78,7 +416,7 @@ export default function CallLandingPage() {
       <section className="py-16 sm:py-24 bg-[#141210]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
-            Let me guess...
+            Here&apos;s what $3,000/month gets you at most agencies:
           </h2>
 
           <div className="mt-8 space-y-4">
@@ -110,7 +448,7 @@ export default function CallLandingPage() {
       <section className="py-16 sm:py-24 bg-[#0c0a09]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
-            Why I&apos;m Different
+            I&apos;m Not an Agency. I&apos;m a Contractor Who Figured Out SEO.
           </h2>
 
           <div className="mt-8 space-y-6 text-white/80 text-lg leading-relaxed">
@@ -243,20 +581,20 @@ export default function CallLandingPage() {
           <div className="grid sm:grid-cols-2 gap-6">
             {[
               {
-                title: 'The Exact System I Use',
-                desc: 'Same SEO playbook that works for my company. Adapted for your market.',
+                title: 'My $0 to Page 1 Playbook',
+                desc: 'The same steps I used to rank my own company. No theory — just what worked.',
               },
               {
-                title: 'You Work With Me Directly',
-                desc: 'No account managers. No hand-offs. You text me, I respond.',
+                title: 'Text Me. I\u2019ll Text Back.',
+                desc: 'No account managers, no ticket systems. You get my cell number.',
               },
               {
-                title: 'Industry-Specific Strategy',
-                desc: 'I understand home services, seasonal demand, and what homeowners actually search for.',
+                title: 'I Know What "Slow Season" Feels Like',
+                desc: 'I plan content around your busy months because I manage the same cycles.',
               },
               {
-                title: 'Results You Can Actually Measure',
-                desc: 'Rankings that turn into calls. Not vanity metrics in a confusing PDF.',
+                title: 'Calls, Not Clicks',
+                desc: 'I don\u2019t send you a PDF full of graphs. I show you which searches turned into phone calls.',
               },
             ].map((item, i) => (
               <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-6">
@@ -268,47 +606,32 @@ export default function CallLandingPage() {
         </div>
       </section>
 
-      {/* Calendar Section */}
-      <section id="book-call" className="py-16 sm:py-24 bg-[#141210] scroll-mt-8">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
-            Ready to Stop Being Treated Like a Number?
-          </h2>
-
-          <p className="mt-6 text-lg text-white/60 max-w-2xl mx-auto">
-            Book a 20-minute call. I&apos;ll take a look at your current rankings, your competition,
-            and give you an honest assessment of what it would take to dominate your local market.
-          </p>
-
-          {/* GHL Calendar Widget */}
-          <div className="mt-10 rounded-2xl overflow-hidden">
-            <iframe
-              src="https://api.leadconnectorhq.com/widget/booking/0sf1QEe5x3p5eHFHPJLW?source=call-page"
-              style={{ width: '100%', border: 'none', overflow: 'hidden', minHeight: '700px' }}
-              scrolling="no"
-              id="0sf1QEe5x3p5eHFHPJLW_1768508624665"
-            />
-            <Script
-              src="https://link.msgsndr.com/js/form_embed.js"
-              strategy="lazyOnload"
-            />
+      {/* Booking Form Section */}
+      <section id="book-call" className="py-16 sm:py-24 bg-[#0c0a09] scroll-mt-8">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-6">
+            <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
+              I&apos;ll Research Your Market Before We Talk. For Free.
+            </h2>
           </div>
 
-          {/* Trust elements */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-white/40">
-            <span className="flex items-center gap-2">
-              <CheckIcon />
-              Free 20-minute call
-            </span>
-            <span className="flex items-center gap-2">
-              <CheckIcon />
-              No contracts required
-            </span>
-            <span className="flex items-center gap-2">
-              <CheckIcon />
-              Honest assessment
-            </span>
+          {/* What happens next - 3 step visual */}
+          <div className="flex items-start justify-center gap-4 sm:gap-8 mb-10 text-center">
+            <div className="flex-1 max-w-[140px]">
+              <div className="w-10 h-10 rounded-full bg-[var(--accent)]/20 text-[var(--accent)] font-bold flex items-center justify-center mx-auto mb-2 text-sm">1</div>
+              <p className="text-white/60 text-xs sm:text-sm">Answer 3 quick questions</p>
+            </div>
+            <div className="flex-1 max-w-[140px]">
+              <div className="w-10 h-10 rounded-full bg-[var(--accent)]/20 text-[var(--accent)] font-bold flex items-center justify-center mx-auto mb-2 text-sm">2</div>
+              <p className="text-white/60 text-xs sm:text-sm">Pick a time that works</p>
+            </div>
+            <div className="flex-1 max-w-[140px]">
+              <div className="w-10 h-10 rounded-full bg-[var(--accent)]/20 text-[var(--accent)] font-bold flex items-center justify-center mx-auto mb-2 text-sm">3</div>
+              <p className="text-white/60 text-xs sm:text-sm">We research your market before we talk</p>
+            </div>
           </div>
+
+          <BookingForm />
         </div>
       </section>
     </div>
