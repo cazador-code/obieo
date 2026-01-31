@@ -548,7 +548,63 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Send to Facebook Conversions API (server-side tracking)
+    // Handle Partial Call Page leads (drop-off capture)
+    if (source === 'call-page-partial') {
+      const answers = body.answers || {}
+      const safeCompany = escapeHtml(answers.companyName || '')
+      const safeName = escapeHtml(name || '')
+      const safeEmail = escapeHtml(email)
+      const safePhone = body.phone ? escapeHtml(body.phone) : ''
+
+      const emailResult = await resend.emails.send({
+        from: 'Obieo <noreply@leads.obieo.com>',
+        to: process.env.NOTIFICATION_EMAIL || 'hunter@obieo.com',
+        subject: `[Partial] Call Page Lead: ${answers.companyName || name || email}`,
+        html: `
+          <h2>⚠️ Partial Call Page Lead (Drop-off)</h2>
+          <p style="color: #666;">This person started the booking form but didn't complete verification.</p>
+          <h3>Contact</h3>
+          <p><strong>Name:</strong> ${safeName}</p>
+          <p><strong>Email:</strong> ${safeEmail}</p>
+          ${safePhone ? `<p><strong>Phone:</strong> ${safePhone}</p>` : ''}
+          <h3>Business Info</h3>
+          <p><strong>Company:</strong> ${safeCompany}</p>
+          <p><strong>Has Website:</strong> ${escapeHtml(answers.hasWebsite || 'N/A')}</p>
+          ${answers.websiteUrl ? `<p><strong>Website:</strong> ${escapeHtml(answers.websiteUrl)}</p>` : ''}
+          <hr />
+          <p style="color: #666; font-size: 12px;">Partial lead from obieo.com/call — user dropped off before completing SMS verification</p>
+        `,
+      })
+      console.log('Partial call page email sent:', emailResult)
+
+      // Send to GHL for CRM segmentation
+      if (GHL_WEBHOOK_URL) {
+        try {
+          const response = await fetch(GHL_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              name,
+              phone: body.phone || '',
+              company: answers.companyName || '',
+              website: website || answers.websiteUrl || '',
+              source: 'call-page-partial',
+              call_has_website: answers.hasWebsite || '',
+            }),
+          })
+          if (response.ok) {
+            console.log('Partial call lead sent to GHL successfully')
+          } else {
+            console.error('GHL webhook failed:', response.status)
+          }
+        } catch (error) {
+          console.error('Error sending partial call lead to GHL:', error)
+        }
+      }
+    }
+
+    // Send to Facebook Conversions API (server-side tracking) — skip partials
     const sourceUrls: Record<string, string> = {
       'quiz': 'quiz',
       'ai-visibility-quiz': 'quiz',
@@ -561,13 +617,15 @@ export async function POST(request: NextRequest) {
       'roi-calculator': 'ROI Calculator',
       'call-page': 'Call Booking Form',
     }
-    await sendToFacebookCAPI({
-      email,
-      eventSourceUrl: `https://obieo.com/${sourceUrls[source] || source}`,
-      clientIp: ip,
-      clientUserAgent: userAgent,
-      contentName: contentNames[source] || source,
-    })
+    if (source !== 'call-page-partial') {
+      await sendToFacebookCAPI({
+        email,
+        eventSourceUrl: `https://obieo.com/${sourceUrls[source] || source}`,
+        clientIp: ip,
+        clientUserAgent: userAgent,
+        contentName: contentNames[source] || source,
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

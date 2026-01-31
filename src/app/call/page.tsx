@@ -76,11 +76,46 @@ function BookingForm() {
 
   const inputRef = useRef<HTMLInputElement>(null)
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const partialSaved = useRef(false)
 
   const steps = form.hasWebsite === 'yes' ? STEPS_WITH_WEBSITE : STEPS_WITHOUT_WEBSITE
   const stepIndex = steps.indexOf(currentStep)
   const totalSteps = steps.length
   const progress = ((stepIndex + 1) / totalSteps) * 100
+
+  // Save partial lead data (fire-and-forget)
+  const buildPartialPayload = useCallback(() => {
+    const email = form.email.trim()
+    if (!email || !email.includes('@') || !email.includes('.')) return null
+    return JSON.stringify({
+      name: form.name.trim(),
+      email,
+      website: form.hasWebsite === 'yes' ? form.websiteUrl.trim() : '',
+      score: 0,
+      source: 'call-page-partial',
+      answers: {
+        companyName: form.companyName.trim(),
+        hasWebsite: form.hasWebsite,
+        websiteUrl: form.hasWebsite === 'yes' ? form.websiteUrl.trim() : '',
+      },
+      phone: rawDigits(form.phone),
+    })
+  }, [form])
+
+  // Beacon partial lead on tab close / navigate away
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && !partialSaved.current) {
+        const payload = buildPartialPayload()
+        if (payload) {
+          navigator.sendBeacon('/api/leads', new Blob([payload], { type: 'application/json' }))
+          partialSaved.current = true
+        }
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
+  }, [buildPartialPayload])
 
   // Focus input when step changes
   useEffect(() => {
@@ -181,6 +216,9 @@ function BookingForm() {
       if (data.verified) {
         setStatus('submitting')
 
+        // Mark as saved so beacon doesn't double-fire
+        partialSaved.current = true
+
         // Fire-and-forget lead capture
         fetch('/api/leads', {
           method: 'POST',
@@ -271,6 +309,18 @@ function BookingForm() {
           setError('Please enter a valid email')
           return
         }
+        // Fire partial lead capture (email collected = actionable lead)
+        if (!partialSaved.current) {
+          const payload = buildPartialPayload()
+          if (payload) {
+            fetch('/api/leads', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: payload,
+            }).catch(() => {})
+            partialSaved.current = true
+          }
+        }
         goTo('phone', 1)
         break
       }
@@ -280,7 +330,7 @@ function BookingForm() {
       default:
         break
     }
-  }, [currentStep, form, goTo, sendCode])
+  }, [currentStep, form, goTo, sendCode, buildPartialPayload])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -350,7 +400,13 @@ function BookingForm() {
                   autoFocus
                   className={INPUT_CLASS}
                 />
-                <p className="mt-3 text-xs text-[#8a8279]">Press Enter to continue</p>
+                <button
+                  type="button"
+                  onClick={advance}
+                  className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium rounded-lg transition-all text-base"
+                >
+                  Continue <ArrowIcon />
+                </button>
               </div>
             )}
 
@@ -422,7 +478,13 @@ function BookingForm() {
                   autoFocus
                   className={INPUT_CLASS}
                 />
-                <p className="mt-3 text-xs text-[#8a8279]">Press Enter to continue</p>
+                <button
+                  type="button"
+                  onClick={advance}
+                  className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium rounded-lg transition-all text-base"
+                >
+                  Continue <ArrowIcon />
+                </button>
               </div>
             )}
 
@@ -443,7 +505,13 @@ function BookingForm() {
                   autoComplete="name"
                   className={INPUT_CLASS}
                 />
-                <p className="mt-3 text-xs text-[#8a8279]">Press Enter to continue</p>
+                <button
+                  type="button"
+                  onClick={advance}
+                  className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium rounded-lg transition-all text-base"
+                >
+                  Continue <ArrowIcon />
+                </button>
               </div>
             )}
 
@@ -465,7 +533,13 @@ function BookingForm() {
                   autoComplete="email"
                   className={INPUT_CLASS}
                 />
-                <p className="mt-3 text-xs text-[#8a8279]">Press Enter to continue</p>
+                <button
+                  type="button"
+                  onClick={advance}
+                  className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium rounded-lg transition-all text-base"
+                >
+                  Continue <ArrowIcon />
+                </button>
               </div>
             )}
 
@@ -487,11 +561,14 @@ function BookingForm() {
                   autoComplete="tel"
                   className={INPUT_CLASS}
                 />
-                {status === 'sendingCode' ? (
-                  <p className="mt-3 text-sm text-[#8a8279]">Sending code...</p>
-                ) : (
-                  <p className="mt-3 text-xs text-[#8a8279]">Press Enter to receive your code</p>
-                )}
+                <button
+                  type="button"
+                  onClick={advance}
+                  disabled={status === 'sendingCode'}
+                  className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all text-base"
+                >
+                  {status === 'sendingCode' ? 'Sending code...' : <>Send Verification Code <ArrowIcon /></>}
+                </button>
               </div>
             )}
 
