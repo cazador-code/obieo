@@ -83,24 +83,31 @@ function BookingForm() {
   const totalSteps = steps.length
   const progress = ((stepIndex + 1) / totalSteps) * 100
 
-  // Save partial lead data (fire-and-forget)
-  const buildPartialPayload = useCallback(() => {
-    const email = form.email.trim()
-    if (!email || !email.includes('@') || !email.includes('.')) return null
-    return JSON.stringify({
+  const websiteValue = form.hasWebsite === 'yes' ? form.websiteUrl.trim() : ''
+
+  // Build the lead payload used by both partial capture and final submission
+  const buildLeadPayload = useCallback((source: string, phone: string) => {
+    return {
       name: form.name.trim(),
-      email,
-      website: form.hasWebsite === 'yes' ? form.websiteUrl.trim() : '',
+      email: form.email.trim(),
+      website: websiteValue,
       score: 0,
-      source: 'call-page-partial',
+      source,
       answers: {
         companyName: form.companyName.trim(),
         hasWebsite: form.hasWebsite,
-        websiteUrl: form.hasWebsite === 'yes' ? form.websiteUrl.trim() : '',
+        websiteUrl: websiteValue,
       },
-      phone: rawDigits(form.phone),
-    })
-  }, [form])
+      phone: rawDigits(phone),
+    }
+  }, [form, websiteValue])
+
+  // Returns JSON string for partial lead, or null if email is not yet valid
+  const buildPartialPayload = useCallback(() => {
+    const email = form.email.trim()
+    if (!email || !email.includes('@') || !email.includes('.')) return null
+    return JSON.stringify(buildLeadPayload('call-page-partial', form.phone))
+  }, [form.email, form.phone, buildLeadPayload])
 
   // Beacon partial lead on tab close / navigate away
   useEffect(() => {
@@ -223,19 +230,7 @@ function BookingForm() {
         fetch('/api/leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: form.name.trim(),
-            email: form.email.trim(),
-            website: form.hasWebsite === 'yes' ? form.websiteUrl.trim() : '',
-            score: 0,
-            source: 'call-page',
-            answers: {
-              companyName: form.companyName.trim(),
-              hasWebsite: form.hasWebsite,
-              websiteUrl: form.hasWebsite === 'yes' ? form.websiteUrl.trim() : '',
-            },
-            phone: rawDigits(sentPhone),
-          }),
+          body: JSON.stringify(buildLeadPayload('call-page', sentPhone)),
         }).catch(() => {})
 
         // Brief success state then redirect
@@ -257,7 +252,7 @@ function BookingForm() {
       setOtpError('Something went wrong. Please try again.')
       setStatus('idle')
     }
-  }, [sentPhone, form])
+  }, [sentPhone, form, buildLeadPayload])
 
   const resendCode = useCallback(async () => {
     if (resendCooldown > 0) return

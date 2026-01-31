@@ -298,6 +298,42 @@ function formatAIQuizEmail(
   `
 }
 
+function formatCallPageEmail(
+  name: string,
+  email: string,
+  phone: string,
+  answers: { companyName?: string; hasWebsite?: string; websiteUrl?: string; revenue?: string },
+  isPartial: boolean
+): string {
+  const safeName = escapeHtml(name || '')
+  const safeEmail = escapeHtml(email)
+  const safePhone = phone ? escapeHtml(phone) : ''
+  const safeCompany = escapeHtml(answers.companyName || '')
+
+  const heading = isPartial
+    ? '<h2>⚠️ Partial Call Page Lead (Drop-off)</h2><p style="color: #666;">This person started the booking form but didn\'t complete verification.</p>'
+    : '<h2>New Call Page Lead</h2>'
+
+  const footer = isPartial
+    ? 'Partial lead from obieo.com/call — user dropped off before completing SMS verification'
+    : 'This lead submitted the booking form on obieo.com/call'
+
+  return `
+    ${heading}
+    <h3>Contact</h3>
+    <p><strong>Name:</strong> ${safeName}</p>
+    <p><strong>Email:</strong> ${safeEmail}</p>
+    ${safePhone ? `<p><strong>Phone:</strong> ${safePhone}</p>` : ''}
+    <h3>Business Info</h3>
+    <p><strong>Company:</strong> ${safeCompany}</p>
+    <p><strong>Has Website:</strong> ${escapeHtml(answers.hasWebsite || 'N/A')}</p>
+    ${answers.websiteUrl ? `<p><strong>Website:</strong> ${escapeHtml(answers.websiteUrl)}</p>` : ''}
+    ${!isPartial && answers.revenue ? `<p><strong>Revenue:</strong> ${escapeHtml(answers.revenue)}</p>` : ''}
+    <hr />
+    <p style="color: #666; font-size: 12px;">${footer}</p>
+  `
+}
+
 function formatROIEmail(
   name: string,
   email: string,
@@ -492,36 +528,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Handle Call Page leads
-    if (source === 'call-page') {
+    // Handle Call Page leads (full and partial drop-off)
+    if (source === 'call-page' || source === 'call-page-partial') {
+      const isPartial = source === 'call-page-partial'
       const answers = body.answers || {}
-      const safeCompany = escapeHtml(answers.companyName || '')
-      const safeName = escapeHtml(name || '')
-      const safeEmail = escapeHtml(email)
-      const safePhone = body.phone ? escapeHtml(body.phone) : ''
+
+      const subjectLabel = isPartial
+        ? `[Partial] Call Page Lead: ${answers.companyName || name || email}`
+        : `New Call Booking Lead: ${answers.companyName || name}`
 
       const emailResult = await resend.emails.send({
         from: 'Obieo <noreply@leads.obieo.com>',
         to: process.env.NOTIFICATION_EMAIL || 'hunter@obieo.com',
-        subject: `New Call Booking Lead: ${answers.companyName || name}`,
-        html: `
-          <h2>New Call Page Lead</h2>
-          <h3>Contact</h3>
-          <p><strong>Name:</strong> ${safeName}</p>
-          <p><strong>Email:</strong> ${safeEmail}</p>
-          ${safePhone ? `<p><strong>Phone:</strong> ${safePhone}</p>` : ''}
-          <h3>Business Info</h3>
-          <p><strong>Company:</strong> ${safeCompany}</p>
-          <p><strong>Has Website:</strong> ${escapeHtml(answers.hasWebsite || 'N/A')}</p>
-          ${answers.websiteUrl ? `<p><strong>Website:</strong> ${escapeHtml(answers.websiteUrl)}</p>` : ''}
-          ${answers.revenue ? `<p><strong>Revenue:</strong> ${escapeHtml(answers.revenue)}</p>` : ''}
-          <hr />
-          <p style="color: #666; font-size: 12px;">This lead submitted the booking form on obieo.com/call</p>
-        `,
+        subject: subjectLabel,
+        html: formatCallPageEmail(name, email, body.phone || '', answers, isPartial),
       })
-      console.log('Call page email sent:', emailResult)
+      console.log(`${isPartial ? 'Partial c' : 'C'}all page email sent:`, emailResult)
 
-      // Send to GHL
       if (GHL_WEBHOOK_URL) {
         try {
           const response = await fetch(GHL_WEBHOOK_URL, {
@@ -533,73 +556,17 @@ export async function POST(request: NextRequest) {
               phone: body.phone || '',
               company: answers.companyName || '',
               website: website || answers.websiteUrl || '',
-              source: 'call-page',
+              source,
               call_has_website: answers.hasWebsite || '',
             }),
           })
           if (response.ok) {
-            console.log('Call page lead sent to GHL successfully')
+            console.log(`${isPartial ? 'Partial c' : 'C'}all lead sent to GHL successfully`)
           } else {
             console.error('GHL webhook failed:', response.status)
           }
         } catch (error) {
           console.error('Error sending call lead to GHL:', error)
-        }
-      }
-    }
-
-    // Handle Partial Call Page leads (drop-off capture)
-    if (source === 'call-page-partial') {
-      const answers = body.answers || {}
-      const safeCompany = escapeHtml(answers.companyName || '')
-      const safeName = escapeHtml(name || '')
-      const safeEmail = escapeHtml(email)
-      const safePhone = body.phone ? escapeHtml(body.phone) : ''
-
-      const emailResult = await resend.emails.send({
-        from: 'Obieo <noreply@leads.obieo.com>',
-        to: process.env.NOTIFICATION_EMAIL || 'hunter@obieo.com',
-        subject: `[Partial] Call Page Lead: ${answers.companyName || name || email}`,
-        html: `
-          <h2>⚠️ Partial Call Page Lead (Drop-off)</h2>
-          <p style="color: #666;">This person started the booking form but didn't complete verification.</p>
-          <h3>Contact</h3>
-          <p><strong>Name:</strong> ${safeName}</p>
-          <p><strong>Email:</strong> ${safeEmail}</p>
-          ${safePhone ? `<p><strong>Phone:</strong> ${safePhone}</p>` : ''}
-          <h3>Business Info</h3>
-          <p><strong>Company:</strong> ${safeCompany}</p>
-          <p><strong>Has Website:</strong> ${escapeHtml(answers.hasWebsite || 'N/A')}</p>
-          ${answers.websiteUrl ? `<p><strong>Website:</strong> ${escapeHtml(answers.websiteUrl)}</p>` : ''}
-          <hr />
-          <p style="color: #666; font-size: 12px;">Partial lead from obieo.com/call — user dropped off before completing SMS verification</p>
-        `,
-      })
-      console.log('Partial call page email sent:', emailResult)
-
-      // Send to GHL for CRM segmentation
-      if (GHL_WEBHOOK_URL) {
-        try {
-          const response = await fetch(GHL_WEBHOOK_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email,
-              name,
-              phone: body.phone || '',
-              company: answers.companyName || '',
-              website: website || answers.websiteUrl || '',
-              source: 'call-page-partial',
-              call_has_website: answers.hasWebsite || '',
-            }),
-          })
-          if (response.ok) {
-            console.log('Partial call lead sent to GHL successfully')
-          } else {
-            console.error('GHL webhook failed:', response.status)
-          }
-        } catch (error) {
-          console.error('Error sending partial call lead to GHL:', error)
         }
       }
     }
