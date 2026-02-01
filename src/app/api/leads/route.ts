@@ -558,6 +558,7 @@ export async function POST(request: NextRequest) {
               website: website || answers.websiteUrl || '',
               source,
               call_has_website: answers.hasWebsite || '',
+              tags: isPartial ? [] : ['call-page-lead'],
             }),
           })
           if (response.ok) {
