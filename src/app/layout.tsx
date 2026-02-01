@@ -8,6 +8,7 @@ import { SmoothScroll } from "@/components/SmoothScroll";
 import { CustomCursor } from "@/components/CustomCursor";
 import { BookingModalProvider } from "@/components/BookingModalContext";
 import { BookingModal } from "@/components/BookingModal";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -125,6 +126,7 @@ export default function RootLayout({
           </ThemeProvider>
           <BookingModal />
         </BookingModalProvider>
+        <Analytics />
       </body>
     </html>
   );
