@@ -51,6 +51,14 @@ const slideVariants = {
   exit: (direction: number) => ({ x: direction > 0 ? -80 : 80, opacity: 0 }),
 }
 
+interface TrackingParams {
+  utm_source?: string
+  utm_medium?: string
+  utm_campaign?: string
+  fbclid?: string
+  gclid?: string
+}
+
 function BookingForm() {
   const [currentStep, setCurrentStep] = useState<Step>('business')
   const [direction, setDirection] = useState(1)
@@ -68,6 +76,19 @@ function BookingForm() {
 
   const inputRef = useRef<HTMLInputElement>(null)
   const partialSaved = useRef(false)
+  const trackingParams = useRef<TrackingParams>({})
+
+  // Capture UTM params and click IDs on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    trackingParams.current = {
+      utm_source: params.get('utm_source') || undefined,
+      utm_medium: params.get('utm_medium') || undefined,
+      utm_campaign: params.get('utm_campaign') || undefined,
+      fbclid: params.get('fbclid') || undefined,
+      gclid: params.get('gclid') || undefined,
+    }
+  }, [])
 
   const websiteValue = form.hasWebsite === 'yes' ? form.websiteUrl.trim() : ''
 
@@ -85,6 +106,7 @@ function BookingForm() {
         websiteUrl: websiteValue,
       },
       phone: rawDigits(form.phone),
+      tracking: trackingParams.current,
     }
   }, [form, websiteValue])
 

@@ -532,6 +532,20 @@ export async function POST(request: NextRequest) {
     if (source === 'call-page' || source === 'call-page-partial') {
       const isPartial = source === 'call-page-partial'
       const answers = body.answers || {}
+      const tracking = body.tracking || {}
+
+      // Build tags based on traffic source
+      const tags: string[] = []
+      if (!isPartial) {
+        tags.push('call-page-lead')
+        // Add source-specific tags
+        if (tracking.fbclid || tracking.utm_source?.toLowerCase() === 'facebook') {
+          tags.push('facebook-lead')
+        }
+        if (tracking.gclid || tracking.utm_source?.toLowerCase() === 'google') {
+          tags.push('google-ads-lead')
+        }
+      }
 
       const subjectLabel = isPartial
         ? `[Partial] Call Page Lead: ${answers.companyName || name || email}`
@@ -558,7 +572,11 @@ export async function POST(request: NextRequest) {
               website: website || answers.websiteUrl || '',
               source,
               call_has_website: answers.hasWebsite || '',
-              tags: isPartial ? [] : ['call-page-lead'],
+              tags: tags.join(','),
+              // Tracking data for attribution
+              utm_source: tracking.utm_source || '',
+              utm_medium: tracking.utm_medium || '',
+              utm_campaign: tracking.utm_campaign || '',
             }),
           })
           if (response.ok) {
