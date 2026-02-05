@@ -603,7 +603,8 @@ export async function POST(request: NextRequest) {
       'roi-calculator': 'ROI Calculator',
       'call-page': 'Call Booking Form',
     }
-    if (source !== 'call-page-partial') {
+    // Skip CAPI for call-page — GHL fires the pixel when booking is confirmed
+    if (source !== 'call-page-partial' && source !== 'call-page') {
       await sendToFacebookCAPI({
         email,
         eventSourceUrl: `https://obieo.com/${sourceUrls[source] || source}`,
