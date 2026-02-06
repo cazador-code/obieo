@@ -27,6 +27,18 @@ const blogSchema = {
     },
     {
       '@type': 'BlogPosting',
+      headline: 'GEO vs SEO: What\'s the Difference?',
+      url: 'https://www.obieo.com/blog/geo-vs-seo',
+      datePublished: '2026-02-06',
+    },
+    {
+      '@type': 'BlogPosting',
+      headline: 'AEO vs SEO: Answer Engine Optimization Explained',
+      url: 'https://www.obieo.com/blog/aeo-vs-seo',
+      datePublished: '2026-02-06',
+    },
+    {
+      '@type': 'BlogPosting',
       headline: 'Why Your Competitors Will Be Invisible in 2 Years',
       url: 'https://www.obieo.com/blog/ai-search-contractors',
       datePublished: '2024-12-01',
@@ -55,6 +67,30 @@ const posts = [
     publishedAt: '2026-01-15',
     category: 'AI Search',
     readTime: '15 min',
+  },
+  {
+    slug: 'geo-vs-seo',
+    title: "GEO vs SEO: What's the Difference? [2026 Guide]",
+    excerpt: "GEO optimizes for AI citations while SEO targets traditional rankings. Learn the key differences, when to use each, and how they work together in modern search.",
+    publishedAt: '2026-02-06',
+    category: 'AI Search',
+    readTime: '8 min',
+  },
+  {
+    slug: 'aeo-vs-seo',
+    title: 'AEO vs SEO: Answer Engine Optimization Explained [2026]',
+    excerpt: "Answer Engine Optimization focuses on getting your content featured as direct answers in AI-powered search. Learn how AEO differs from SEO and how to optimize for both.",
+    publishedAt: '2026-02-06',
+    category: 'AI Search',
+    readTime: '8 min',
+  },
+  {
+    slug: 'chatgpt-ads',
+    title: "ChatGPT Is Adding Ads. Here's What It Means for You",
+    excerpt: "ChatGPT is introducing ads into AI-generated responses. Here's what this means for home service businesses and how to position yourself before it rolls out.",
+    publishedAt: '2026-01-10',
+    category: 'AI Search',
+    readTime: '5 min',
   },
   {
     slug: 'ai-search-contractors',
@@ -198,16 +234,61 @@ export default function BlogPage() {
         </Section>
       )}
 
+      {/* All Posts Grid */}
+      {posts.length > 1 && (
+        <Section className="pt-0">
+          <Container>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {posts.slice(1).map((post, i) => (
+                <FadeInSection key={post.slug} delay={0.1 * i}>
+                  <Link href={`/blog/${post.slug}`} className="group block h-full">
+                    <article className="h-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] hover:border-[var(--accent)]/30 transition-all hover:shadow-lg hover:shadow-[var(--accent)]/5 p-6 flex flex-col">
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[var(--accent)]/10 text-[var(--accent)]">
+                          {post.category}
+                        </span>
+                        <span className="text-xs text-[var(--text-muted)]">{post.readTime} read</span>
+                      </div>
+                      <h3 className="text-lg font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors mb-3 leading-snug">
+                        {post.title}
+                      </h3>
+                      <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-4 flex-1">
+                        {post.excerpt}
+                      </p>
+                      <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">
+                        <time className="text-xs text-[var(--text-muted)]">
+                          {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })}
+                        </time>
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--accent)] group-hover:gap-2 transition-all">
+                          Read
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                          </svg>
+                        </span>
+                      </div>
+                    </article>
+                  </Link>
+                </FadeInSection>
+              ))}
+            </div>
+          </Container>
+        </Section>
+      )}
+
       {/* Newsletter CTA */}
       <Section variant="alternate">
         <Container size="md">
           <FadeInSection>
             <div className="text-center">
               <h2 className="text-2xl md:text-3xl font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary)] mb-4">
-                More articles coming soon
+                Want a custom SEO strategy?
               </h2>
               <p className="text-[var(--text-secondary)] mb-8 max-w-lg mx-auto">
-                We&apos;re writing guides on SEO, local marketing, and growth strategies for contractors. Want early access?
+                We help home service businesses dominate Google and AI search. Book a free strategy call to see what&apos;s possible for your business.
               </p>
               <Link
                 href="/call"
