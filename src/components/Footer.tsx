@@ -28,6 +28,8 @@ export default function Footer() {
                 { name: 'Work', href: '/work' },
                 { name: 'Services', href: '/services' },
                 { name: 'Industries', href: '/industries' },
+                { name: 'Home Services SEO', href: '/home-services-seo' },
+                { name: 'Blog', href: '/blog' },
                 { name: 'About', href: '/about' },
                 { name: 'Contact', href: '/contact' },
               ].map((link) => (
@@ -79,6 +81,14 @@ export default function Footer() {
                   className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
                 >
                   ROI Calculator
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/ai-seo"
+                  className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
+                >
+                  AI SEO
                 </Link>
               </li>
             </ul>
