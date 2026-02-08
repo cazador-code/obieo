@@ -28,6 +28,37 @@ function getResendClient() {
   return new Resend(apiKey)
 }
 
+function normalizeGhlTag(value: string): string | null {
+  const cleaned = value.trim().toLowerCase()
+  if (!cleaned) return null
+  // Keep tags short and safe. Avoid creating infinite tag variants in GHL.
+  if (cleaned.length > 64) return null
+  if (!/^[a-z0-9:_-]+$/.test(cleaned)) return null
+  return cleaned
+}
+
+function extractExtraTags(raw: unknown): string[] {
+  const candidates: string[] = []
+  if (typeof raw === 'string') {
+    candidates.push(...raw.split(','))
+  } else if (Array.isArray(raw)) {
+    for (const item of raw) {
+      if (typeof item === 'string') candidates.push(item)
+    }
+  }
+
+  const out: string[] = []
+  const seen = new Set<string>()
+  for (const c of candidates) {
+    const t = normalizeGhlTag(c)
+    if (!t) continue
+    if (seen.has(t)) continue
+    seen.add(t)
+    out.push(t)
+  }
+  return out
+}
+
 interface QuizAnswers {
   industry?: string
   hasWebsite?: string
@@ -583,6 +614,9 @@ export async function POST(request: NextRequest) {
       if (tracking.gclid || tracking.utm_source?.toLowerCase() === 'google') {
         tags.push('google-ads-lead')
       }
+      // Campaign / landing-page tags can be supplied by the client (e.g. /call?ghl_tag=lp-foo).
+      // These are used for routing + attribution inside GHL.
+      tags.push(...extractExtraTags(body.tags))
 
       const subjectLabel = isPartial
         ? `[Partial] Call Page Lead: ${answers.companyName || name || email}`

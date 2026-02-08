@@ -59,6 +59,25 @@ interface TrackingParams {
   gclid?: string
 }
 
+function normalizeGhlTag(value: string | null): string | null {
+  if (!value) return null
+  const cleaned = value.trim().toLowerCase()
+  if (!cleaned) return null
+  if (cleaned.length > 64) return null
+  if (!/^[a-z0-9:_-]+$/.test(cleaned)) return null
+  return cleaned
+}
+
+function normalizeBookingSource(value: string | null): string | null {
+  if (!value) return null
+  const cleaned = value.trim().toLowerCase()
+  if (!cleaned) return null
+  if (cleaned.length > 64) return null
+  // Keep this URL-safe. This ends up inside the GHL booking widget query string.
+  if (!/^[a-z0-9_-]+$/.test(cleaned)) return null
+  return cleaned
+}
+
 function BookingForm() {
   const [currentStep, setCurrentStep] = useState<Step>('business')
   const [direction, setDirection] = useState(1)
@@ -77,6 +96,10 @@ function BookingForm() {
   const inputRef = useRef<HTMLInputElement>(null)
   const partialSaved = useRef(false)
   const trackingParams = useRef<TrackingParams>({})
+  const campaign = useRef<{ bookingSource: string; tags: string[] }>({
+    bookingSource: 'call-page',
+    tags: [],
+  })
 
   // Capture UTM params and click IDs on mount
   useEffect(() => {
@@ -88,6 +111,13 @@ function BookingForm() {
       fbclid: params.get('fbclid') || undefined,
       gclid: params.get('gclid') || undefined,
     }
+
+    // Optional: allow pages linking into /call to set a booking widget "source"
+    // and add a stable campaign tag for GHL workflows/attribution.
+    const bookingSource = normalizeBookingSource(params.get('source'))
+    if (bookingSource) campaign.current.bookingSource = bookingSource
+    const ghlTag = normalizeGhlTag(params.get('ghl_tag'))
+    if (ghlTag) campaign.current.tags = [ghlTag]
   }, [])
 
   const websiteValue = form.hasWebsite === 'yes' ? form.websiteUrl.trim() : ''
@@ -100,10 +130,12 @@ function BookingForm() {
       website: websiteValue,
       score: 0,
       source,
+      tags: campaign.current.tags.length > 0 ? campaign.current.tags : undefined,
       answers: {
         companyName: form.companyName.trim(),
         hasWebsite: form.hasWebsite,
         websiteUrl: websiteValue,
+        bookingSource: campaign.current.bookingSource,
       },
       phone: rawDigits(form.phone),
       tracking: trackingParams.current,
@@ -196,7 +228,7 @@ function BookingForm() {
     setStatus('redirecting')
     setTimeout(() => {
       const params = new URLSearchParams({
-        source: 'call-page',
+        source: campaign.current.bookingSource,
         name: form.name.trim(),
         email: form.email.trim(),
         phone: digits,
