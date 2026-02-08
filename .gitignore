@@ -59,6 +59,8 @@ docs/claude-capabilities-map.md
 
 # Claude Code generated artifacts
 .claude/audit-report-*.md
+# Local Claude planning notes (keep out of git)
+.claude/seo-optimization-plan.md
 
 # SEO Machine tool (separate repo)
 .seomachine/
