@@ -121,6 +121,8 @@ async function sendToFacebookCAPI(data: {
   clientIp: string
   clientUserAgent: string
   contentName: string
+  fbp?: string
+  fbc?: string
 }) {
   if (!FB_ACCESS_TOKEN) {
     console.warn('FB_CONVERSIONS_API_TOKEN not configured, skipping CAPI')
@@ -144,6 +146,8 @@ async function sendToFacebookCAPI(data: {
             em: [hashedEmail], // hashed email
             client_ip_address: data.clientIp,
             client_user_agent: data.clientUserAgent,
+            ...(data.fbp ? { fbp: data.fbp } : {}),
+            ...(data.fbc ? { fbc: data.fbc } : {}),
           },
           custom_data: {
             content_name: data.contentName,
@@ -338,8 +342,7 @@ function formatROIEmail(
   name: string,
   email: string,
   company: string,
-  data: ROICalculatorData,
-  _score: number
+  data: ROICalculatorData
 ): string {
   const extraLeads = Math.round(data.currentLeadsPerMonth * 0.3)
   const additionalJobs = extraLeads * (data.closeRate / 100)
@@ -381,45 +384,67 @@ function formatROIEmail(
 }
 
 export async function POST(request: NextRequest) {
-  // Rate limiting
-  const ip = getClientIp(request);
-  const { success, remaining } = await leadsLimiter.limit(ip);
-  if (!success) {
-    return rateLimitResponse(remaining);
-  }
-
   // Capture user agent for Facebook CAPI
+  const ip = getClientIp(request)
   const userAgent = request.headers.get('user-agent') || ''
 
   try {
+    // Rate limiting (best-effort). If KV is misconfigured/down, don't drop leads.
+    try {
+      const { success, remaining } = await leadsLimiter.limit(ip)
+      if (!success) {
+        return rateLimitResponse(remaining)
+      }
+    } catch (e) {
+      console.error('Leads rate limiter error (allowing request):', e)
+    }
+
     const body = await request.json()
     const { name, email, website, score, source } = body
 
-    if (!email) {
-      return NextResponse.json(
-        { error: 'Email is required' },
-        { status: 400 }
-      )
+    const emailStr = typeof email === 'string' ? email.trim() : ''
+    const phoneStr = typeof body?.phone === 'string' ? body.phone.trim() : ''
+    const hasEmail = Boolean(emailStr)
+    const hasPhone = Boolean(phoneStr)
+
+    // For call-page partials we accept either email or phone so speed-to-lead can still fire.
+    // For all other lead types, require email (keeps our data quality high and supports Meta CAPI).
+    if (source === 'call-page-partial') {
+      if (!hasEmail && !hasPhone) {
+        return NextResponse.json(
+          { error: 'Email or phone is required' },
+          { status: 400 }
+        )
+      }
+    } else {
+      if (!hasEmail) {
+        return NextResponse.json(
+          { error: 'Email is required' },
+          { status: 400 }
+        )
+      }
     }
 
     const resend = getResendClient()
-
     if (!resend) {
-      console.error('Resend not configured - RESEND_API_KEY missing')
-      return NextResponse.json(
-        { error: 'Email service not configured' },
-        { status: 500 }
-      )
+      // Do not drop leads if notifications are misconfigured. GHL is the source of truth for speed-to-lead.
+      console.error('Resend not configured - RESEND_API_KEY missing (will skip email, still send to GHL if configured)')
     }
 
     if (source === 'roi-calculator') {
-      const emailResult = await resend.emails.send({
-        from: 'Obieo <noreply@leads.obieo.com>',
-        to: process.env.NOTIFICATION_EMAIL || 'hunter@obieo.com',
-        subject: `New ROI Calculator Lead: ${name}`,
-        html: formatROIEmail(name, email, website, body.quizAnswers, score),
-      })
-      console.log('Email sent:', emailResult)
+      if (resend) {
+        try {
+          const emailResult = await resend.emails.send({
+            from: 'Obieo <noreply@leads.obieo.com>',
+            to: process.env.NOTIFICATION_EMAIL || 'hunter@obieo.com',
+            subject: `New ROI Calculator Lead: ${name}`,
+            html: formatROIEmail(name, email, website, body.quizAnswers),
+          })
+          console.log('Email sent:', emailResult)
+        } catch (e) {
+          console.error('Failed sending ROI email notification:', e)
+        }
+      }
 
       // Send to GHL
       if (GHL_WEBHOOK_URL) {
@@ -443,7 +468,7 @@ export async function POST(request: NextRequest) {
           if (response.ok) {
             console.log('ROI lead sent to GHL successfully')
           } else {
-            console.error('GHL webhook failed:', response.status)
+            console.error('GHL webhook failed:', response.status, await response.text())
           }
         } catch (error) {
           console.error('Error sending ROI lead to GHL:', error)
@@ -453,13 +478,19 @@ export async function POST(request: NextRequest) {
 
     if (source === 'quiz') {
       // Send email notification
-      const emailResult = await resend.emails.send({
-        from: 'Obieo <noreply@leads.obieo.com>',
-        to: process.env.NOTIFICATION_EMAIL || 'hunter@obieo.com',
-        subject: `New Quiz Lead: ${name || email} (Score: ${score}/100)`,
-        html: formatQuizEmail(name, email, website, body.answers || {}, score),
-      })
-      console.log('Quiz email sent:', emailResult)
+      if (resend) {
+        try {
+          const emailResult = await resend.emails.send({
+            from: 'Obieo <noreply@leads.obieo.com>',
+            to: process.env.NOTIFICATION_EMAIL || 'hunter@obieo.com',
+            subject: `New Quiz Lead: ${name || email} (Score: ${score}/100)`,
+            html: formatQuizEmail(name, email, website, body.answers || {}, score),
+          })
+          console.log('Quiz email sent:', emailResult)
+        } catch (e) {
+          console.error('Failed sending Quiz email notification:', e)
+        }
+      }
 
       // Send to GHL
       await sendToGHL({
@@ -478,13 +509,19 @@ export async function POST(request: NextRequest) {
       const analysisResults = body.analysisResults as AIAnalysisResults
 
       // Send detailed email notification
-      const emailResult = await resend.emails.send({
-        from: 'Obieo <noreply@leads.obieo.com>',
-        to: process.env.NOTIFICATION_EMAIL || 'hunter@obieo.com',
-        subject: `🔥 AI Quiz Lead: ${aiQuizData?.business?.name || name} (Score: ${score}/100)`,
-        html: formatAIQuizEmail(aiQuizData, analysisResults),
-      })
-      console.log('AI Quiz email sent:', emailResult)
+      if (resend) {
+        try {
+          const emailResult = await resend.emails.send({
+            from: 'Obieo <noreply@leads.obieo.com>',
+            to: process.env.NOTIFICATION_EMAIL || 'hunter@obieo.com',
+            subject: `🔥 AI Quiz Lead: ${aiQuizData?.business?.name || name} (Score: ${score}/100)`,
+            html: formatAIQuizEmail(aiQuizData, analysisResults),
+          })
+          console.log('AI Quiz email sent:', emailResult)
+        } catch (e) {
+          console.error('Failed sending AI Quiz email notification:', e)
+        }
+      }
 
       // Send to GHL with enriched data
       if (GHL_WEBHOOK_URL) {
@@ -520,7 +557,7 @@ export async function POST(request: NextRequest) {
           if (response.ok) {
             console.log('AI Quiz lead sent to GHL successfully')
           } else {
-            console.error('GHL webhook failed:', response.status)
+            console.error('GHL webhook failed:', response.status, await response.text())
           }
         } catch (error) {
           console.error('Error sending AI Quiz lead to GHL:', error)
@@ -536,28 +573,34 @@ export async function POST(request: NextRequest) {
 
       // Build tags based on traffic source
       const tags: string[] = []
-      if (!isPartial) {
-        tags.push('call-page-lead')
-        // Add source-specific tags
-        if (tracking.fbclid || tracking.utm_source?.toLowerCase() === 'facebook') {
-          tags.push('facebook-lead')
-        }
-        if (tracking.gclid || tracking.utm_source?.toLowerCase() === 'google') {
-          tags.push('google-ads-lead')
-        }
+      // Stable tag for any /call form fill (partial or full). Use this for workflow triggers.
+      tags.push('call-page-form-fill')
+      tags.push(isPartial ? 'call-page-partial' : 'call-page-lead')
+      // Add source-specific tags (useful for routing even if they drop off before booking)
+      if (tracking.fbclid || tracking.utm_source?.toLowerCase() === 'facebook') {
+        tags.push('facebook-lead')
+      }
+      if (tracking.gclid || tracking.utm_source?.toLowerCase() === 'google') {
+        tags.push('google-ads-lead')
       }
 
       const subjectLabel = isPartial
         ? `[Partial] Call Page Lead: ${answers.companyName || name || email}`
         : `New Call Booking Lead: ${answers.companyName || name}`
 
-      const emailResult = await resend.emails.send({
-        from: 'Obieo <noreply@leads.obieo.com>',
-        to: process.env.NOTIFICATION_EMAIL || 'hunter@obieo.com',
-        subject: subjectLabel,
-        html: formatCallPageEmail(name, email, body.phone || '', answers, isPartial),
-      })
-      console.log(`${isPartial ? 'Partial c' : 'C'}all page email sent:`, emailResult)
+      if (resend) {
+        try {
+          const emailResult = await resend.emails.send({
+            from: 'Obieo <noreply@leads.obieo.com>',
+            to: process.env.NOTIFICATION_EMAIL || 'hunter@obieo.com',
+            subject: subjectLabel,
+            html: formatCallPageEmail(name, email, body.phone || '', answers, isPartial),
+          })
+          console.log(`${isPartial ? 'Partial c' : 'C'}all page email sent:`, emailResult)
+        } catch (e) {
+          console.error('Failed sending Call Page email notification:', e)
+        }
+      }
 
       if (GHL_WEBHOOK_URL) {
         try {
@@ -577,12 +620,14 @@ export async function POST(request: NextRequest) {
               utm_source: tracking.utm_source || '',
               utm_medium: tracking.utm_medium || '',
               utm_campaign: tracking.utm_campaign || '',
+              fbclid: tracking.fbclid || '',
+              gclid: tracking.gclid || '',
             }),
           })
           if (response.ok) {
             console.log(`${isPartial ? 'Partial c' : 'C'}all lead sent to GHL successfully`)
           } else {
-            console.error('GHL webhook failed:', response.status)
+            console.error('GHL webhook failed:', response.status, await response.text())
           }
         } catch (error) {
           console.error('Error sending call lead to GHL:', error)
@@ -603,14 +648,23 @@ export async function POST(request: NextRequest) {
       'roi-calculator': 'ROI Calculator',
       'call-page': 'Call Booking Form',
     }
-    // Skip CAPI for call-page — GHL fires the pixel when booking is confirmed
-    if (source !== 'call-page-partial' && source !== 'call-page') {
+    // Fire a "Lead" event when the form is submitted (even if they don't book).
+    // Skip partials: those are drop-offs where we may only have an email.
+    if (source !== 'call-page-partial') {
+      const tracking = body?.tracking || {}
+      const fbp = request.cookies.get('_fbp')?.value
+      const fbclid = typeof tracking.fbclid === 'string' ? tracking.fbclid : undefined
+      const fbcCookie = request.cookies.get('_fbc')?.value
+      const fbc = fbclid ? `fb.1.${Math.floor(Date.now() / 1000)}.${fbclid}` : fbcCookie
+
       await sendToFacebookCAPI({
         email,
         eventSourceUrl: `https://obieo.com/${sourceUrls[source] || source}`,
         clientIp: ip,
         clientUserAgent: userAgent,
         contentName: contentNames[source] || source,
+        fbp,
+        fbc,
       })
     }
 

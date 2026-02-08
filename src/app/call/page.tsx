@@ -110,12 +110,18 @@ function BookingForm() {
     }
   }, [form, websiteValue])
 
-  // Returns JSON string for partial lead, or null if email is not yet valid
+  // Returns JSON string for partial lead, or null if we don't have usable contact info yet.
+  // "Usable" here means: valid email and/or a 10-digit phone number.
   const buildPartialPayload = useCallback(() => {
     const email = form.email.trim()
-    if (!email || !email.includes('@') || !email.includes('.')) return null
+    const digits = rawDigits(form.phone)
+
+    const hasEmail = Boolean(email && email.includes('@') && email.includes('.'))
+    const hasPhone = digits.length === 10
+
+    if (!hasEmail && !hasPhone) return null
     return JSON.stringify(buildLeadPayload('call-page-partial'))
-  }, [form.email, buildLeadPayload])
+  }, [form.email, form.phone, buildLeadPayload])
 
   // Beacon partial lead on tab close / navigate away
   useEffect(() => {
@@ -165,12 +171,26 @@ function BookingForm() {
     // Mark as saved so beacon doesn't double-fire
     partialSaved.current = true
 
-    // Fire-and-forget lead capture
-    fetch('/api/leads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(buildLeadPayload('call-page')),
-    }).catch(() => {})
+    // IMPORTANT:
+    // We redirect to the GHL booking widget almost immediately. A normal `fetch()` can get
+    // aborted/canceled during navigation, which would drop the lead (and prevent GHL workflow entry).
+    // `sendBeacon()` is designed for this exact "fire-and-forget while unloading" use case.
+    const leadPayload = JSON.stringify(buildLeadPayload('call-page'))
+    let beaconOk = false
+    try {
+      beaconOk = navigator.sendBeacon('/api/leads', new Blob([leadPayload], { type: 'application/json' }))
+    } catch {
+      beaconOk = false
+    }
+    if (!beaconOk) {
+      fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: leadPayload,
+        // Allow the request to outlive page navigation in supporting browsers.
+        keepalive: true,
+      }).catch(() => {})
+    }
 
     // Brief success state then redirect
     setStatus('redirecting')
@@ -182,7 +202,7 @@ function BookingForm() {
         phone: digits,
       })
       window.location.href = `${GHL_BOOKING_URL}?${params.toString()}`
-    }, 500)
+    }, 250)
   }, [form, buildLeadPayload])
 
   const advanceBusiness = useCallback(() => {
