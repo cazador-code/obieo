@@ -4,7 +4,11 @@
 
 **Obieo** is a Next.js marketing website for a solo SEO/AEO (Answer Engine Optimization) agency targeting home service businesses (plumbers, electricians, roofers, etc.).
 
-**Key Features:**
+**Business Lines:**
+1. **Obieo SEO/AEO Agency** — Core service. Website, content, and AI visibility optimization for home service businesses.
+2. **Obieo Lead Generation** — Recently acquired. Done-for-you SMS-based lead gen for roofing contractors (not on website yet, internal ops only). See [Obieo Lead Generation](#obieo-lead-generation-acquired-business) section below.
+
+**Website Features:**
 - AI Visibility Quiz (lead capture with scoring)
 - ROI Calculator (multi-step with animated widgets)
 - Industry landing pages (10+ verticals)
@@ -359,6 +363,85 @@ node scripts/send-audit-email.mjs \
 - **This workflow (Claude Code local)**: $0 (uses Max subscription)
 - **Agent SDK via run-audit.mjs**: ~$2-3 per audit (API credits)
 - **Web portal**: ~$2 per audit (API credits)
+
+---
+
+## Obieo Lead Generation (Acquired Business)
+
+Obieo Lead Generation is a sub-service providing done-for-you, SMS-based homeowner lead generation exclusively for **roofing contractors** across the United States. Recently acquired and operated under the Obieo brand. **Not currently on the website** — internal operations only for now.
+
+### Business Model
+- **Pricing:** Pay-per-lead packages. 40 leads for $1,600 ($40/lead). No monthly retainer.
+- **Payment:** Half up front ($800), auto-bill after fulfillment via Ignition payment processor.
+- **Price flexibility:** Hold firm at $40/lead. May drop to $39 to close. No deeper discounting.
+- **Upsell path:** After ~180 leads delivered (response rates degrade), upsell into Obieo SEO services and/or managed Meta advertising. The 180-lead cap is a feature, not a bug — it's the designed upsell trigger.
+- **Upsell expectation set during initial sales call** — transition to SEO/Meta framed as natural next step from day one.
+
+### Acquisition Funnel (B2B)
+1. Meta ad on a **separate Facebook page** (protects brand, prevents funnel hacking)
+2. Ad → GHL landing page → prospect books discovery call
+3. Sales call (owner) → close → sign T&C → payment via Ignition → onboarding form → Airtable sync
+
+**Metrics:** CPB appointment $20–$30 | Show rate 48% | Close rate 37% (of shows) | Avg ticket $1,600 | CAC ~$140
+
+### Backend Fulfillment Flow
+1. Onboarding answers sync to **Airtable** (central ops database)
+2. Backend employee assigns customer to a GHL sub-account (max 5 seats per sub-account)
+3. Homeowner data sourced via **DealMachine** ($149/month)
+4. Data filtered through **Landline Remover** (~$0.0022/contact) — hit rate ~40–50%
+5. A2P texting campaign launched through **Sendivo** (sendivo.io/marketing)
+6. GHL automations filter responses (opt-outs, irrelevant, non-qualified)
+7. Qualified leads routed to contractor (email + phone)
+8. ~180 lead cap per customer before response rates degrade
+
+### Technology Stack
+| Tool | Purpose |
+|------|---------|
+| GoHighLevel (GHL) | CRM, automations, landing pages, calendar, lead routing, sub-accounts |
+| Meta Ads | B2B acquisition (separate page from Obieo) |
+| Airtable | Customer tracking, seat assignments, campaign status |
+| DealMachine | Homeowner data sourcing ($149/month) |
+| Landline Remover | Mobile-only filtering (~$0.0022/contact) |
+| Ignition | Payment processing (auto-charge capable) |
+| Sendivo (sendivo.io/marketing) | A2P texting platform ($0.004/text excl. variable carrier fees) |
+
+### GHL Sub-Account Architecture
+- Max 5 customer seats per sub-account (A2P throughput / carrier flagging limits)
+- New sub-accounts provisioned as customer count grows
+- Airtable tracks seat availability across all sub-accounts
+
+### Compliance (TCPA)
+- Operating under **informational exception** of TCPA
+- DNC registry scrubbing on all lists
+- Landline Remover filters non-mobile numbers
+- Attorney has reviewed texting methodology
+- All messages include opt-out instructions; GHL auto-suppresses opt-outs
+- Geographic exclusivity enforced by ZIP code (hard policy, no overlapping service areas)
+
+### Team
+- **Owner/Operator:** Strategy, sales calls, pricing, upsell, P&L
+- **Backend Operations Contractor:** $800/month. Manages GHL, Airtable, data scraping, sub-account assignment, campaign launches. Came with acquisition — primary holder of operational knowledge. **SOPs need urgent documentation.**
+
+### Key Strategic Priorities
+1. Document all SOPs from backend contractor immediately (screen recordings + written procedures)
+2. Determine actual text-to-qualified-lead conversion rate to nail down true fulfillment cost
+3. Improve show rate (48%) through better reminder sequences — highest-leverage profitability improvement
+4. Understand close rate objections (63% don't close) to optimize sales process
+5. Build toward upselling lead gen customers into Obieo SEO and Meta ads services
+
+### Known Constraints & Risks
+- ~180 lead ceiling per customer (by design — upsell trigger)
+- Single backend contractor = critical bottleneck with no redundancy
+- A2P texting in legal gray area despite attorney review + DNC scrubbing
+- Variable carrier fees not fully predictable
+- Full GHL platform dependency
+
+### When Helping With Lead Gen
+- This is a **lead generation business for roofing contractors**, not SaaS
+- Revenue is per-package ($1,600/40 leads), not subscription/MRR
+- Always consider TCPA compliance when discussing messaging strategy
+- Backend contractor at $800/month is underpaid relative to importance — factor into scaling/hiring discussions
+- Geographic exclusivity by ZIP code is non-negotiable
 
 ---
 
