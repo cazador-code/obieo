@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { Section, Container } from '@/components/ui'
 import { FadeInSection } from '@/components/animations'
@@ -36,6 +37,35 @@ function Bullet({ children }: { children: React.ReactNode }) {
       <span className="mt-2 h-2 w-2 rounded-full bg-[var(--accent)] flex-shrink-0" />
       <span>{children}</span>
     </li>
+  )
+}
+
+function AutomateCtasFallback() {
+  const params = new URLSearchParams({
+    source: automateBookingSource,
+    ghl_tag: automateGhlTag,
+    utm_campaign: automateBookingSource,
+  })
+  const href = `/call?${params.toString()}`
+
+  const base =
+    'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2'
+
+  return (
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+      <Link
+        href={href}
+        className={`${base} px-8 py-4 text-lg bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] hover:scale-[1.02]`}
+      >
+        Book a Call
+      </Link>
+      <Link
+        href="/work"
+        className={`${base} px-8 py-4 text-lg border-2 border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white`}
+      >
+        See Examples
+      </Link>
+    </div>
   )
 }
 
@@ -85,7 +115,9 @@ export default function AutomateWithObieoPage() {
               </p>
 
               <div className="mt-8">
-                <AutomateCtas />
+                <Suspense fallback={<AutomateCtasFallback />}>
+                  <AutomateCtas />
+                </Suspense>
                 <p className="mt-3 text-sm text-[var(--text-muted)]">
                   This routes through our booking flow with <code className="px-1 py-0.5 rounded bg-[var(--bg-secondary)]">source={automateBookingSource}</code>{' '}
                   and tags leads in GHL with{' '}
@@ -157,7 +189,9 @@ export default function AutomateWithObieoPage() {
                 </div>
 
                 <div className="mt-8">
-                  <AutomateCtas />
+                  <Suspense fallback={<AutomateCtasFallback />}>
+                    <AutomateCtas />
+                  </Suspense>
                 </div>
               </div>
             </div>
@@ -214,7 +248,9 @@ export default function AutomateWithObieoPage() {
                   .
                 </p>
               </div>
-              <AutomateCtas />
+              <Suspense fallback={<AutomateCtasFallback />}>
+                <AutomateCtas />
+              </Suspense>
             </div>
           </FadeInSection>
         </Container>
@@ -258,4 +294,3 @@ export default function AutomateWithObieoPage() {
     </>
   )
 }
-
