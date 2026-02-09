@@ -35,6 +35,8 @@
   --terracotta-300: #f2b094;
 
   /* Font variables */
+  --font-dm-sans: 'DM Sans Variable', 'DM Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-outfit: 'Outfit Variable', 'Outfit', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-display: var(--font-outfit);
   --font-body: var(--font-dm-sans);
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { DM_Sans, Outfit } from "next/font/google";
 import Script from "next/script";
+import "@fontsource-variable/dm-sans";
+import "@fontsource-variable/outfit";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -10,16 +11,6 @@ import { BookingModalProvider } from "@/components/BookingModalContext";
 import { BookingModal } from "@/components/BookingModal";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
-
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-});
-
-const outfit = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.obieo.com"),
@@ -104,7 +95,7 @@ export default function RootLayout({
         {/* Facebook Pixel managed via GTM */}
       </head>
       <body
-        className={`${dmSans.variable} ${outfit.variable} antialiased bg-[var(--bg-primary)] text-[var(--text-primary)]`}
+        className="antialiased bg-[var(--bg-primary)] text-[var(--text-primary)]"
       >
         {/* Google Tag Manager (noscript) */}
         <noscript>

@@ -11,6 +11,8 @@
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.12",
     "@anthropic-ai/sdk": "^0.71.2",
+    "@fontsource-variable/dm-sans": "^5.2.8",
+    "@fontsource-variable/outfit": "^5.2.8",
     "@portabletext/react": "^6.0.2",
     "@sanity/image-url": "^2.0.2",
     "@sanity/vision": "^5.1.0",
