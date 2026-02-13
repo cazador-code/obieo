@@ -356,6 +356,7 @@ async function createInitialChargeCheckoutSession(
     savePaymentMethod: boolean
     chargeKind: 'paid_in_full' | 'upfront_bundle' | 'card_verification'
     journey?: string
+    discount?: { coupon?: string; promotionCode?: string; allowPromotionCodes?: boolean }
   }
 ): Promise<{ url: string | null; sessionId: string }> {
   const { successUrl, cancelUrl } = getCheckoutUrls()
@@ -380,6 +381,13 @@ async function createInitialChargeCheckoutSession(
         ? ({ coupon: internalPromo.coupon } as Stripe.Checkout.SessionCreateParams.Discount)
         : null
 
+  const explicitDiscount =
+    input.discount?.promotionCode
+      ? ({ promotion_code: input.discount.promotionCode } as Stripe.Checkout.SessionCreateParams.Discount)
+      : input.discount?.coupon
+        ? ({ coupon: input.discount.coupon } as Stripe.Checkout.SessionCreateParams.Discount)
+        : null
+
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
     customer: input.customerId,
@@ -387,8 +395,8 @@ async function createInitialChargeCheckoutSession(
     success_url: successUrl,
     cancel_url: cancelUrl,
     // Helpful for local/preview testing (e.g. entering a 100% off promo code).
-    ...(isNonProd ? { allow_promotion_codes: true } : {}),
-    ...(internalDiscount ? { discounts: [internalDiscount] } : {}),
+    ...(isNonProd || input.discount?.allowPromotionCodes ? { allow_promotion_codes: true } : {}),
+    ...(explicitDiscount ? { discounts: [explicitDiscount] } : internalDiscount ? { discounts: [internalDiscount] } : {}),
     payment_intent_data: {
       ...(input.savePaymentMethod ? { setup_future_usage: 'off_session' as const } : {}),
       metadata: {
@@ -416,7 +424,10 @@ async function createInitialChargeCheckoutSession(
 }
 
 export async function provisionLeadBillingForOnboarding(
-  input: LeadBillingProvisionInput & { journey?: string }
+  input: LeadBillingProvisionInput & {
+    journey?: string
+    discount?: { coupon?: string; promotionCode?: string; allowPromotionCodes?: boolean }
+  }
 ): Promise<LeadBillingProvisionResult | null> {
   const stripe = getStripeClient()
   if (!stripe) return null
@@ -452,6 +463,7 @@ export async function provisionLeadBillingForOnboarding(
       savePaymentMethod: false,
       chargeKind: 'paid_in_full',
       journey: input.journey,
+      discount: input.discount,
     })
 
     return {
@@ -514,6 +526,7 @@ export async function provisionLeadBillingForOnboarding(
         ? 'upfront_bundle'
         : 'card_verification',
     journey: input.journey,
+    discount: input.discount,
   })
 
   return {

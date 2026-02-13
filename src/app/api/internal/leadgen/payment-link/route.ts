@@ -21,6 +21,8 @@ type RequestBody = {
   utmMedium?: unknown
   utmContent?: unknown
   notes?: unknown
+  testDiscount?: unknown
+  forceNew?: unknown
 }
 
 function getJwtSecret(): Uint8Array {
@@ -102,6 +104,8 @@ export async function POST(request: NextRequest) {
   const companyName = cleanString(body.companyName)
   const billingEmail = cleanString(body.billingEmail)
   const billingName = cleanString(body.billingName) || undefined
+  const testDiscountRaw = cleanString(body.testDiscount) || ''
+  const forceNew = body.forceNew === true
   if (!companyName || !billingEmail) {
     return NextResponse.json(
       { success: false, error: 'companyName and billingEmail are required' },
@@ -116,7 +120,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, ...existing })
     }
 
-    if (existing.status === 'checkout_created' && existing.checkoutUrl) {
+    if (!forceNew && !testDiscountRaw && existing.status === 'checkout_created' && existing.checkoutUrl) {
       return NextResponse.json({
         success: true,
         portalKey: existing.portalKey,
@@ -173,6 +177,13 @@ export async function POST(request: NextRequest) {
     leadChargeThreshold: 10,
     billingModel: 'package_40_paid_in_full',
     journey: 'leadgen_payment_first',
+    ...(testDiscountRaw
+      ? {
+          discount: testDiscountRaw.startsWith('promo_')
+            ? { promotionCode: testDiscountRaw }
+            : { coupon: testDiscountRaw },
+        }
+      : {}),
   })
 
   if (!provisioned?.initialCheckoutUrl || !provisioned.initialCheckoutSessionId) {
@@ -197,4 +208,3 @@ export async function POST(request: NextRequest) {
     tokenExpiresAt,
   })
 }
-

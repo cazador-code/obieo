@@ -46,6 +46,8 @@ export default function PaymentLinkPage() {
   const [utmSource, setUtmSource] = useState('')
   const [utmCampaign, setUtmCampaign] = useState('')
   const [notes, setNotes] = useState('')
+  const [testDiscount, setTestDiscount] = useState('')
+  const [forceNew, setForceNew] = useState(false)
 
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -123,6 +125,8 @@ export default function PaymentLinkPage() {
           utmSource: utmSource || undefined,
           utmCampaign: utmCampaign || undefined,
           notes: notes || undefined,
+          testDiscount: testDiscount || undefined,
+          forceNew,
         }),
       })
 
@@ -256,6 +260,32 @@ export default function PaymentLinkPage() {
                 />
               </label>
 
+              <div className="grid gap-4 md:grid-cols-2">
+                <label>
+                  <span className="block text-sm font-semibold text-[var(--text-primary)]">
+                    Test discount (optional)
+                  </span>
+                  <input
+                    value={testDiscount}
+                    onChange={(e) => setTestDiscount(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
+                    placeholder="test-lapeyre-roofing-100 or promo_..."
+                  />
+                  <p className="mt-1 text-xs text-[var(--text-muted)]">
+                    Internal-only: applies a coupon or promotion code ID to make this checkout free for testing.
+                  </p>
+                </label>
+
+                <label className="flex items-end gap-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={forceNew}
+                    onChange={(e) => setForceNew(e.target.checked)}
+                  />
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">Force new checkout link</span>
+                </label>
+              </div>
+
               {submitError && (
                 <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                   {submitError}
@@ -317,4 +347,3 @@ export default function PaymentLinkPage() {
     </main>
   )
 }
-
