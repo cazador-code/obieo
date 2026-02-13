@@ -401,6 +401,25 @@ export async function getLeadgenIntentByPortalKeyInConvex(input: {
   }
 }
 
+export async function getLeadgenIntentByBillingEmailInConvex(input: {
+  billingEmail: string
+}): Promise<LeadgenIntentSnapshot | null> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const result = await client.query(api.leadgen.getLeadgenIntentByBillingEmail, {
+      authSecret,
+      ...input,
+    })
+    return result as LeadgenIntentSnapshot | null
+  } catch (error) {
+    console.error('Convex getLeadgenIntentByBillingEmail failed:', error)
+    return null
+  }
+}
+
 export async function submitClientOnboardingInConvex(input: {
   companyId?: string
   portalKey: string

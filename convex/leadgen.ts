@@ -32,6 +32,28 @@ async function getIntentByToken(ctx: { db: DatabaseReader }, token: string) {
     .first()) as LeadgenIntentRecord | null
 }
 
+export const getLeadgenIntentByBillingEmail = query({
+  args: {
+    authSecret: v.string(),
+    billingEmail: v.string(),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+    const billingEmail = normalizeString(args.billingEmail)
+    if (!billingEmail) return null
+
+    const now = Date.now()
+    const candidates = (await ctx.db
+      .query('leadgenIntents')
+      .withIndex('by_billingEmail', (q) => q.eq('billingEmail', billingEmail))
+      .collect()) as LeadgenIntentRecord[]
+
+    const filtered = candidates.filter((intent) => intent.tokenExpiresAt > now)
+    if (filtered.length === 0) return null
+    return filtered.reduce((latest, cur) => (cur.createdAt > latest.createdAt ? cur : latest))
+  },
+})
+
 export const findActiveLeadgenIntent = query({
   args: {
     authSecret: v.string(),

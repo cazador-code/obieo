@@ -2,7 +2,11 @@ import Link from 'next/link'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import LeadTopUpCard from './LeadTopUpCard'
-import { getLeadgenIntentByPortalKeyInConvex, getOrganizationSnapshotInConvex } from '@/lib/convex'
+import {
+  getLeadgenIntentByBillingEmailInConvex,
+  getLeadgenIntentByPortalKeyInConvex,
+  getOrganizationSnapshotInConvex,
+} from '@/lib/convex'
 
 export default async function PortalPage() {
   const { userId } = await auth()
@@ -12,10 +16,36 @@ export default async function PortalPage() {
 
   const clerk = await clerkClient()
   const user = await clerk.users.getUser(userId)
-  const portalKey =
+  let portalKey =
     (typeof user.publicMetadata?.portalKey === 'string' && user.publicMetadata.portalKey.trim()) ||
     (typeof user.publicMetadata?.portal_key === 'string' && user.publicMetadata.portal_key.trim()) ||
     null
+
+  // Self-heal: if the Clerk user is missing portalKey metadata (common if they created an account
+  // before being invited), try mapping by billing email to a leadgen intent, then attach portalKey.
+  if (!portalKey) {
+    const emailAddress =
+      user.emailAddresses.find((email) => email.id === user.primaryEmailAddressId)?.emailAddress ||
+      user.emailAddresses[0]?.emailAddress ||
+      ''
+    if (emailAddress) {
+      const intent = await getLeadgenIntentByBillingEmailInConvex({ billingEmail: emailAddress })
+      if (intent?.portalKey) {
+        portalKey = intent.portalKey
+        try {
+          await clerk.users.updateUser(userId, {
+            publicMetadata: {
+              ...(user.publicMetadata || {}),
+              portalKey,
+            },
+          })
+        } catch (error) {
+          console.warn('Failed to backfill Clerk portalKey metadata:', error)
+        }
+      }
+    }
+  }
+
   if (!portalKey) {
     redirect('/sign-in?redirect_url=/portal')
   }
