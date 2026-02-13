@@ -3,7 +3,8 @@ import { SignJWT, jwtVerify } from 'jose';
 import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 
 // JWT configuration
-const TOKEN_EXPIRATION = '1h'; // Tokens expire after 1 hour
+// This is an internal tool gate, not customer auth. Keep it stable and low-friction.
+const TOKEN_EXPIRATION = process.env.INTERNAL_TOOL_TOKEN_EXPIRATION?.trim() || '30d';
 
 // Get the secret as Uint8Array for jose
 function getJwtSecret(): Uint8Array {
@@ -12,6 +13,11 @@ function getJwtSecret(): Uint8Array {
     throw new Error('JWT_SECRET must be set and at least 32 characters');
   }
   return new TextEncoder().encode(secret);
+}
+
+function isJwtSecretConfigured(): boolean {
+  const secret = process.env.JWT_SECRET;
+  return Boolean(secret && secret.length >= 32);
 }
 
 // Create a signed JWT with expiration
@@ -51,7 +57,18 @@ export async function POST(request: NextRequest) {
     const correctPassword = process.env.INTERNAL_TOOL_PASSWORD;
     if (!correctPassword) {
       console.error('INTERNAL_TOOL_PASSWORD not configured');
-      return NextResponse.json({ valid: false }, { status: 500 });
+      return NextResponse.json(
+        { valid: false, error: 'Server misconfigured: INTERNAL_TOOL_PASSWORD is not set.' },
+        { status: 500 }
+      );
+    }
+
+    if (!isJwtSecretConfigured()) {
+      console.error('JWT_SECRET not configured or too short');
+      return NextResponse.json(
+        { valid: false, error: 'Server misconfigured: JWT_SECRET is missing or too short.' },
+        { status: 500 }
+      );
     }
 
     // If token provided, verify it
@@ -66,12 +83,15 @@ export async function POST(request: NextRequest) {
         const newToken = await createToken();
         return NextResponse.json({ valid: true, token: newToken });
       }
-      return NextResponse.json({ valid: false });
+      return NextResponse.json({ valid: false, error: 'Incorrect password.' }, { status: 401 });
     }
 
     return NextResponse.json({ valid: false });
   } catch (error) {
     console.error('Auth error:', error);
-    return NextResponse.json({ valid: false }, { status: 400 });
+    return NextResponse.json(
+      { valid: false, error: 'Invalid request. Please try again.' },
+      { status: 400 }
+    );
   }
 }

@@ -1,15 +1,12 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { ClerkProvider } from "@clerk/nextjs";
 import "@fontsource-variable/dm-sans";
 import "@fontsource-variable/outfit";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { SmoothScroll } from "@/components/SmoothScroll";
-import { CustomCursor } from "@/components/CustomCursor";
 import { BookingModalProvider } from "@/components/BookingModalContext";
-import { BookingModal } from "@/components/BookingModal";
 import { Analytics } from "@vercel/analytics/react";
+import AppChrome from "@/components/AppChrome";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -80,45 +77,41 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Google Tag Manager - must be first */}
-        <Script id="gtm" strategy="afterInteractive">
-          {`
-            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-            })(window,document,'script','dataLayer','GTM-TMBFS7H7');
-          `}
-        </Script>
-        {/* Facebook Pixel managed via GTM */}
-      </head>
-      <body
-        className="antialiased bg-[var(--bg-primary)] text-[var(--text-primary)]"
-      >
-        {/* Google Tag Manager (noscript) */}
-        <noscript>
-          <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-TMBFS7H7"
-            height="0"
-            width="0"
-            style={{ display: 'none', visibility: 'hidden' }}
-          />
-        </noscript>
-        <BookingModalProvider>
-          <ThemeProvider>
-            <SmoothScroll>
-              <CustomCursor />
-              <Header />
-              <main className="min-h-screen">{children}</main>
-              <Footer />
-            </SmoothScroll>
-          </ThemeProvider>
-          <BookingModal />
-        </BookingModalProvider>
-        <Analytics />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        <head>
+          {/* Google Tag Manager - must be first */}
+          <Script id="gtm" strategy="afterInteractive">
+            {`
+              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+              })(window,document,'script','dataLayer','GTM-TMBFS7H7');
+            `}
+          </Script>
+          {/* Facebook Pixel managed via GTM */}
+        </head>
+        <body
+          className="antialiased bg-[var(--bg-primary)] text-[var(--text-primary)]"
+        >
+          {/* Google Tag Manager (noscript) */}
+          <noscript>
+            <iframe
+              src="https://www.googletagmanager.com/ns.html?id=GTM-TMBFS7H7"
+              height="0"
+              width="0"
+              style={{ display: 'none', visibility: 'hidden' }}
+            />
+          </noscript>
+          <BookingModalProvider>
+            <ThemeProvider>
+              <AppChrome>{children}</AppChrome>
+            </ThemeProvider>
+          </BookingModalProvider>
+          <Analytics />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

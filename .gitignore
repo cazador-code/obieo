@@ -68,3 +68,6 @@ docs/claude-capabilities-map.md
 
 # Remotion (video generation - WIP)
 remotion/
+
+# clerk configuration (can include secrets)
+/.clerk/

@@ -4,6 +4,14 @@
       "command": "npx",
       "args": ["-y", "mcp-remote", "https://gtm-mcp.stape.ai/mcp"]
     },
+    "stripe": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.stripe.com"]
+    },
+    "clerk": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.clerk.com/mcp"]
+    },
     "analytics-mcp": {
       "command": "pipx",
       "args": ["run", "analytics-mcp"]
