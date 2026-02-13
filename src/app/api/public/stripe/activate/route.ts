@@ -3,6 +3,8 @@ import Stripe from 'stripe'
 import { getStripeClient } from '@/lib/stripe'
 import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { activateCustomer, getActivationCandidateFromCheckout } from '@/lib/stripe-activation'
+import { getBillingModelDefaults } from '@/lib/billing-models'
+import { markLeadgenPaidInConvex, upsertOrganizationInConvex } from '@/lib/convex'
 
 export const runtime = 'nodejs'
 
@@ -29,6 +31,12 @@ function extractCheckoutSessionId(value: unknown): string | null {
 
 async function retrieveCheckoutSession(stripe: Stripe, sessionId: string): Promise<Stripe.Checkout.Session> {
   return stripe.checkout.sessions.retrieve(sessionId)
+}
+
+function normalizeString(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const cleaned = value.trim()
+  return cleaned ? cleaned : null
 }
 
 export async function POST(request: NextRequest) {
@@ -58,6 +66,38 @@ export async function POST(request: NextRequest) {
 
   try {
     const session = await retrieveCheckoutSession(stripe, sessionId)
+
+    // Webhook-safe fallback: if the user is on the success page and the Stripe webhook
+    // is temporarily failing/misconfigured, we still want the "resend invite" flow to
+    // advance leadgen state so `/leadgen/onboarding` won't be blocked.
+    if (session.payment_status === 'paid' && session.metadata?.obieo_journey === 'leadgen_payment_first') {
+      const portalKey = normalizeString(session.metadata?.portal_key)
+      const companyName = normalizeString(session.metadata?.company_name) || undefined
+      const stripeCustomerId = typeof session.customer === 'string' ? session.customer : undefined
+
+      if (portalKey) {
+        await markLeadgenPaidInConvex({
+          portalKey,
+          checkoutSessionId: session.id,
+          stripeCustomerId,
+        })
+
+        const defaults = getBillingModelDefaults('package_40_paid_in_full', 4000)
+        await upsertOrganizationInConvex({
+          portalKey,
+          name: companyName,
+          stripeCustomerId,
+          billingModel: 'package_40_paid_in_full',
+          prepaidLeadCredits: defaults.prepaidLeadCredits,
+          leadCommitmentTotal: defaults.leadCommitmentTotal || undefined,
+          initialChargeCents: defaults.initialChargeCents,
+          leadChargeThreshold: defaults.leadChargeThreshold,
+          leadUnitPriceCents: defaults.leadUnitPriceCents,
+          isActive: true,
+        })
+      }
+    }
+
     const candidate = getActivationCandidateFromCheckout(session)
     if (!candidate) {
       return NextResponse.json(

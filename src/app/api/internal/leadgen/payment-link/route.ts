@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import crypto from 'crypto'
+import Stripe from 'stripe'
 import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { provisionLeadBillingForOnboarding } from '@/lib/stripe-onboarding'
+import { getStripeClient } from '@/lib/stripe'
 import {
   createLeadgenIntentInConvex,
   findActiveLeadgenIntentInConvex,
@@ -67,6 +69,49 @@ function generatePortalKey(companyName: string): string {
 
 function generateToken(): string {
   return crypto.randomBytes(32).toString('base64url')
+}
+
+async function resolveTestDiscount(
+  stripe: Stripe,
+  rawInput: string
+): Promise<{ coupon?: string; promotionCode?: string } | null> {
+  const cleaned = rawInput.trim()
+  if (!cleaned) return null
+
+  // Direct ID forms.
+  if (cleaned.startsWith('promo_')) return { promotionCode: cleaned }
+
+  // 1) Try coupon ID directly.
+  try {
+    const coupon = await stripe.coupons.retrieve(cleaned)
+    if (coupon && typeof coupon === 'object') {
+      return { coupon: coupon.id }
+    }
+  } catch {
+    // continue
+  }
+
+  // 2) Try promotion code by user-facing code string.
+  try {
+    const promos = await stripe.promotionCodes.list({ code: cleaned, active: true, limit: 1 })
+    const promo = promos.data[0]
+    if (promo) return { promotionCode: promo.id }
+  } catch {
+    // continue
+  }
+
+  // 3) Try coupon "name" (dashboard label) by listing and matching.
+  try {
+    const coupons = await stripe.coupons.list({ limit: 100 })
+    const match = coupons.data.find((c) => (c.name || '').trim() === cleaned)
+    if (match) return { coupon: match.id }
+  } catch {
+    // continue
+  }
+
+  throw new Error(
+    `Unknown discount "${cleaned}". Use a coupon ID (like "aW0d883k"), a promotion code ID ("promo_..."), or a promo code string.`
+  )
 }
 
 export async function POST(request: NextRequest) {
@@ -169,6 +214,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const stripe = getStripeClient()
+    if (!stripe) {
+      return NextResponse.json(
+        { success: false, error: 'Stripe is not configured (missing STRIPE_SECRET_KEY).' },
+        { status: 500 }
+      )
+    }
+
+    let resolvedDiscount: { coupon?: string; promotionCode?: string } | null = null
+    try {
+      resolvedDiscount = testDiscountRaw ? await resolveTestDiscount(stripe, testDiscountRaw) : null
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error)
+      return NextResponse.json({ success: false, error: msg }, { status: 400 })
+    }
+
     let provisioned: Awaited<ReturnType<typeof provisionLeadBillingForOnboarding>> | null = null
     try {
       provisioned = await provisionLeadBillingForOnboarding({
@@ -180,11 +241,9 @@ export async function POST(request: NextRequest) {
         leadChargeThreshold: 10,
         billingModel: 'package_40_paid_in_full',
         journey: 'leadgen_payment_first',
-        ...(testDiscountRaw
+        ...(resolvedDiscount
           ? {
-              discount: testDiscountRaw.startsWith('promo_')
-                ? { promotionCode: testDiscountRaw }
-                : { coupon: testDiscountRaw },
+              discount: resolvedDiscount,
             }
           : {}),
       })
