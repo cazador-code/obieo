@@ -70,141 +70,161 @@ function generateToken(): string {
 }
 
 export async function POST(request: NextRequest) {
-  const ip = getClientIp(request)
-  const { success, remaining } = await auditLimiter.limit(ip)
-  if (!success) {
-    return rateLimitResponse(remaining)
-  }
-
-  if (process.env.LEADGEN_PAYMENT_FIRST_ENABLED?.trim() !== 'true') {
-    return NextResponse.json(
-      { success: false, error: 'Leadgen payment-first flow is disabled.' },
-      { status: 403 }
-    )
-  }
-
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const token = authHeader.slice(7)
-  const authorized = await verifyAuthToken(token)
-  if (!authorized) {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
-  }
-
-  let body: RequestBody
   try {
-    body = (await request.json()) as RequestBody
-  } catch {
-    return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
-  }
-
-  const companyName = cleanString(body.companyName)
-  const billingEmail = cleanString(body.billingEmail)
-  const billingName = cleanString(body.billingName) || undefined
-  const testDiscountRaw = cleanString(body.testDiscount) || ''
-  const forceNew = body.forceNew === true
-  if (!companyName || !billingEmail) {
-    return NextResponse.json(
-      { success: false, error: 'companyName and billingEmail are required' },
-      { status: 400 }
-    )
-  }
-
-  const existing = await findActiveLeadgenIntentInConvex({ billingEmail, companyName })
-  if (existing) {
-    if (existing.status !== 'checkout_created' && existing.status !== 'paid' && existing.status !== 'invited') {
-      // Unexpected, but return it anyway.
-      return NextResponse.json({ success: true, ...existing })
+    const ip = getClientIp(request)
+    const { success, remaining } = await auditLimiter.limit(ip)
+    if (!success) {
+      return rateLimitResponse(remaining)
     }
 
-    if (!forceNew && !testDiscountRaw && existing.status === 'checkout_created' && existing.checkoutUrl) {
-      return NextResponse.json({
-        success: true,
-        portalKey: existing.portalKey,
-        checkoutUrl: existing.checkoutUrl,
-        status: existing.status,
-        tokenExpiresAt: existing.tokenExpiresAt,
-      })
-    }
-
-    if (existing.status === 'paid' || existing.status === 'invited') {
-      return NextResponse.json({
-        success: true,
-        portalKey: existing.portalKey,
-        checkoutUrl: existing.checkoutUrl || null,
-        status: existing.status,
-        tokenExpiresAt: existing.tokenExpiresAt,
-      })
-    }
-  }
-
-  const portalKey = existing?.portalKey || generatePortalKey(companyName)
-  const leadgenToken = existing?.token || generateToken()
-  const tokenExpiresAt = existing?.tokenExpiresAt || Date.now() + 30 * 24 * 60 * 60 * 1000
-
-  if (!existing) {
-    const created = await createLeadgenIntentInConvex({
-      portalKey,
-      companyName,
-      billingEmail,
-      billingName,
-      token: leadgenToken,
-      tokenExpiresAt,
-      source: cleanString(body.source) || undefined,
-      utmSource: cleanString(body.utmSource) || undefined,
-      utmCampaign: cleanString(body.utmCampaign) || undefined,
-      utmMedium: cleanString(body.utmMedium) || undefined,
-      utmContent: cleanString(body.utmContent) || undefined,
-    })
-
-    if (!created) {
+    if (process.env.LEADGEN_PAYMENT_FIRST_ENABLED?.trim() !== 'true') {
       return NextResponse.json(
-        { success: false, error: 'Failed to create leadgen intent. Check Convex config.' },
+        { success: false, error: 'Leadgen payment-first flow is disabled.' },
+        { status: 403 }
+      )
+    }
+
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const token = authHeader.slice(7)
+    const authorized = await verifyAuthToken(token)
+    if (!authorized) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
+    let body: RequestBody
+    try {
+      body = (await request.json()) as RequestBody
+    } catch {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
+
+    const companyName = cleanString(body.companyName)
+    const billingEmail = cleanString(body.billingEmail)
+    const billingName = cleanString(body.billingName) || undefined
+    const testDiscountRaw = cleanString(body.testDiscount) || ''
+    const forceNew = body.forceNew === true
+    if (!companyName || !billingEmail) {
+      return NextResponse.json(
+        { success: false, error: 'companyName and billingEmail are required' },
+        { status: 400 }
+      )
+    }
+
+    const existing = await findActiveLeadgenIntentInConvex({ billingEmail, companyName })
+    if (existing) {
+      if (existing.status !== 'checkout_created' && existing.status !== 'paid' && existing.status !== 'invited') {
+        // Unexpected, but return it anyway.
+        return NextResponse.json({ success: true, ...existing })
+      }
+
+      if (!forceNew && !testDiscountRaw && existing.status === 'checkout_created' && existing.checkoutUrl) {
+        return NextResponse.json({
+          success: true,
+          portalKey: existing.portalKey,
+          checkoutUrl: existing.checkoutUrl,
+          status: existing.status,
+          tokenExpiresAt: existing.tokenExpiresAt,
+        })
+      }
+
+      if (existing.status === 'paid' || existing.status === 'invited') {
+        return NextResponse.json({
+          success: true,
+          portalKey: existing.portalKey,
+          checkoutUrl: existing.checkoutUrl || null,
+          status: existing.status,
+          tokenExpiresAt: existing.tokenExpiresAt,
+        })
+      }
+    }
+
+    const portalKey = existing?.portalKey || generatePortalKey(companyName)
+    const leadgenToken = existing?.token || generateToken()
+    const tokenExpiresAt = existing?.tokenExpiresAt || Date.now() + 30 * 24 * 60 * 60 * 1000
+
+    if (!existing) {
+      const created = await createLeadgenIntentInConvex({
+        portalKey,
+        companyName,
+        billingEmail,
+        billingName,
+        token: leadgenToken,
+        tokenExpiresAt,
+        source: cleanString(body.source) || undefined,
+        utmSource: cleanString(body.utmSource) || undefined,
+        utmCampaign: cleanString(body.utmCampaign) || undefined,
+        utmMedium: cleanString(body.utmMedium) || undefined,
+        utmContent: cleanString(body.utmContent) || undefined,
+      })
+
+      if (!created) {
+        return NextResponse.json(
+          { success: false, error: 'Failed to create leadgen intent. Check Convex config.' },
+          { status: 500 }
+        )
+      }
+    }
+
+    let provisioned: Awaited<ReturnType<typeof provisionLeadBillingForOnboarding>> | null = null
+    try {
+      provisioned = await provisionLeadBillingForOnboarding({
+        portalKey,
+        companyName,
+        billingEmail,
+        billingName,
+        leadUnitPriceCents: 4000,
+        leadChargeThreshold: 10,
+        billingModel: 'package_40_paid_in_full',
+        journey: 'leadgen_payment_first',
+        ...(testDiscountRaw
+          ? {
+              discount: testDiscountRaw.startsWith('promo_')
+                ? { promotionCode: testDiscountRaw }
+                : { coupon: testDiscountRaw },
+            }
+          : {}),
+      })
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error)
+      console.error('Stripe provisioning failed in payment-link:', { portalKey, msg })
+      return NextResponse.json(
+        { success: false, error: `Stripe provisioning failed: ${msg}` },
         { status: 500 }
       )
     }
+
+    if (!provisioned?.initialCheckoutUrl || !provisioned.initialCheckoutSessionId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Stripe provisioning failed (missing checkout URL). Check STRIPE_SECRET_KEY and catalog pins.',
+        },
+        { status: 500 }
+      )
+    }
+
+    await updateLeadgenCheckoutDetailsInConvex({
+      portalKey,
+      stripeCustomerId: provisioned.stripeCustomerId,
+      checkoutSessionId: provisioned.initialCheckoutSessionId,
+      checkoutUrl: provisioned.initialCheckoutUrl,
+    })
+
+    return NextResponse.json({
+      success: true,
+      portalKey,
+      checkoutUrl: provisioned.initialCheckoutUrl,
+      status: 'checkout_created',
+      tokenExpiresAt,
+    })
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error)
+    console.error('Internal payment-link handler failed:', msg)
+    return NextResponse.json({ success: false, error: `Server error: ${msg}` }, { status: 500 })
   }
-
-  const provisioned = await provisionLeadBillingForOnboarding({
-    portalKey,
-    companyName,
-    billingEmail,
-    billingName,
-    leadUnitPriceCents: 4000,
-    leadChargeThreshold: 10,
-    billingModel: 'package_40_paid_in_full',
-    journey: 'leadgen_payment_first',
-    ...(testDiscountRaw
-      ? {
-          discount: testDiscountRaw.startsWith('promo_')
-            ? { promotionCode: testDiscountRaw }
-            : { coupon: testDiscountRaw },
-        }
-      : {}),
-  })
-
-  if (!provisioned?.initialCheckoutUrl || !provisioned.initialCheckoutSessionId) {
-    return NextResponse.json(
-      { success: false, error: 'Stripe provisioning failed (missing checkout URL). Check STRIPE_SECRET_KEY and catalog pins.' },
-      { status: 500 }
-    )
-  }
-
-  await updateLeadgenCheckoutDetailsInConvex({
-    portalKey,
-    stripeCustomerId: provisioned.stripeCustomerId,
-    checkoutSessionId: provisioned.initialCheckoutSessionId,
-    checkoutUrl: provisioned.initialCheckoutUrl,
-  })
-
-  return NextResponse.json({
-    success: true,
-    portalKey,
-    checkoutUrl: provisioned.initialCheckoutUrl,
-    status: 'checkout_created',
-    tokenExpiresAt,
-  })
 }

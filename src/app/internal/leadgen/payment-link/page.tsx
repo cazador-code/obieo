@@ -29,6 +29,7 @@ async function parseJsonResponse<T>(response: Response): Promise<T | null> {
   try {
     return JSON.parse(text) as T
   } catch {
+    // Give the caller a chance to show the raw response in a friendly way.
     return null
   }
 }
@@ -130,7 +131,9 @@ export default function PaymentLinkPage() {
         }),
       })
 
-      const data = (await parseJsonResponse<ApiResponse>(response)) || { success: false, error: 'Invalid response' }
+      const data =
+        (await parseJsonResponse<ApiResponse>(response)) ||
+        ({ success: false, error: `Invalid response (${response.status}). Please check Vercel logs.` } as ApiResponse)
       if (!response.ok || !data.success) {
         setSubmitError((data as { error?: string }).error || 'Failed to generate payment link.')
         return
