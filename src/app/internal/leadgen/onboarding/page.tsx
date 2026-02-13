@@ -4,7 +4,6 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   BILLING_MODEL_LABELS,
-  BILLING_MODEL_VALUES,
   DEFAULT_BILLING_MODEL,
   type BillingModel,
   normalizeBillingModel,
@@ -35,6 +34,11 @@ const SERVICE_TYPES = [
   'Bathroom Remodeling',
   'Painting',
 ] as const
+
+const ONBOARDING_BILLING_MODELS: BillingModel[] = [
+  'pay_per_lead_perpetual',
+  'commitment_40_with_10_upfront',
+]
 
 type FieldErrors = Record<string, string>
 
@@ -660,9 +664,7 @@ export default function LeadGenOnboardingPage() {
     const threshold =
       nextModel === 'pay_per_lead_perpetual'
         ? 1
-        : nextModel === 'commitment_40_with_10_upfront' || nextModel === 'package_40_paid_in_full'
-          ? 10
-          : 10
+        : 10
 
     setField('billingModel', nextModel)
     setField('leadChargeThreshold', threshold)
@@ -1438,7 +1440,7 @@ export default function LeadGenOnboardingPage() {
                 <div className="md:col-span-2">
                   <label className="mb-2 block text-sm font-semibold">Billing Model *</label>
                   <div className="grid gap-2 md:grid-cols-3">
-                    {BILLING_MODEL_VALUES.map((model) => {
+                    {ONBOARDING_BILLING_MODELS.map((model) => {
                       const selected = form.billingModel === model
                       return (
                         <button
@@ -1457,6 +1459,9 @@ export default function LeadGenOnboardingPage() {
                       )
                     })}
                   </div>
+                  <p className="mt-2 text-xs text-[var(--text-muted)]">
+                    Note: $1,600 paid-in-full packages are handled externally (Whop/Ignition).
+                  </p>
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-semibold">Price Per Lead (USD) *</label>

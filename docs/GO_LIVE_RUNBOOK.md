@@ -125,6 +125,11 @@ Set these in `.env.local` (do not commit secrets).
 - `CLERK_SECRET_KEY=...`
 - `STRIPE_SECRET_KEY=...`
 - `STRIPE_WEBHOOK_SECRET=whsec_...` (local uses Stripe CLI secret; prod uses Dashboard endpoint secret)
+- Stripe catalog pins (recommended so provisioning does not create duplicates):
+  - `STRIPE_DEFAULT_LEAD_PRODUCT_ID=prod_...` ("Delivered Leads")
+  - `STRIPE_DEFAULT_LEAD_PRICE_ID=price_...` (metered $40/lead)
+  - `STRIPE_CARD_VERIFICATION_PRICE_ID=price_...` ($1 one-time)
+  - `STRIPE_UPFRONT_BUNDLE_PRICE_ID=price_...` ($400 one-time)
 - `RESEND_API_KEY=...`
 - `RESEND_FROM_EMAIL=noreply@obieo.com` (must be verified in Resend)
 - `CONVEX_URL=https://<your-deployment>.convex.cloud`

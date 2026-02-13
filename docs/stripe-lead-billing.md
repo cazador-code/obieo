@@ -61,6 +61,11 @@ In `.env.local`:
 STRIPE_SECRET_KEY=<your_stripe_secret_key>
 STRIPE_WEBHOOK_SECRET=<your_stripe_webhook_signing_secret>
 STRIPE_API_VERSION=2024-10-28.acacia
+# Recommended: pin canonical catalog IDs so provisioning never creates duplicates.
+STRIPE_DEFAULT_LEAD_PRODUCT_ID=prod_...
+STRIPE_DEFAULT_LEAD_PRICE_ID=price_... # metered $40/lead
+STRIPE_CARD_VERIFICATION_PRICE_ID=price_... # $1 one-time
+STRIPE_UPFRONT_BUNDLE_PRICE_ID=price_... # $400 one-time
 GHL_LEAD_DELIVERED_WEBHOOK_SECRET=your-long-random-secret
 CONVEX_URL=https://your-deployment.convex.cloud
 CONVEX_AUTH_ADAPTER_SECRET=your-convex-shared-secret

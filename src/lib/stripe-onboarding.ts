@@ -138,6 +138,40 @@ async function resolveOneTimePriceId(
   }
 }
 
+async function resolvePinnedOneTimePrice(
+  stripe: Stripe,
+  input: {
+    envVar: string
+    expectedAmountCents: number
+  }
+): Promise<{ productId: string; priceId: string } | null> {
+  const priceId = process.env[input.envVar]?.trim()
+  if (!priceId) return null
+
+  const price = await stripe.prices.retrieve(priceId)
+  if (!price || typeof price !== 'object') {
+    throw new Error(`Stripe did not return a price for ${input.envVar}`)
+  }
+
+  const productId = typeof price.product === 'string' ? price.product : price.product?.id
+  if (!productId) {
+    throw new Error(`Pinned price ${priceId} is missing a product id`)
+  }
+
+  // Not a hard error because Stripe amount changes are sometimes expected during iteration.
+  if (price.unit_amount !== input.expectedAmountCents) {
+    console.warn(
+      `Pinned Stripe price ${priceId} (from ${input.envVar}) has unit_amount=${price.unit_amount}, expected ${input.expectedAmountCents}`
+    )
+  }
+
+  if (price.recurring) {
+    console.warn(`Pinned Stripe price ${priceId} (from ${input.envVar}) is recurring; expected one-time`)
+  }
+
+  return { productId, priceId }
+}
+
 async function resolveMeteredPriceId(
   stripe: Stripe,
   productId: string,
@@ -396,11 +430,15 @@ export async function provisionLeadBillingForOnboarding(
   )
 
   if (input.billingModel === 'package_40_paid_in_full') {
-    const upfront = await resolveOneTimePriceId(stripe, {
+    const upfrontPinned = await resolvePinnedOneTimePrice(stripe, {
+      envVar: 'STRIPE_PAID_IN_FULL_PRICE_ID',
+      expectedAmountCents: defaults.initialChargeCents,
+    })
+    const upfront = upfrontPinned || (await resolveOneTimePriceId(stripe, {
       productKind: 'lead_package_40_paid_in_full',
       productName: '40 Lead Package (Paid in Full)',
       unitAmountCents: defaults.initialChargeCents,
-    })
+    }))
     const checkout = await createInitialChargeCheckoutSession(stripe, {
       customerId,
       priceId: upfront.priceId,
@@ -440,16 +478,24 @@ export async function provisionLeadBillingForOnboarding(
 
   const upfront =
     input.billingModel === 'commitment_40_with_10_upfront'
-      ? await resolveOneTimePriceId(stripe, {
+      ? (await resolvePinnedOneTimePrice(stripe, {
+          envVar: 'STRIPE_UPFRONT_BUNDLE_PRICE_ID',
+          expectedAmountCents: defaults.initialChargeCents,
+        })) ||
+        (await resolveOneTimePriceId(stripe, {
           productKind: 'lead_package_10_upfront_commitment_40',
           productName: '10 Lead Upfront Bundle (40 Lead Commitment)',
           unitAmountCents: defaults.initialChargeCents,
-        })
-      : await resolveOneTimePriceId(stripe, {
+        }))
+      : (await resolvePinnedOneTimePrice(stripe, {
+          envVar: 'STRIPE_CARD_VERIFICATION_PRICE_ID',
+          expectedAmountCents: defaults.initialChargeCents,
+        })) ||
+        (await resolveOneTimePriceId(stripe, {
           productKind: 'lead_card_verification',
           productName: 'Card Verification Charge',
           unitAmountCents: defaults.initialChargeCents,
-        })
+        }))
 
   const checkout = await createInitialChargeCheckoutSession(stripe, {
     customerId,
