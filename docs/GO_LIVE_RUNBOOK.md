@@ -358,6 +358,8 @@ Run a real flow using the $1 card verification model:
    - Before go-live, still run:
      - `npm run build`
      - and fix anything it fails on.
+   - Node version note:
+     - Use Node 20 (recommended) or Node 22. Newer Node majors may break `next build` locally.
 
 2. Customer portal:
    - Clerk sign-in is in place, but the full customer-facing leads dashboard + replacements workflow is not completed yet.

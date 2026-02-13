@@ -8,8 +8,29 @@ import {
   getActivationCandidateFromInvoice,
   type ActivationCandidate,
 } from '@/lib/stripe-activation'
+import { grantLeadCreditsFromInvoiceInConvex, recordInvoiceEventInConvex } from '@/lib/convex'
 
 export const runtime = 'nodejs'
+
+function normalizeString(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const cleaned = value.trim()
+  return cleaned ? cleaned : null
+}
+
+function parsePositiveInt(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const intVal = Math.floor(value)
+    return intVal > 0 ? intVal : null
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value)
+    if (!Number.isFinite(parsed)) return null
+    const intVal = Math.floor(parsed)
+    return intVal > 0 ? intVal : null
+  }
+  return null
+}
 
 async function isEventAlreadyProcessed(eventId: string): Promise<boolean> {
   try {
@@ -89,9 +110,38 @@ export async function POST(request: NextRequest) {
     event.type === 'invoice.payment_succeeded' ||
     event.type === 'invoice.paid'
   ) {
-    candidate = getActivationCandidateFromInvoice(
-      event.data.object as Stripe.Invoice
-    )
+    const invoice = event.data.object as Stripe.Invoice
+    candidate = getActivationCandidateFromInvoice(invoice)
+
+    // If this invoice was for purchasing lead credits, grant them after payment.
+    if (invoice.status === 'paid') {
+      const portalKey = normalizeString(invoice.metadata?.portal_key)
+      const credits = parsePositiveInt(invoice.metadata?.obieo_lead_credits)
+      if (portalKey && credits) {
+        const invoiceUrl = normalizeString(invoice.hosted_invoice_url) || undefined
+        const amountCents = typeof invoice.amount_paid === 'number' ? invoice.amount_paid : undefined
+
+        const grant = await grantLeadCreditsFromInvoiceInConvex({
+          portalKey,
+          invoiceId: invoice.id,
+          credits,
+          amountCents,
+          invoiceUrl,
+        })
+
+        if (!grant) {
+          throw new Error('Failed to grant lead credits (Convex not configured or request failed)')
+        }
+
+        await recordInvoiceEventInConvex({
+          portalKey,
+          invoiceId: invoice.id,
+          status: 'paid',
+          amountCents,
+          invoiceUrl,
+        })
+      }
+    }
   }
 
   if (!candidate) {

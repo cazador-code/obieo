@@ -813,6 +813,82 @@ export const recordInvoiceEvent = mutation({
   },
 })
 
+export const grantLeadCreditsFromInvoice = mutation({
+  args: {
+    authSecret: v.string(),
+    portalKey: v.string(),
+    invoiceId: v.string(),
+    credits: v.number(),
+    amountCents: v.optional(v.number()),
+    invoiceUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+    const organization = await getOrganizationByPortalKey(ctx, args.portalKey)
+    if (!organization) {
+      throw new Error(`Unknown portal key: ${args.portalKey}`)
+    }
+
+    const credits = Number.isFinite(args.credits) ? Math.max(1, Math.floor(args.credits)) : 1
+    const prior = await ctx.db
+      .query('billingEvents')
+      .withIndex('by_portal_and_kind', (q) => q.eq('portalKey', args.portalKey).eq('kind', 'credit_topup'))
+      .filter((q) => q.eq(q.field('referenceId'), args.invoiceId))
+      .first()
+
+    if (prior) {
+      return {
+        alreadyGranted: true,
+        prepaidLeadCredits: organization.prepaidLeadCredits ?? 0,
+        leadCommitmentTotal: organization.leadCommitmentTotal ?? null,
+      }
+    }
+
+    const now = Date.now()
+    const prepaidBefore =
+      typeof organization.prepaidLeadCredits === 'number' && Number.isFinite(organization.prepaidLeadCredits)
+        ? Math.max(0, Math.floor(organization.prepaidLeadCredits))
+        : 0
+
+    const nextPrepaid = prepaidBefore + credits
+    const commitmentBefore =
+      typeof organization.leadCommitmentTotal === 'number' && Number.isFinite(organization.leadCommitmentTotal)
+        ? Math.max(0, Math.floor(organization.leadCommitmentTotal))
+        : null
+    const nextCommitment = commitmentBefore === null ? null : commitmentBefore + credits
+
+    await ctx.db.patch(organization._id, {
+      prepaidLeadCredits: nextPrepaid,
+      ...(nextCommitment !== null ? { leadCommitmentTotal: nextCommitment } : {}),
+      updatedAt: now,
+    })
+
+    await ctx.db.insert('billingEvents', {
+      organizationId: organization._id,
+      portalKey: args.portalKey,
+      kind: 'credit_topup',
+      status: 'granted',
+      referenceId: args.invoiceId,
+      amountCents: args.amountCents,
+      createdAt: now,
+      payloadJson: JSON.stringify({
+        credits,
+        invoiceUrl: args.invoiceUrl,
+        prepaidBefore,
+        prepaidAfter: nextPrepaid,
+        commitmentBefore,
+        commitmentAfter: nextCommitment,
+      }),
+    })
+
+    return {
+      alreadyGranted: false,
+      prepaidLeadCredits: nextPrepaid,
+      leadCommitmentTotal: nextCommitment,
+    }
+  },
+})
+
 export const getOrganizationSnapshot = query({
   args: {
     authSecret: v.string(),

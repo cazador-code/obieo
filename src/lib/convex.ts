@@ -148,6 +148,63 @@ export async function recordInvoiceEventInConvex(input: {
   return result as { billingEventId: string }
 }
 
+export async function grantLeadCreditsFromInvoiceInConvex(input: {
+  portalKey: string
+  invoiceId: string
+  credits: number
+  amountCents?: number
+  invoiceUrl?: string
+}): Promise<{ alreadyGranted: boolean; prepaidLeadCredits: number; leadCommitmentTotal: number | null } | null> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const result = await client.mutation(api.leadLedger.grantLeadCreditsFromInvoice, {
+      authSecret,
+      ...input,
+    })
+    return result as { alreadyGranted: boolean; prepaidLeadCredits: number; leadCommitmentTotal: number | null }
+  } catch (error) {
+    console.error('Convex grantLeadCreditsFromInvoice failed:', error)
+    return null
+  }
+}
+
+export async function getOrganizationSnapshotInConvex(input: {
+  portalKey: string
+}): Promise<
+  | {
+      organization: Record<string, unknown>
+      leadCounts: { total: number; usageRecorded: number; unbilled: number }
+      replacementRequests: unknown[]
+      billingEvents: unknown[]
+    }
+  | null
+> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const result = await client.query(api.leadLedger.getOrganizationSnapshot, {
+      authSecret,
+      portalKey: input.portalKey,
+    })
+    return result as
+      | {
+          organization: Record<string, unknown>
+          leadCounts: { total: number; usageRecorded: number; unbilled: number }
+          replacementRequests: unknown[]
+          billingEvents: unknown[]
+        }
+      | null
+  } catch (error) {
+    console.error('Convex getOrganizationSnapshot failed:', error)
+    return null
+  }
+}
+
 export async function submitClientOnboardingInConvex(input: {
   companyId?: string
   portalKey: string

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
+import LeadTopUpCard from './LeadTopUpCard'
 
 export default async function PortalPage() {
   const { userId } = await auth()
@@ -39,6 +40,8 @@ export default async function PortalPage() {
               timestamps, and lead status.
             </p>
           </section>
+
+          <LeadTopUpCard />
 
           <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-5">
             <h2 className="text-lg font-semibold text-[var(--text-primary)]">

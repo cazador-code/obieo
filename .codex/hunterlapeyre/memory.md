@@ -22,6 +22,7 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
 - Analytics/tracking:
 - Payments/billing:
 - CMS/content:
+- Pay-per-lead landing page: `claim-area.obieo.com`
 
 ## Gotchas / Sharp Edges (fill in over time)
 - (Add items as they come up.)
@@ -37,4 +38,11 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
 - What we did:
 - What we learned:
 - Next time, do:
-
+### 2026-02-12
+- What we did:
+  - Configured production Stripe webhook destination `obieo-prod-stripe-activation-webhook` for `https://www.obieo.com/api/webhooks/stripe` with 4 activation events.
+  - Updated local env: `STRIPE_WEBHOOK_SECRET` is set in `.env.local`.
+- What we learned:
+  - Stripe Dashboard destinations require public URLs; localhost requires Stripe CLI forwarding.
+- Next time, do:
+  - Mirror this webhook config in production environment variables and send one test checkout to confirm invite email flow.
