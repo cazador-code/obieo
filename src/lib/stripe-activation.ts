@@ -178,6 +178,7 @@ async function sendCustomerPaymentNotice(input: {
 export async function activateCustomer(input: {
   stripe: Stripe
   candidate: ActivationCandidate
+  forceResendInvitation?: boolean
 }): Promise<{
   status: 'activated' | 'skipped'
   reason?: string
@@ -209,7 +210,7 @@ export async function activateCustomer(input: {
     normalizeString(customer?.metadata?.company_name)
 
   const alreadyInvitedAt = normalizeString(customer?.metadata?.obieo_activation_invite_sent_at)
-  if (alreadyInvitedAt) {
+  if (alreadyInvitedAt && !input.forceResendInvitation) {
     return {
       status: 'skipped',
       reason: 'Activation invite already sent',
@@ -225,6 +226,20 @@ export async function activateCustomer(input: {
   }
 
   const clerk = await clerkClient()
+
+  // If we're explicitly resending, revoke the previous invitation (if we have it)
+  // so Clerk will send a fresh invite email. This is intentionally only used by
+  // explicit manual actions (e.g. the checkout success "resend" button).
+  if (alreadyInvitedAt && input.forceResendInvitation && customer) {
+    const priorInvitationId = normalizeString(customer.metadata?.obieo_activation_invitation_id)
+    if (priorInvitationId) {
+      try {
+        await clerk.invitations.revokeInvitation(priorInvitationId)
+      } catch (error) {
+        console.warn('Failed to revoke prior Clerk invitation (continuing):', error)
+      }
+    }
+  }
 
   // For payment-first leadgen, redirect invite to the onboarding form instead of the portal.
   let redirectUrl = getInvitationRedirectUrl()

@@ -7,6 +7,12 @@ import { activateCustomer, getActivationCandidateFromCheckout } from '@/lib/stri
 
 export const runtime = 'nodejs'
 
+type RequestBody = {
+  sessionId?: unknown
+  checkoutSessionId?: unknown
+  forceResendInvitation?: unknown
+}
+
 function getJwtSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET
   if (!secret || secret.length < 32) {
@@ -88,7 +94,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const payload = body as Record<string, unknown>
+  const payload = body as RequestBody & Record<string, unknown>
   const sessionId = extractCheckoutSessionId(payload.sessionId || payload.checkoutSessionId)
   if (!sessionId) {
     return NextResponse.json({ success: false, error: 'sessionId is required' }, { status: 400 })
@@ -107,7 +113,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const activation = await activateCustomer({ stripe, candidate })
+    const activation = await activateCustomer({
+      stripe,
+      candidate,
+      forceResendInvitation: payload.forceResendInvitation === true,
+    })
     return NextResponse.json({ success: true, activation })
   } catch (error) {
     console.error('Manual activation failed:', error)

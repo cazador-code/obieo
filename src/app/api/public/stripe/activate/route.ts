@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const activation = await activateCustomer({ stripe, candidate })
+    const activation = await activateCustomer({ stripe, candidate, forceResendInvitation: true })
     return NextResponse.json({ success: true, activation })
   } catch (error) {
     console.error('Public activation failed:', error)
