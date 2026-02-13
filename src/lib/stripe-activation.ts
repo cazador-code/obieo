@@ -1,6 +1,7 @@
 import Stripe from 'stripe'
 import { clerkClient } from '@clerk/nextjs/server'
 import { Resend } from 'resend'
+import { getLeadgenIntentByPortalKeyInConvex, markLeadgenInvitedInConvex } from '@/lib/convex'
 
 const ACTIVATION_CHARGE_KINDS = new Set([
   'paid_in_full',
@@ -17,6 +18,7 @@ export interface ActivationCandidate {
   companyName?: string
   billingModel?: string
   chargeKind?: string
+  journey?: string
 }
 
 function normalizeString(value: unknown): string | undefined {
@@ -75,6 +77,7 @@ export function getActivationCandidateFromCheckout(
     companyName: normalizeString(session.metadata?.company_name),
     billingModel: normalizeString(session.metadata?.billing_model),
     chargeKind,
+    journey: normalizeString(session.metadata?.obieo_journey),
   }
 }
 
@@ -97,6 +100,7 @@ export function getActivationCandidateFromInvoice(invoice: Stripe.Invoice): Acti
     portalKey,
     companyName: normalizeString(invoice.metadata?.company_name),
     billingModel: normalizeString(invoice.metadata?.billing_model),
+    journey: normalizeString(invoice.metadata?.obieo_journey),
   }
 }
 
@@ -221,11 +225,21 @@ export async function activateCustomer(input: {
   }
 
   const clerk = await clerkClient()
+
+  // For payment-first leadgen, redirect invite to the onboarding form instead of the portal.
+  let redirectUrl = getInvitationRedirectUrl()
+  if (input.candidate.journey === 'leadgen_payment_first' && portalKey) {
+    const intent = await getLeadgenIntentByPortalKeyInConvex({ portalKey })
+    if (intent?.token) {
+      redirectUrl = `${getAppBaseUrl()}/leadgen/onboarding?token=${encodeURIComponent(intent.token)}`
+    }
+  }
+
   const invitation = await clerk.invitations.createInvitation({
     emailAddress: email,
     ignoreExisting: true,
     notify: true,
-    redirectUrl: getInvitationRedirectUrl(),
+    redirectUrl,
     publicMetadata: {
       portalKey: portalKey || null,
       companyName: companyName || null,
@@ -235,6 +249,10 @@ export async function activateCustomer(input: {
       chargeKind: input.candidate.chargeKind || null,
     },
   })
+
+  if (input.candidate.journey === 'leadgen_payment_first' && portalKey) {
+    await markLeadgenInvitedInConvex({ portalKey })
+  }
 
   if (customer) {
     await input.stripe.customers.update(customer.id, {
@@ -286,4 +304,3 @@ export async function activateCustomer(input: {
     loginUrl,
   }
 }
-

@@ -130,6 +130,7 @@ Set these in `.env.local` (do not commit secrets).
   - `STRIPE_DEFAULT_LEAD_PRICE_ID=price_...` (metered $40/lead)
   - `STRIPE_CARD_VERIFICATION_PRICE_ID=price_...` ($1 one-time)
   - `STRIPE_UPFRONT_BUNDLE_PRICE_ID=price_...` ($400 one-time)
+  - `STRIPE_PAID_IN_FULL_PRICE_ID=price_...` ($1,600 one-time)
 - `RESEND_API_KEY=...`
 - `RESEND_FROM_EMAIL=noreply@obieo.com` (must be verified in Resend)
 - `CONVEX_URL=https://<your-deployment>.convex.cloud`
@@ -288,6 +289,13 @@ In Clerk:
 Run a real flow using the $1 card verification model:
 - confirm Stripe webhook calls your prod endpoint
 - confirm customer gets Clerk invite + can sign in
+
+Run a payment-first flow ($1,600 paid-in-full):
+1. Set `LEADGEN_PAYMENT_FIRST_ENABLED=true` in production env.
+2. Create a checkout link at `/internal/leadgen/payment-link`.
+3. Pay the Checkout link.
+4. Confirm Clerk invitation redirects to `/leadgen/onboarding?token=...`.
+5. Complete onboarding and confirm `/portal` access works (portal blocks until onboarding complete).
 
 ---
 

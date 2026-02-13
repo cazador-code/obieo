@@ -9,6 +9,7 @@
  */
 
 import type * as leadLedger from "../leadLedger.js";
+import type * as leadgen from "../leadgen.js";
 
 import type {
   ApiFromModules,
@@ -18,6 +19,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   leadLedger: typeof leadLedger;
+  leadgen: typeof leadgen;
 }>;
 
 /**

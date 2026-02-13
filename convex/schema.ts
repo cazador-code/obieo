@@ -8,6 +8,38 @@ const billingModel = v.union(
 )
 
 export default defineSchema({
+  leadgenIntents: defineTable({
+    portalKey: v.string(),
+    companyName: v.string(),
+    billingEmail: v.string(),
+    billingName: v.optional(v.string()),
+    billingModel: v.literal('package_40_paid_in_full'),
+    token: v.string(),
+    tokenExpiresAt: v.number(),
+    status: v.union(
+      v.literal('checkout_created'),
+      v.literal('paid'),
+      v.literal('invited'),
+      v.literal('onboarding_completed')
+    ),
+    checkoutSessionId: v.optional(v.string()),
+    checkoutUrl: v.optional(v.string()),
+    stripeCustomerId: v.optional(v.string()),
+    paidAt: v.optional(v.number()),
+    invitedAt: v.optional(v.number()),
+    onboardingCompletedAt: v.optional(v.number()),
+    source: v.optional(v.string()),
+    utmSource: v.optional(v.string()),
+    utmCampaign: v.optional(v.string()),
+    utmMedium: v.optional(v.string()),
+    utmContent: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_portalKey', ['portalKey'])
+    .index('by_token', ['token'])
+    .index('by_billingEmail', ['billingEmail']),
+
   organizations: defineTable({
     companyId: v.optional(v.string()),
     portalKey: v.string(),
@@ -70,7 +102,7 @@ export default defineSchema({
     .index('by_portal_and_external', ['portalKey', 'sourceExternalId'])
     .index('by_portal_and_idempotency', ['portalKey', 'idempotencyKey']),
 
-      billingEvents: defineTable({
+  billingEvents: defineTable({
     organizationId: v.optional(v.id('organizations')),
     portalKey: v.string(),
     kind: v.string(),

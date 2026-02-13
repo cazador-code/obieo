@@ -111,6 +111,8 @@ export async function upsertOrganizationInConvex(input: {
   initialChargeCents?: number
   leadChargeThreshold?: number
   leadUnitPriceCents?: number
+  onboardingStatus?: string
+  onboardingCompletedAt?: number
   isActive?: boolean
 }, opts?: { throwOnError?: boolean }) {
   const client = getConvexClient()
@@ -201,6 +203,200 @@ export async function getOrganizationSnapshotInConvex(input: {
       | null
   } catch (error) {
     console.error('Convex getOrganizationSnapshot failed:', error)
+    return null
+  }
+}
+
+export type LeadgenIntentStatus = 'checkout_created' | 'paid' | 'invited' | 'onboarding_completed'
+
+export interface LeadgenIntentSnapshot {
+  portalKey: string
+  companyName: string
+  billingEmail: string
+  billingName?: string
+  billingModel: 'package_40_paid_in_full'
+  token: string
+  tokenExpiresAt: number
+  status: LeadgenIntentStatus
+  checkoutSessionId?: string
+  checkoutUrl?: string
+  stripeCustomerId?: string
+  paidAt?: number
+  invitedAt?: number
+  onboardingCompletedAt?: number
+  source?: string
+  utmSource?: string
+  utmCampaign?: string
+  utmMedium?: string
+  utmContent?: string
+  createdAt: number
+  updatedAt: number
+}
+
+export async function findActiveLeadgenIntentInConvex(input: {
+  billingEmail: string
+  companyName: string
+}): Promise<LeadgenIntentSnapshot | null> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const result = await client.query(api.leadgen.findActiveLeadgenIntent, {
+      authSecret,
+      ...input,
+    })
+    return result as LeadgenIntentSnapshot | null
+  } catch (error) {
+    console.error('Convex findActiveLeadgenIntent failed:', error)
+    return null
+  }
+}
+
+export async function createLeadgenIntentInConvex(input: {
+  portalKey: string
+  companyName: string
+  billingEmail: string
+  billingName?: string
+  token: string
+  tokenExpiresAt: number
+  source?: string
+  utmSource?: string
+  utmCampaign?: string
+  utmMedium?: string
+  utmContent?: string
+}): Promise<LeadgenIntentSnapshot | null> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const result = await client.mutation(api.leadgen.createLeadgenIntent, {
+      authSecret,
+      ...input,
+    })
+    return result as LeadgenIntentSnapshot
+  } catch (error) {
+    console.error('Convex createLeadgenIntent failed:', error)
+    return null
+  }
+}
+
+export async function updateLeadgenCheckoutDetailsInConvex(input: {
+  portalKey: string
+  stripeCustomerId?: string
+  checkoutSessionId?: string
+  checkoutUrl?: string
+}): Promise<LeadgenIntentSnapshot | null> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const result = await client.mutation(api.leadgen.updateLeadgenCheckoutDetails, {
+      authSecret,
+      ...input,
+    })
+    return result as LeadgenIntentSnapshot
+  } catch (error) {
+    console.error('Convex updateLeadgenCheckoutDetails failed:', error)
+    return null
+  }
+}
+
+export async function markLeadgenPaidInConvex(input: {
+  portalKey: string
+  checkoutSessionId?: string
+  stripeCustomerId?: string
+}): Promise<LeadgenIntentSnapshot | null> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const result = await client.mutation(api.leadgen.markLeadgenPaid, {
+      authSecret,
+      ...input,
+    })
+    return result as LeadgenIntentSnapshot
+  } catch (error) {
+    console.error('Convex markLeadgenPaid failed:', error)
+    return null
+  }
+}
+
+export async function markLeadgenInvitedInConvex(input: {
+  portalKey: string
+}): Promise<LeadgenIntentSnapshot | null> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const result = await client.mutation(api.leadgen.markLeadgenInvited, {
+      authSecret,
+      ...input,
+    })
+    return result as LeadgenIntentSnapshot
+  } catch (error) {
+    console.error('Convex markLeadgenInvited failed:', error)
+    return null
+  }
+}
+
+export async function markLeadgenOnboardingCompletedInConvex(input: {
+  portalKey: string
+}): Promise<LeadgenIntentSnapshot | null> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const result = await client.mutation(api.leadgen.markLeadgenOnboardingCompleted, {
+      authSecret,
+      ...input,
+    })
+    return result as LeadgenIntentSnapshot
+  } catch (error) {
+    console.error('Convex markLeadgenOnboardingCompleted failed:', error)
+    return null
+  }
+}
+
+export async function getLeadgenIntentByTokenInConvex(input: {
+  token: string
+}): Promise<LeadgenIntentSnapshot | null> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const result = await client.query(api.leadgen.getLeadgenIntentByToken, {
+      authSecret,
+      ...input,
+    })
+    return result as LeadgenIntentSnapshot | null
+  } catch (error) {
+    console.error('Convex getLeadgenIntentByToken failed:', error)
+    return null
+  }
+}
+
+export async function getLeadgenIntentByPortalKeyInConvex(input: {
+  portalKey: string
+}): Promise<LeadgenIntentSnapshot | null> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const result = await client.query(api.leadgen.getLeadgenIntentByPortalKey, {
+      authSecret,
+      ...input,
+    })
+    return result as LeadgenIntentSnapshot | null
+  } catch (error) {
+    console.error('Convex getLeadgenIntentByPortalKey failed:', error)
     return null
   }
 }

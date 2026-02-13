@@ -112,6 +112,8 @@ export const upsertOrganization = mutation({
     initialChargeCents: v.optional(v.number()),
     leadChargeThreshold: v.optional(v.number()),
     leadUnitPriceCents: v.optional(v.number()),
+    onboardingStatus: v.optional(v.string()),
+    onboardingCompletedAt: v.optional(v.number()),
     isActive: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
@@ -151,6 +153,8 @@ export const upsertOrganization = mutation({
         ...(args.initialChargeCents !== undefined ? { initialChargeCents: args.initialChargeCents } : {}),
         ...(args.leadChargeThreshold !== undefined ? { leadChargeThreshold: args.leadChargeThreshold } : {}),
         ...(args.leadUnitPriceCents !== undefined ? { leadUnitPriceCents: args.leadUnitPriceCents } : {}),
+        ...(args.onboardingStatus !== undefined ? { onboardingStatus: args.onboardingStatus } : {}),
+        ...(args.onboardingCompletedAt !== undefined ? { onboardingCompletedAt: args.onboardingCompletedAt } : {}),
         ...(args.isActive !== undefined ? { isActive: args.isActive } : {}),
         updatedAt: now,
       })
@@ -185,6 +189,8 @@ export const upsertOrganization = mutation({
       initialChargeCents: args.initialChargeCents,
       leadChargeThreshold: args.leadChargeThreshold,
       leadUnitPriceCents: args.leadUnitPriceCents,
+      onboardingStatus: args.onboardingStatus,
+      onboardingCompletedAt: args.onboardingCompletedAt,
       isActive: args.isActive ?? true,
       createdAt: now,
       updatedAt: now,

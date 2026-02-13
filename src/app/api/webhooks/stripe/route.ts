@@ -8,7 +8,13 @@ import {
   getActivationCandidateFromInvoice,
   type ActivationCandidate,
 } from '@/lib/stripe-activation'
-import { grantLeadCreditsFromInvoiceInConvex, recordInvoiceEventInConvex } from '@/lib/convex'
+import {
+  grantLeadCreditsFromInvoiceInConvex,
+  markLeadgenPaidInConvex,
+  recordInvoiceEventInConvex,
+  upsertOrganizationInConvex,
+} from '@/lib/convex'
+import { getBillingModelDefaults } from '@/lib/billing-models'
 
 export const runtime = 'nodejs'
 
@@ -103,9 +109,38 @@ export async function POST(request: NextRequest) {
     event.type === 'checkout.session.completed' ||
     event.type === 'checkout.session.async_payment_succeeded'
   ) {
-    candidate = getActivationCandidateFromCheckout(
-      event.data.object as Stripe.Checkout.Session
-    )
+    const session = event.data.object as Stripe.Checkout.Session
+
+    // Payment-first leadgen flow: mark leadgen paid + ensure org shell exists before inviting.
+    if (session.payment_status === 'paid' && session.metadata?.obieo_journey === 'leadgen_payment_first') {
+      const portalKey = normalizeString(session.metadata?.portal_key)
+      const companyName = normalizeString(session.metadata?.company_name) || undefined
+      const stripeCustomerId = typeof session.customer === 'string' ? session.customer : undefined
+
+      if (portalKey) {
+        await markLeadgenPaidInConvex({
+          portalKey,
+          checkoutSessionId: session.id,
+          stripeCustomerId,
+        })
+
+        const defaults = getBillingModelDefaults('package_40_paid_in_full', 4000)
+        await upsertOrganizationInConvex({
+          portalKey,
+          name: companyName,
+          stripeCustomerId,
+          billingModel: 'package_40_paid_in_full',
+          prepaidLeadCredits: defaults.prepaidLeadCredits,
+          leadCommitmentTotal: defaults.leadCommitmentTotal || undefined,
+          initialChargeCents: defaults.initialChargeCents,
+          leadChargeThreshold: defaults.leadChargeThreshold,
+          leadUnitPriceCents: defaults.leadUnitPriceCents,
+          isActive: true,
+        })
+      }
+    }
+
+    candidate = getActivationCandidateFromCheckout(session)
   } else if (
     event.type === 'invoice.payment_succeeded' ||
     event.type === 'invoice.paid'

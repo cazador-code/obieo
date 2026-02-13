@@ -355,6 +355,7 @@ async function createInitialChargeCheckoutSession(
     billingModel: BillingModel
     savePaymentMethod: boolean
     chargeKind: 'paid_in_full' | 'upfront_bundle' | 'card_verification'
+    journey?: string
   }
 ): Promise<{ url: string | null; sessionId: string }> {
   const { successUrl, cancelUrl } = getCheckoutUrls()
@@ -395,6 +396,7 @@ async function createInitialChargeCheckoutSession(
         ...(input.companyName ? { company_name: input.companyName } : {}),
         billing_model: input.billingModel,
         obieo_kind: input.chargeKind,
+        ...(input.journey ? { obieo_journey: input.journey } : {}),
       },
     },
     metadata: {
@@ -403,6 +405,7 @@ async function createInitialChargeCheckoutSession(
       billing_model: input.billingModel,
       obieo_kind: input.chargeKind,
       initial_charge_cents: String(input.amountCents),
+      ...(input.journey ? { obieo_journey: input.journey } : {}),
     },
   })
 
@@ -413,7 +416,7 @@ async function createInitialChargeCheckoutSession(
 }
 
 export async function provisionLeadBillingForOnboarding(
-  input: LeadBillingProvisionInput
+  input: LeadBillingProvisionInput & { journey?: string }
 ): Promise<LeadBillingProvisionResult | null> {
   const stripe = getStripeClient()
   if (!stripe) return null
@@ -448,6 +451,7 @@ export async function provisionLeadBillingForOnboarding(
       billingModel: input.billingModel,
       savePaymentMethod: false,
       chargeKind: 'paid_in_full',
+      journey: input.journey,
     })
 
     return {
@@ -509,6 +513,7 @@ export async function provisionLeadBillingForOnboarding(
       input.billingModel === 'commitment_40_with_10_upfront'
         ? 'upfront_bundle'
         : 'card_verification',
+    journey: input.journey,
   })
 
   return {

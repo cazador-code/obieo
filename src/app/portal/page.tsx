@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import LeadTopUpCard from './LeadTopUpCard'
+import { getLeadgenIntentByPortalKeyInConvex, getOrganizationSnapshotInConvex } from '@/lib/convex'
 
 export default async function PortalPage() {
   const { userId } = await auth()
@@ -9,10 +10,28 @@ export default async function PortalPage() {
     redirect('/sign-in?redirect_url=/portal')
   }
 
+  const clerk = await clerkClient()
+  const user = await clerk.users.getUser(userId)
+  const portalKey =
+    (typeof user.publicMetadata?.portalKey === 'string' && user.publicMetadata.portalKey.trim()) ||
+    (typeof user.publicMetadata?.portal_key === 'string' && user.publicMetadata.portal_key.trim()) ||
+    null
+  if (!portalKey) {
+    redirect('/sign-in?redirect_url=/portal')
+  }
+
+  const snapshot = await getOrganizationSnapshotInConvex({ portalKey })
+  const org = snapshot?.organization as Record<string, unknown> | undefined
+  const onboardingStatus = typeof org?.onboardingStatus === 'string' ? org.onboardingStatus : null
+  if (onboardingStatus !== 'completed') {
+    const intent = await getLeadgenIntentByPortalKeyInConvex({ portalKey })
+    if (intent?.token) {
+      redirect(`/leadgen/onboarding?token=${encodeURIComponent(intent.token)}`)
+    }
+  }
+
   let emailAddress = ''
   try {
-    const clerk = await clerkClient()
-    const user = await clerk.users.getUser(userId)
     emailAddress = user.emailAddresses.find(
       (email) => email.id === user.primaryEmailAddressId
     )?.emailAddress || ''
