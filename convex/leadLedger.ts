@@ -23,7 +23,8 @@ const CREDIT_REASON_SET = new Set<string>(CREDIT_REASON_VALUES)
 const BILLING_MODEL_VALIDATION = v.union(
   v.literal('package_40_paid_in_full'),
   v.literal('commitment_40_with_10_upfront'),
-  v.literal('pay_per_lead_perpetual')
+  v.literal('pay_per_lead_perpetual'),
+  v.literal('pay_per_lead_40_first_lead')
 )
 
 function assertAuthorized(authSecret: string) {
