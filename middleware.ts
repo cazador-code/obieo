@@ -38,11 +38,13 @@ function decodeBasicAuthHeader(value: string): { user: string; pass: string } | 
 export function middleware(request: NextRequest) {
   const expectedUser = process.env.INTERNAL_LEADGEN_BASIC_AUTH_USER || ''
   const expectedPass = process.env.INTERNAL_LEADGEN_BASIC_AUTH_PASS || ''
-  const onVercel = process.env.VERCEL === '1'
+  const isProd =
+    process.env.VERCEL_ENV === 'production' ||
+    process.env.NODE_ENV === 'production'
 
-  // Fail closed on Vercel if secrets are missing.
-  // We intentionally avoid relying on VERCEL_ENV here because some runtimes don't expose it.
-  if ((!expectedUser || !expectedPass) && onVercel) {
+  // Fail closed in production if secrets are missing.
+  // Using NODE_ENV here is more reliable than Vercel-specific vars in edge middleware.
+  if ((!expectedUser || !expectedPass) && isProd) {
     return new NextResponse('Internal tools auth is not configured.', { status: 503 })
   }
 
