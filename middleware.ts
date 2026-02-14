@@ -38,14 +38,15 @@ function decodeBasicAuthHeader(value: string): { user: string; pass: string } | 
 export function middleware(request: NextRequest) {
   const expectedUser = process.env.INTERNAL_LEADGEN_BASIC_AUTH_USER || ''
   const expectedPass = process.env.INTERNAL_LEADGEN_BASIC_AUTH_PASS || ''
-  const isProd = process.env.VERCEL_ENV === 'production'
+  const onVercel = process.env.VERCEL === '1'
 
-  // Fail closed in production if secrets are missing.
-  if ((!expectedUser || !expectedPass) && isProd) {
+  // Fail closed on Vercel if secrets are missing.
+  // We intentionally avoid relying on VERCEL_ENV here because some runtimes don't expose it.
+  if ((!expectedUser || !expectedPass) && onVercel) {
     return new NextResponse('Internal tools auth is not configured.', { status: 503 })
   }
 
-  // In non-prod environments, allow access if Basic Auth isn't configured.
+  // In local/dev environments, allow access if Basic Auth isn't configured.
   if (!expectedUser || !expectedPass) return NextResponse.next()
 
   const creds = decodeBasicAuthHeader(request.headers.get('authorization') || '')
