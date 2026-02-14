@@ -38,18 +38,11 @@ function decodeBasicAuthHeader(value: string): { user: string; pass: string } | 
 export function middleware(request: NextRequest) {
   const expectedUser = process.env.INTERNAL_LEADGEN_BASIC_AUTH_USER || ''
   const expectedPass = process.env.INTERNAL_LEADGEN_BASIC_AUTH_PASS || ''
-  const isProd =
-    process.env.VERCEL_ENV === 'production' ||
-    process.env.NODE_ENV === 'production'
 
-  // Fail closed in production if secrets are missing.
-  // Using NODE_ENV here is more reliable than Vercel-specific vars in edge middleware.
-  if ((!expectedUser || !expectedPass) && isProd) {
+  // Fail closed. This is an internal tool; if auth isn't configured, it's safer to block.
+  if (!expectedUser || !expectedPass) {
     return new NextResponse('Internal tools auth is not configured.', { status: 503 })
   }
-
-  // In local/dev environments, allow access if Basic Auth isn't configured.
-  if (!expectedUser || !expectedPass) return NextResponse.next()
 
   const creds = decodeBasicAuthHeader(request.headers.get('authorization') || '')
   if (!creds) return unauthorized()
@@ -67,5 +60,6 @@ export const config = {
     '/internal/leadgen/payment-link',
     '/internal/leadgen/payment-link/:path*',
     '/api/internal/leadgen/payment-link',
+    '/api/internal/leadgen/payment-link/:path*',
   ],
 }
