@@ -4,7 +4,8 @@ import { v } from 'convex/values'
 const billingModel = v.union(
   v.literal('package_40_paid_in_full'),
   v.literal('commitment_40_with_10_upfront'),
-  v.literal('pay_per_lead_perpetual')
+  v.literal('pay_per_lead_perpetual'),
+  v.literal('pay_per_lead_40_first_lead')
 )
 
 export default defineSchema({
@@ -13,7 +14,7 @@ export default defineSchema({
     companyName: v.string(),
     billingEmail: v.string(),
     billingName: v.optional(v.string()),
-    billingModel: v.literal('package_40_paid_in_full'),
+    billingModel,
     token: v.string(),
     tokenExpiresAt: v.number(),
     status: v.union(

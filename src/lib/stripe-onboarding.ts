@@ -354,7 +354,7 @@ async function createInitialChargeCheckoutSession(
     companyName?: string
     billingModel: BillingModel
     savePaymentMethod: boolean
-    chargeKind: 'paid_in_full' | 'upfront_bundle' | 'card_verification'
+    chargeKind: 'paid_in_full' | 'upfront_bundle' | 'card_verification' | 'first_lead'
     journey?: string
     discount?: { coupon?: string; promotionCode?: string; allowPromotionCodes?: boolean }
   }
@@ -478,7 +478,7 @@ export async function provisionLeadBillingForOnboarding(
   }
 
   const threshold =
-    input.billingModel === 'pay_per_lead_perpetual'
+    input.billingModel === 'pay_per_lead_perpetual' || input.billingModel === 'pay_per_lead_40_first_lead'
       ? 1
       : normalizePositiveInt(input.leadChargeThreshold, defaults.leadChargeThreshold)
 
@@ -503,15 +503,25 @@ export async function provisionLeadBillingForOnboarding(
           productName: '10 Lead Upfront Bundle (40 Lead Commitment)',
           unitAmountCents: defaults.initialChargeCents,
         }))
-      : (await resolvePinnedOneTimePrice(stripe, {
-          envVar: 'STRIPE_CARD_VERIFICATION_PRICE_ID',
-          expectedAmountCents: defaults.initialChargeCents,
-        })) ||
-        (await resolveOneTimePriceId(stripe, {
-          productKind: 'lead_card_verification',
-          productName: 'Card Verification Charge',
-          unitAmountCents: defaults.initialChargeCents,
-        }))
+      : input.billingModel === 'pay_per_lead_40_first_lead'
+        ? (await resolvePinnedOneTimePrice(stripe, {
+            envVar: 'STRIPE_PAY_PER_LEAD_FIRST_LEAD_PRICE_ID',
+            expectedAmountCents: defaults.initialChargeCents,
+          })) ||
+          (await resolveOneTimePriceId(stripe, {
+            productKind: 'lead_pay_per_lead_first_lead',
+            productName: 'First Lead Charge (Pay Per Lead)',
+            unitAmountCents: defaults.initialChargeCents,
+          }))
+        : (await resolvePinnedOneTimePrice(stripe, {
+            envVar: 'STRIPE_CARD_VERIFICATION_PRICE_ID',
+            expectedAmountCents: defaults.initialChargeCents,
+          })) ||
+          (await resolveOneTimePriceId(stripe, {
+            productKind: 'lead_card_verification',
+            productName: 'Card Verification Charge',
+            unitAmountCents: defaults.initialChargeCents,
+          }))
 
   const checkout = await createInitialChargeCheckoutSession(stripe, {
     customerId,
@@ -524,6 +534,8 @@ export async function provisionLeadBillingForOnboarding(
     chargeKind:
       input.billingModel === 'commitment_40_with_10_upfront'
         ? 'upfront_bundle'
+        : input.billingModel === 'pay_per_lead_40_first_lead'
+          ? 'first_lead'
         : 'card_verification',
     journey: input.journey,
     discount: input.discount,

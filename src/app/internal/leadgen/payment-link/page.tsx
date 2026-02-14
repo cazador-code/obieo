@@ -1,9 +1,9 @@
 'use client'
 
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 
-const STORED_AUTH_KEY = 'obieo-audit-auth'
+type BillingModel = 'package_40_paid_in_full' | 'pay_per_lead_40_first_lead'
 
 type ApiResponse =
   | {
@@ -35,10 +35,7 @@ async function parseJsonResponse<T>(response: Response): Promise<T | null> {
 }
 
 export default function PaymentLinkPage() {
-  const [authToken, setAuthToken] = useState<string | null>(null)
-  const [lockedPassword, setLockedPassword] = useState('')
-  const [unlocking, setUnlocking] = useState(false)
-  const [unlockError, setUnlockError] = useState<string | null>(null)
+  const [billingModel, setBillingModel] = useState<BillingModel>('package_40_paid_in_full')
 
   const [companyName, setCompanyName] = useState('')
   const [billingEmail, setBillingEmail] = useState('')
@@ -54,58 +51,16 @@ export default function PaymentLinkPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [result, setResult] = useState<Extract<ApiResponse, { success: true }> | null>(null)
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORED_AUTH_KEY)
-      if (stored) setAuthToken(stored)
-    } catch {
-      // ignore
-    }
-  }, [])
-
   const canSubmit = useMemo(() => {
     return Boolean(
-      authToken &&
-        cleanString(companyName) &&
-        isValidEmail(cleanString(billingEmail))
+      cleanString(companyName) &&
+        isValidEmail(cleanString(billingEmail)) &&
+        billingModel
     )
-  }, [authToken, companyName, billingEmail])
-
-  async function handleUnlock(e: FormEvent) {
-    e.preventDefault()
-    setUnlocking(true)
-    setUnlockError(null)
-
-    try {
-      const response = await fetch('/api/internal/verify-auth', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ password: lockedPassword }),
-      })
-
-      const data = await parseJsonResponse<{ success: boolean; token?: string; error?: string }>(response)
-      if (!response.ok || !data?.success || !data.token) {
-        setUnlockError(data?.error || 'Failed to unlock.')
-        return
-      }
-
-      try {
-        localStorage.setItem(STORED_AUTH_KEY, data.token)
-      } catch {
-        // ignore
-      }
-      setAuthToken(data.token)
-      setLockedPassword('')
-    } catch (err) {
-      setUnlockError(err instanceof Error ? err.message : 'Unlock failed.')
-    } finally {
-      setUnlocking(false)
-    }
-  }
+  }, [billingModel, companyName, billingEmail])
 
   async function handleGenerate(e: FormEvent) {
     e.preventDefault()
-    if (!authToken) return
 
     setSubmitting(true)
     setSubmitError(null)
@@ -116,9 +71,9 @@ export default function PaymentLinkPage() {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
+          billingModel,
           companyName,
           billingEmail,
           billingName: billingName || undefined,
@@ -152,66 +107,52 @@ export default function PaymentLinkPage() {
       <div className="mx-auto max-w-3xl">
         <h1 className="text-3xl font-bold text-[var(--text-primary)]">Payment Link Generator</h1>
         <p className="mt-2 text-[var(--text-secondary)]">
-          Create the $1,600 Stripe Checkout link for the paid-in-full 40 lead package.
+          Create a Stripe Checkout link for a leadgen customer. This page is protected by Basic Auth.
         </p>
 
-        {!authToken ? (
-          <section className="mt-8 rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-lg">
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Unlock</h2>
-            <form onSubmit={handleUnlock} className="mt-4 grid gap-3">
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-8 rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-lg"
+        >
+          <form onSubmit={handleGenerate} className="grid gap-4">
+            <label>
+              <span className="block text-sm font-semibold text-[var(--text-primary)]">Offering</span>
+              <select
+                value={billingModel}
+                onChange={(e) => setBillingModel(e.target.value as BillingModel)}
+                className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
+              >
+                <option value="package_40_paid_in_full">$1,600 paid in full (40 leads)</option>
+                <option value="pay_per_lead_40_first_lead">$40 first lead, then $40 per lead</option>
+              </select>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">
+                Pay-per-lead creates a metered Stripe subscription (threshold=1) so each delivered lead triggers an
+                immediate invoice/charge. Leads can still be delivered even if a payment later fails.
+              </p>
+            </label>
+
+            <div className="grid gap-4 md:grid-cols-2">
               <label>
-                <span className="block text-sm font-semibold text-[var(--text-primary)]">Internal password</span>
+                <span className="block text-sm font-semibold text-[var(--text-primary)]">Company name</span>
                 <input
-                  type="password"
-                  value={lockedPassword}
-                  onChange={(e) => setLockedPassword(e.target.value)}
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
+                  placeholder="Lapeyre Roofing"
                 />
               </label>
 
-              {unlockError && (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                  {unlockError}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={unlocking || !lockedPassword.trim()}
-                className="rounded-xl bg-[var(--accent)] px-4 py-3 font-semibold text-white hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {unlocking ? 'Unlocking...' : 'Unlock'}
-              </button>
-            </form>
-          </section>
-        ) : (
-          <motion.section
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-8 rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-lg"
-          >
-            <form onSubmit={handleGenerate} className="grid gap-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <label>
-                  <span className="block text-sm font-semibold text-[var(--text-primary)]">Company name</span>
-                  <input
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
-                    placeholder="Lapeyre Roofing"
-                  />
-                </label>
-
-                <label>
-                  <span className="block text-sm font-semibold text-[var(--text-primary)]">Billing email</span>
-                  <input
-                    value={billingEmail}
-                    onChange={(e) => setBillingEmail(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
-                    placeholder="owner@company.com"
-                  />
-                </label>
-              </div>
+              <label>
+                <span className="block text-sm font-semibold text-[var(--text-primary)]">Billing email</span>
+                <input
+                  value={billingEmail}
+                  onChange={(e) => setBillingEmail(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
+                  placeholder="owner@company.com"
+                />
+              </label>
+            </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <label>
@@ -300,7 +241,11 @@ export default function PaymentLinkPage() {
                 disabled={submitting || !canSubmit}
                 className="rounded-xl bg-[var(--accent)] px-4 py-3 font-semibold text-white hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {submitting ? 'Generating...' : 'Generate $1,600 Checkout Link'}
+                {submitting
+                  ? 'Generating...'
+                  : billingModel === 'package_40_paid_in_full'
+                    ? 'Generate $1,600 Checkout Link'
+                    : 'Generate $40 Checkout Link'}
               </button>
             </form>
 
@@ -344,8 +289,7 @@ export default function PaymentLinkPage() {
                 )}
               </div>
             )}
-          </motion.section>
-        )}
+        </motion.section>
       </div>
     </main>
   )

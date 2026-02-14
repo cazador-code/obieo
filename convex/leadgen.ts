@@ -5,6 +5,21 @@ import { v } from 'convex/values'
 
 type LeadgenIntentRecord = Doc<'leadgenIntents'>
 
+const BILLING_MODELS = [
+  'package_40_paid_in_full',
+  'commitment_40_with_10_upfront',
+  'pay_per_lead_perpetual',
+  'pay_per_lead_40_first_lead',
+] as const
+
+type BillingModel = (typeof BILLING_MODELS)[number]
+
+function normalizeBillingModel(value: unknown): BillingModel {
+  if (typeof value !== 'string') return 'package_40_paid_in_full'
+  const trimmed = value.trim() as BillingModel
+  return BILLING_MODELS.includes(trimmed) ? trimmed : 'package_40_paid_in_full'
+}
+
 function assertAuthorized(authSecret: string) {
   const expected = process.env.CONVEX_AUTH_ADAPTER_SECRET
   if (!expected || authSecret !== expected) {
@@ -90,6 +105,7 @@ export const createLeadgenIntent = mutation({
     companyName: v.string(),
     billingEmail: v.string(),
     billingName: v.optional(v.string()),
+    billingModel: v.optional(v.string()),
     token: v.string(),
     tokenExpiresAt: v.number(),
     source: v.optional(v.string()),
@@ -112,7 +128,7 @@ export const createLeadgenIntent = mutation({
       companyName: args.companyName,
       billingEmail: args.billingEmail,
       billingName: args.billingName,
-      billingModel: 'package_40_paid_in_full',
+      billingModel: normalizeBillingModel(args.billingModel),
       token: args.token,
       tokenExpiresAt: Math.floor(args.tokenExpiresAt),
       status: 'checkout_created',

@@ -104,14 +104,15 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const defaults = getBillingModelDefaults('package_40_paid_in_full', 4000)
+  const billingModel = intent.billingModel || 'package_40_paid_in_full'
+  const defaults = getBillingModelDefaults(billingModel, 4000)
 
   // Ensure org is present and has correct paid-in-full billing defaults.
   await upsertOrganizationInConvex({
     portalKey,
     name: intent.companyName,
     stripeCustomerId: intent.stripeCustomerId || undefined,
-    billingModel: 'package_40_paid_in_full',
+    billingModel,
     prepaidLeadCredits: defaults.prepaidLeadCredits,
     leadCommitmentTotal: defaults.leadCommitmentTotal || undefined,
     initialChargeCents: defaults.initialChargeCents,
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest) {
     leadNotificationPhone: cleanString(payload.leadNotificationPhone) || undefined,
     leadNotificationEmail: cleanString(payload.leadNotificationEmail) || undefined,
     leadProspectEmail: cleanString(payload.leadProspectEmail) || undefined,
-    billingModel: 'package_40_paid_in_full',
+    billingModel,
     prepaidLeadCredits: defaults.prepaidLeadCredits,
     leadCommitmentTotal: defaults.leadCommitmentTotal || undefined,
     initialChargeCents: defaults.initialChargeCents,

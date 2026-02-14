@@ -214,7 +214,7 @@ export interface LeadgenIntentSnapshot {
   companyName: string
   billingEmail: string
   billingName?: string
-  billingModel: 'package_40_paid_in_full'
+  billingModel: BillingModel
   token: string
   tokenExpiresAt: number
   status: LeadgenIntentStatus
@@ -258,6 +258,7 @@ export async function createLeadgenIntentInConvex(input: {
   companyName: string
   billingEmail: string
   billingName?: string
+  billingModel?: BillingModel
   token: string
   tokenExpiresAt: number
   source?: string

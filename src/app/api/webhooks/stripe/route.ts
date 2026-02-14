@@ -14,7 +14,7 @@ import {
   recordInvoiceEventInConvex,
   upsertOrganizationInConvex,
 } from '@/lib/convex'
-import { getBillingModelDefaults } from '@/lib/billing-models'
+import { getBillingModelDefaults, normalizeBillingModel } from '@/lib/billing-models'
 
 export const runtime = 'nodejs'
 
@@ -116,6 +116,8 @@ export async function POST(request: NextRequest) {
       const portalKey = normalizeString(session.metadata?.portal_key)
       const companyName = normalizeString(session.metadata?.company_name) || undefined
       const stripeCustomerId = typeof session.customer === 'string' ? session.customer : undefined
+      const billingModel =
+        session.metadata?.billing_model ? normalizeBillingModel(session.metadata.billing_model) : 'package_40_paid_in_full'
 
       if (portalKey) {
         await markLeadgenPaidInConvex({
@@ -124,12 +126,12 @@ export async function POST(request: NextRequest) {
           stripeCustomerId,
         })
 
-        const defaults = getBillingModelDefaults('package_40_paid_in_full', 4000)
+        const defaults = getBillingModelDefaults(billingModel, 4000)
         await upsertOrganizationInConvex({
           portalKey,
           name: companyName,
           stripeCustomerId,
-          billingModel: 'package_40_paid_in_full',
+          billingModel,
           prepaidLeadCredits: defaults.prepaidLeadCredits,
           leadCommitmentTotal: defaults.leadCommitmentTotal || undefined,
           initialChargeCents: defaults.initialChargeCents,

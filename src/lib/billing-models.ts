@@ -2,6 +2,7 @@ export const BILLING_MODEL_VALUES = [
   'package_40_paid_in_full',
   'commitment_40_with_10_upfront',
   'pay_per_lead_perpetual',
+  'pay_per_lead_40_first_lead',
 ] as const
 
 export type BillingModel = (typeof BILLING_MODEL_VALUES)[number]
@@ -20,6 +21,7 @@ export const BILLING_MODEL_LABELS: Record<BillingModel, string> = {
   package_40_paid_in_full: '$1,600 paid in full (40 leads)',
   commitment_40_with_10_upfront: '$400 upfront, then billed per 10 leads (40 total)',
   pay_per_lead_perpetual: '$40 pay-per-lead with $1 card verification',
+  pay_per_lead_40_first_lead: '$40 first lead, then $40 per lead (perpetual)',
 }
 
 export function normalizeBillingModel(value: unknown): BillingModel {
@@ -56,11 +58,21 @@ export function getBillingModelDefaults(
     }
   }
 
+  if (model === 'pay_per_lead_perpetual') {
+    return {
+      leadUnitPriceCents: unit,
+      leadChargeThreshold: 1,
+      prepaidLeadCredits: 0,
+      leadCommitmentTotal: null,
+      initialChargeCents: 100,
+    }
+  }
+
   return {
     leadUnitPriceCents: unit,
     leadChargeThreshold: 1,
-    prepaidLeadCredits: 0,
+    prepaidLeadCredits: 1,
     leadCommitmentTotal: null,
-    initialChargeCents: 100,
+    initialChargeCents: unit,
   }
 }

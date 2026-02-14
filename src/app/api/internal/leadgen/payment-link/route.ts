@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { jwtVerify } from 'jose'
 import crypto from 'crypto'
 import Stripe from 'stripe'
 import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { provisionLeadBillingForOnboarding } from '@/lib/stripe-onboarding'
 import { getStripeClient } from '@/lib/stripe'
+import { getBillingModelDefaults, normalizeBillingModel } from '@/lib/billing-models'
 import {
   createLeadgenIntentInConvex,
   findActiveLeadgenIntentInConvex,
+  upsertOrganizationInConvex,
   updateLeadgenCheckoutDetailsInConvex,
 } from '@/lib/convex'
 
@@ -17,6 +18,7 @@ type RequestBody = {
   companyName?: unknown
   billingEmail?: unknown
   billingName?: unknown
+  billingModel?: unknown
   source?: unknown
   utmSource?: unknown
   utmCampaign?: unknown
@@ -27,22 +29,61 @@ type RequestBody = {
   forceNew?: unknown
 }
 
-function getJwtSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET
-  if (!secret || secret.length < 32) {
-    throw new Error('JWT_SECRET must be set and at least 32 characters')
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let out = 0
+  for (let i = 0; i < a.length; i++) {
+    out |= a.charCodeAt(i) ^ b.charCodeAt(i)
   }
-  return new TextEncoder().encode(secret)
+  return out === 0
 }
 
-async function verifyAuthToken(token: string): Promise<boolean> {
+function decodeBasicAuthHeader(value: string): { user: string; pass: string } | null {
+  const [scheme, encoded] = value.split(' ')
+  if (scheme !== 'Basic' || !encoded) return null
+  let decoded = ''
   try {
-    const secret = getJwtSecret()
-    await jwtVerify(token, secret)
-    return true
+    decoded = Buffer.from(encoded, 'base64').toString('utf8')
   } catch {
-    return false
+    return null
   }
+  const idx = decoded.indexOf(':')
+  if (idx < 0) return null
+  return { user: decoded.slice(0, idx), pass: decoded.slice(idx + 1) }
+}
+
+function requireBasicAuthInProd(request: NextRequest): NextResponse | null {
+  const isProd = process.env.VERCEL_ENV === 'production'
+  if (!isProd) return null
+
+  const expectedUser = process.env.INTERNAL_LEADGEN_BASIC_AUTH_USER || ''
+  const expectedPass = process.env.INTERNAL_LEADGEN_BASIC_AUTH_PASS || ''
+  if (!expectedUser || !expectedPass) {
+    return NextResponse.json(
+      { success: false, error: 'Internal leadgen auth is not configured.' },
+      { status: 503 }
+    )
+  }
+
+  const creds = decodeBasicAuthHeader(request.headers.get('authorization') || '')
+  if (!creds) {
+    return new NextResponse('Authorization required.', {
+      status: 401,
+      headers: { 'WWW-Authenticate': 'Basic realm="Obieo Internal", charset="UTF-8"' },
+    })
+  }
+
+  const ok =
+    timingSafeEqual(creds.user, expectedUser) &&
+    timingSafeEqual(creds.pass, expectedPass)
+  if (!ok) {
+    return new NextResponse('Authorization required.', {
+      status: 401,
+      headers: { 'WWW-Authenticate': 'Basic realm="Obieo Internal", charset="UTF-8"' },
+    })
+  }
+
+  return null
 }
 
 function cleanString(value: unknown): string | null {
@@ -116,6 +157,9 @@ async function resolveTestDiscount(
 
 export async function POST(request: NextRequest) {
   try {
+    const authResponse = requireBasicAuthInProd(request)
+    if (authResponse) return authResponse
+
     const ip = getClientIp(request)
     const { success, remaining } = await auditLimiter.limit(ip)
     if (!success) {
@@ -129,17 +173,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const token = authHeader.slice(7)
-    const authorized = await verifyAuthToken(token)
-    if (!authorized) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
-    }
-
     let body: RequestBody
     try {
       body = (await request.json()) as RequestBody
@@ -150,6 +183,8 @@ export async function POST(request: NextRequest) {
     const companyName = cleanString(body.companyName)
     const billingEmail = cleanString(body.billingEmail)
     const billingName = cleanString(body.billingName) || undefined
+    const billingModelRaw = cleanString(body.billingModel)
+    const billingModel = billingModelRaw ? normalizeBillingModel(billingModelRaw) : 'package_40_paid_in_full'
     const testDiscountRaw = cleanString(body.testDiscount) || ''
     const forceNew = body.forceNew === true
     if (!companyName || !billingEmail) {
@@ -161,6 +196,16 @@ export async function POST(request: NextRequest) {
 
     const existing = await findActiveLeadgenIntentInConvex({ billingEmail, companyName })
     if (existing) {
+      if (existing.billingModel && existing.billingModel !== billingModel) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Existing leadgen intent already exists for this billing email/company with billingModel=${existing.billingModel}. Use a new billing email (recommended) or complete/expire the existing intent.`,
+          },
+          { status: 409 }
+        )
+      }
+
       if (existing.status !== 'checkout_created' && existing.status !== 'paid' && existing.status !== 'invited') {
         // Unexpected, but return it anyway.
         return NextResponse.json({ success: true, ...existing })
@@ -197,6 +242,7 @@ export async function POST(request: NextRequest) {
         companyName,
         billingEmail,
         billingName,
+        billingModel,
         token: leadgenToken,
         tokenExpiresAt,
         source: cleanString(body.source) || undefined,
@@ -232,14 +278,15 @@ export async function POST(request: NextRequest) {
 
     let provisioned: Awaited<ReturnType<typeof provisionLeadBillingForOnboarding>> | null = null
     try {
+      const defaults = getBillingModelDefaults(billingModel, 4000)
       provisioned = await provisionLeadBillingForOnboarding({
         portalKey,
         companyName,
         billingEmail,
         billingName,
         leadUnitPriceCents: 4000,
-        leadChargeThreshold: 10,
-        billingModel: 'package_40_paid_in_full',
+        leadChargeThreshold: defaults.leadChargeThreshold,
+        billingModel,
         journey: 'leadgen_payment_first',
         ...(resolvedDiscount
           ? {
@@ -273,6 +320,18 @@ export async function POST(request: NextRequest) {
       checkoutSessionId: provisioned.initialCheckoutSessionId,
       checkoutUrl: provisioned.initialCheckoutUrl,
     })
+
+    // For pay-per-lead models, downstream lead delivery billing needs the Stripe subscription item id.
+    // Store it early so the lead-delivered webhook can record usage as soon as leads start flowing.
+    if (provisioned.stripeSubscriptionItemId || provisioned.stripeSubscriptionId) {
+      await upsertOrganizationInConvex({
+        portalKey,
+        stripeCustomerId: provisioned.stripeCustomerId,
+        stripeSubscriptionId: provisioned.stripeSubscriptionId,
+        stripeSubscriptionItemId: provisioned.stripeSubscriptionItemId,
+        billingModel,
+      })
+    }
 
     return NextResponse.json({
       success: true,

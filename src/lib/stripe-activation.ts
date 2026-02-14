@@ -7,6 +7,7 @@ const ACTIVATION_CHARGE_KINDS = new Set([
   'paid_in_full',
   'upfront_bundle',
   'card_verification',
+  'first_lead',
 ])
 
 export interface ActivationCandidate {
