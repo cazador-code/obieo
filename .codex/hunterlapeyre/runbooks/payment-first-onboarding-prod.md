@@ -1,19 +1,23 @@
 # Runbook: Payment-First Onboarding (Prod)
 
 ## Goal
-Send a customer a $1,600 Stripe Checkout link and reliably land them in Clerk onboarding, then `/portal`, with billing + org state correctly created in Convex.
+Generate a Stripe Checkout link for a leadgen customer (paid-in-full or pay-per-lead) and reliably land them in Clerk onboarding, then `/portal`, with billing + org state correctly created in Convex.
 
 ## When To Use This
 - Sales/Ops needs to onboard a new “40 leads paid in full” customer.
+- Sales/Ops needs to onboard a corporate “$40 first lead, then $40 per delivered lead” customer.
 - Stripe webhooks or Clerk invite/redirect behavior is acting weird and you need a repeatable debug flow.
 
 ## Preconditions
 - Access: Vercel project settings, Stripe Live dashboard, Clerk dashboard, Convex dashboard.
 - Vercel Production env vars (minimum for this flow):
   - `LEADGEN_PAYMENT_FIRST_ENABLED=true`
+  - `INTERNAL_LEADGEN_BASIC_AUTH_USER`
+  - `INTERNAL_LEADGEN_BASIC_AUTH_PASS`
   - `STRIPE_SECRET_KEY` (live)
   - `STRIPE_WEBHOOK_SECRET` (the endpoint signing secret for `https://www.obieo.com/api/webhooks/stripe`)
   - `STRIPE_PAID_IN_FULL_PRICE_ID=price_...` (one-time $1,600 price)
+  - Optional: `STRIPE_PAY_PER_LEAD_FIRST_LEAD_PRICE_ID=price_...` (one-time $40 first-lead charge; otherwise code can create)
   - `CLERK_SECRET_KEY` (live)
   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (live)
   - `CONVEX_URL` (prod deployment URL)
@@ -39,15 +43,19 @@ Send a customer a $1,600 Stripe Checkout link and reliably land them in Clerk on
    - Redeploy after env changes.
 
 3. Generate the payment link (Ops/Sales)
-   - Open `/internal/leadgen/payment-link`.
-   - Fill:
-     - Company name
-     - Billing email
-     - Optional: billing name, source, UTMs, notes
-   - Optional test-only: “Test discount”
-     - Accepts coupon ID (`aW0d...`), coupon “name” (dashboard label), promotion code ID (`promo_...`), or promo code string.
-   - Click “Generate $1,600 Checkout Link”.
-   - Send checkout URL to customer.
+  - Open `/internal/leadgen/payment-link`.
+    - This page is protected by HTTP Basic Auth (browser prompt).
+  - Fill:
+    - Offering
+    - Company name
+    - Billing email
+    - Optional: billing name, source, UTMs, notes
+  - Optional test-only: “Test discount”
+    - Accepts coupon ID (`aW0d...`), coupon “name” (dashboard label), promotion code ID (`promo_...`), or promo code string.
+  - Click:
+    - “Generate $1,600 Checkout Link” (paid in full), or
+    - “Generate $40 First-Lead Checkout Link” (pay-per-lead first lead)
+  - Send checkout URL to customer.
 
 4. Customer payment + invite + onboarding
    - Customer completes Stripe Checkout.
@@ -69,8 +77,8 @@ Send a customer a $1,600 Stripe Checkout link and reliably land them in Clerk on
     - `obieo_activation_invitation_id`
   - PaymentIntent metadata includes:
     - `obieo_journey=leadgen_payment_first`
-    - `obieo_kind=paid_in_full`
-    - `billing_model=package_40_paid_in_full`
+    - `obieo_kind=paid_in_full` or `obieo_kind=first_lead`
+    - `billing_model=package_40_paid_in_full` or `billing_model=pay_per_lead_40_first_lead`
     - `portal_key=...`
 
 - Clerk
@@ -79,7 +87,7 @@ Send a customer a $1,600 Stripe Checkout link and reliably land them in Clerk on
 
 - Convex
   - `leadgenIntents`: status progresses to `invited` then `onboarding_completed`.
-  - `organizations`: has `portalKey`, `billingModel=package_40_paid_in_full`, `prepaidLeadCredits=40`, and `onboardingStatus=completed` after form submit.
+  - `organizations`: has `portalKey`, `billingModel` matching the offering, and `onboardingStatus=completed` after form submit.
 
 - App
   - Visiting `/portal` while signed in does not redirect-loop.
@@ -98,4 +106,5 @@ Send a customer a $1,600 Stripe Checkout link and reliably land them in Clerk on
   - Use `/checkout/success` → “Resend invitation email” (forces a new invite), or
   - Remove `obieo_activation_invite_*` fields from the Stripe customer metadata and resend the webhook event.
 - Avoid local Node `v25.x` for builds; use Node 20 (`.nvmrc`).
+- If the internal payment-link page is not prompting for auth, verify the env vars exist in **Vercel Production** and try incognito. If you get `503 Internal tools auth is not configured.`, those env vars are missing (fail-closed).
 
