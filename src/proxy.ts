@@ -1,5 +1,5 @@
 import { clerkMiddleware } from '@clerk/nextjs/server'
-import type { NextRequest } from 'next/server'
+import type { NextFetchEvent, NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 const INTERNAL_AUTH_BASE_PATHS = [
@@ -51,9 +51,9 @@ function requiresInternalBasicAuth(pathname: string): boolean {
 
 const clerkProxy = clerkMiddleware()
 
-export default function proxy(request: NextRequest) {
+export default function proxy(request: NextRequest, event: NextFetchEvent) {
   if (!requiresInternalBasicAuth(request.nextUrl.pathname)) {
-    return clerkProxy(request)
+    return clerkProxy(request, event)
   }
 
   const expectedUser = process.env.INTERNAL_LEADGEN_BASIC_AUTH_USER || ''
