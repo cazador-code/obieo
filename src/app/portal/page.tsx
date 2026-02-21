@@ -90,10 +90,10 @@ export default async function PortalPage() {
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
-              href="/checkout/success"
+              href="/contact"
               className="inline-flex rounded-xl bg-[var(--accent)] px-4 py-2 font-semibold text-white hover:bg-[var(--accent-hover)]"
             >
-              Go to Payment Success
+              Contact Support
             </Link>
             <Link
               href="/"

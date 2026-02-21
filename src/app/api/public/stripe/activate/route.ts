@@ -39,11 +39,25 @@ function normalizeString(value: unknown): string | null {
   return cleaned ? cleaned : null
 }
 
+function isLeadgenStripeActive(): boolean {
+  return process.env.LEADGEN_STRIPE_ACTIVE?.trim() === 'true'
+}
+
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request)
   const { success, remaining } = await authLimiter.limit(ip)
   if (!success) {
     return rateLimitResponse(remaining)
+  }
+
+  if (!isLeadgenStripeActive()) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Stripe activation endpoint is disabled (set LEADGEN_STRIPE_ACTIVE=true to re-enable).',
+      },
+      { status: 409 }
+    )
   }
 
   const stripe = getStripeClient()

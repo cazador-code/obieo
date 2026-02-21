@@ -61,5 +61,7 @@ export const config = {
     '/internal/leadgen/payment-link/:path*',
     '/api/internal/leadgen/payment-link',
     '/api/internal/leadgen/payment-link/:path*',
+    '/api/internal/leadgen/payment-confirmation',
+    '/api/internal/leadgen/payment-confirmation/:path*',
   ],
 }

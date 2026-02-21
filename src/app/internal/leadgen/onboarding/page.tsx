@@ -501,12 +501,12 @@ export default function LeadGenOnboardingPage() {
 
     const snapshot = lastSubmissionSnapshot
     if (!snapshot) return
-    if (!snapshot.stripeCheckoutUrl || !snapshot.stripeMessage || !snapshot.stripeStatus) return
+    if (!snapshot.stripeMessage || !snapshot.stripeStatus) return
 
     setSubmitMeta({
       stripeStatus: snapshot.stripeStatus,
       stripeMessage: snapshot.stripeMessage,
-      stripeCheckoutUrl: snapshot.stripeCheckoutUrl,
+      stripeCheckoutUrl: snapshot.stripeCheckoutUrl || undefined,
     })
     setLastPortalKey(snapshot.portalKey)
     setSubmitted(true)
@@ -924,7 +924,7 @@ export default function LeadGenOnboardingPage() {
               ].join(' ')}
             >
               <p>
-                Stripe provisioning status: <span className="font-semibold">{submitMeta.stripeStatus}</span>
+                Billing provisioning status: <span className="font-semibold">{submitMeta.stripeStatus}</span>
               </p>
               <p className="mt-1">{submitMeta.stripeMessage}</p>
               {submitMeta.stripeCheckoutUrl && (
@@ -937,13 +937,15 @@ export default function LeadGenOnboardingPage() {
                   Open Initial Charge Checkout
                 </a>
               )}
-              <button
-                type="button"
-                onClick={regenerateCheckout}
-                className="mt-3 ml-2 inline-flex rounded-lg bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-white hover:bg-[var(--accent-hover)]"
-              >
-                Regenerate Checkout (Test)
-              </button>
+              {submitMeta.stripeStatus === 'provisioned' && (
+                <button
+                  type="button"
+                  onClick={regenerateCheckout}
+                  className="mt-3 ml-2 inline-flex rounded-lg bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-white hover:bg-[var(--accent-hover)]"
+                >
+                  Regenerate Checkout (Test)
+                </button>
+              )}
             </div>
           )}
 
@@ -1032,7 +1034,7 @@ export default function LeadGenOnboardingPage() {
               <div>
                 <p className="text-sm font-semibold text-[var(--text-primary)]">Last submission is still saved</p>
                 <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                  You can resume it anytime (useful if you need the Stripe checkout link again).
+                  You can resume it anytime.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -1041,11 +1043,11 @@ export default function LeadGenOnboardingPage() {
                   onClick={() => {
                     setSuppressAutoRestoreLastSubmission(false)
                     const snapshot = lastSubmissionSnapshot
-                    if (!snapshot?.stripeCheckoutUrl) return
+                    if (!snapshot?.stripeMessage || !snapshot?.stripeStatus) return
                     setSubmitMeta({
                       stripeStatus: snapshot.stripeStatus,
                       stripeMessage: snapshot.stripeMessage,
-                      stripeCheckoutUrl: snapshot.stripeCheckoutUrl,
+                      stripeCheckoutUrl: snapshot.stripeCheckoutUrl || undefined,
                     })
                     setLastPortalKey(snapshot.portalKey)
                     setSubmitted(true)

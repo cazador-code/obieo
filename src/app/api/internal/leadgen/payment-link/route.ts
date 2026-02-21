@@ -112,6 +112,10 @@ function generateToken(): string {
   return crypto.randomBytes(32).toString('base64url')
 }
 
+function isLeadgenStripeActive(): boolean {
+  return process.env.LEADGEN_STRIPE_ACTIVE?.trim() === 'true'
+}
+
 async function resolveTestDiscount(
   stripe: Stripe,
   rawInput: string
@@ -170,6 +174,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Leadgen payment-first flow is disabled.' },
         { status: 403 }
+      )
+    }
+
+    if (!isLeadgenStripeActive()) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Stripe checkout generation is currently disabled. Use /api/internal/leadgen/payment-confirmation after Ignition/Whop payment is confirmed.',
+        },
+        { status: 409 }
       )
     }
 

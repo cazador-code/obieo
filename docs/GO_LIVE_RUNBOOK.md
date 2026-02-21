@@ -6,6 +6,8 @@ This document captures what we built, how it works end-to-end, how to test local
 
 It intentionally avoids putting real secret values in the repo. Use placeholders and keep all secrets in `.env.local` (local) and your hosting provider's env settings (prod).
 
+> Current mode (February 2026): leadgen onboarding is driven by external payment confirmation (Ignition/Whop/manual). Stripe code is retained but inactive unless `LEADGEN_STRIPE_ACTIVE=true`.
+
 ---
 
 ## 1) What We Have Working Right Now
@@ -73,6 +75,9 @@ This means customers never need to touch the internal intake password page.
 - Submit onboarding: `POST /api/internal/leadgen/onboarding`
 - Regenerate Checkout session: `POST /api/internal/leadgen/checkout`
 - Manual activation (fallback for ops): `POST /api/internal/leadgen/activate`
+
+### Internal API (Basic Auth protected, external payment flow)
+- Confirm external payment + send onboarding invite: `POST /api/internal/leadgen/payment-confirmation`
 
 ### Public API
 - Resend activation from Stripe session id: `POST /api/public/stripe/activate`

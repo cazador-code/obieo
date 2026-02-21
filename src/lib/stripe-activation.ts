@@ -11,7 +11,7 @@ const ACTIVATION_CHARGE_KINDS = new Set([
 ])
 
 export interface ActivationCandidate {
-  source: 'checkout' | 'invoice'
+  source: 'checkout' | 'invoice' | 'ignition' | 'whop' | 'manual'
   sourceId: string
   customerId?: string
   email?: string
@@ -121,7 +121,7 @@ async function sendOpsActivationNotice(input: {
   email: string
   portalKey?: string
   companyName?: string
-  source: 'checkout' | 'invoice'
+  source: 'checkout' | 'invoice' | 'ignition' | 'whop' | 'manual'
   sourceId: string
   billingModel?: string
   chargeKind?: string
@@ -177,7 +177,7 @@ async function sendCustomerPaymentNotice(input: {
 }
 
 export async function activateCustomer(input: {
-  stripe: Stripe
+  stripe?: Stripe
   candidate: ActivationCandidate
   forceResendInvitation?: boolean
 }): Promise<{
@@ -189,7 +189,9 @@ export async function activateCustomer(input: {
   invitationId?: string
   loginUrl: string
 }> {
-  const customer = await getCustomer(input.stripe, input.candidate.customerId)
+  const customer = input.stripe
+    ? await getCustomer(input.stripe, input.candidate.customerId)
+    : null
 
   const email =
     input.candidate.email ||
@@ -209,6 +211,25 @@ export async function activateCustomer(input: {
   const companyName =
     input.candidate.companyName ||
     normalizeString(customer?.metadata?.company_name)
+
+  const leadgenIntent =
+    input.candidate.journey === 'leadgen_payment_first' && portalKey
+      ? await getLeadgenIntentByPortalKeyInConvex({ portalKey })
+      : null
+
+  if (
+    !input.forceResendInvitation &&
+    (leadgenIntent?.status === 'invited' || leadgenIntent?.status === 'onboarding_completed')
+  ) {
+    return {
+      status: 'skipped',
+      reason: 'Activation invite already sent',
+      email,
+      portalKey,
+      companyName,
+      loginUrl: getPortalLoginUrl(),
+    }
+  }
 
   const alreadyInvitedAt = normalizeString(customer?.metadata?.obieo_activation_invite_sent_at)
   if (alreadyInvitedAt && !input.forceResendInvitation) {
@@ -244,10 +265,10 @@ export async function activateCustomer(input: {
 
   // For payment-first leadgen, redirect invite to the onboarding form instead of the portal.
   let redirectUrl = getInvitationRedirectUrl()
-  if (input.candidate.journey === 'leadgen_payment_first' && portalKey) {
-    const intent = await getLeadgenIntentByPortalKeyInConvex({ portalKey })
-    if (intent?.token) {
-      redirectUrl = `${getAppBaseUrl()}/leadgen/onboarding?token=${encodeURIComponent(intent.token)}`
+  if (input.candidate.journey === 'leadgen_payment_first') {
+    const onboardingToken = leadgenIntent?.token
+    if (onboardingToken) {
+      redirectUrl = `${getAppBaseUrl()}/leadgen/onboarding?token=${encodeURIComponent(onboardingToken)}`
     }
   }
 
@@ -270,7 +291,7 @@ export async function activateCustomer(input: {
     await markLeadgenInvitedInConvex({ portalKey })
   }
 
-  if (customer) {
+  if (customer && input.stripe) {
     await input.stripe.customers.update(customer.id, {
       metadata: {
         ...(customer.metadata || {}),

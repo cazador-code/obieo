@@ -61,8 +61,8 @@ export default function LeadTopUpCard() {
     <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-5">
       <h2 className="text-lg font-semibold text-[var(--text-primary)]">Buy More Leads</h2>
       <p className="mt-2 text-sm text-[var(--text-secondary)]">
-        Generate a Stripe invoice for additional lead credits. Default pricing is $40/lead.
-        Credits are applied automatically after the invoice is paid.
+        Request additional lead credits. Default pricing is $40/lead.
+        If self-serve billing is disabled, support will handle your reorder manually.
       </p>
 
       <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -89,7 +89,7 @@ export default function LeadTopUpCard() {
             disabled={loading}
             className="rounded-xl bg-[var(--accent)] px-4 py-3 font-semibold text-white hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? 'Generating...' : 'Generate Invoice'}
+            {loading ? 'Submitting...' : 'Request Top-up'}
           </button>
         </div>
       </div>

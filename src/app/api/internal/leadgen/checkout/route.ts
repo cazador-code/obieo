@@ -30,6 +30,10 @@ function cleanString(value: unknown): string | null {
   return trimmed || null
 }
 
+function isLeadgenStripeActive(): boolean {
+  return process.env.LEADGEN_STRIPE_ACTIVE?.trim() === 'true'
+}
+
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request)
   const { success, remaining } = await authLimiter.limit(ip)
@@ -46,6 +50,17 @@ export async function POST(request: NextRequest) {
   const authorized = await verifyAuthToken(token)
   if (!authorized) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (!isLeadgenStripeActive()) {
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          'Stripe checkout regeneration is disabled (set LEADGEN_STRIPE_ACTIVE=true to re-enable).',
+      },
+      { status: 409 }
+    )
   }
 
   let body: unknown
@@ -104,4 +119,3 @@ export async function POST(request: NextRequest) {
     billingModel: provisioned.billingModel,
   })
 }
-

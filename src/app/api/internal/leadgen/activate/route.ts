@@ -56,6 +56,10 @@ function extractCheckoutSessionId(value: unknown): string | null {
   return match ? match[0] : trimmed
 }
 
+function isLeadgenStripeActive(): boolean {
+  return process.env.LEADGEN_STRIPE_ACTIVE?.trim() === 'true'
+}
+
 async function retrieveCheckoutSession(
   stripe: Stripe,
   sessionId: string
@@ -80,6 +84,16 @@ export async function POST(request: NextRequest) {
   const authorized = await verifyAuthToken(token)
   if (!authorized) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (!isLeadgenStripeActive()) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Stripe activation endpoint is disabled (set LEADGEN_STRIPE_ACTIVE=true to re-enable).',
+      },
+      { status: 409 }
+    )
   }
 
   const stripe = getStripeClient()

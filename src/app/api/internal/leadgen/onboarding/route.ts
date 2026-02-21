@@ -115,6 +115,10 @@ function getOpsRecipients(): string[] {
     .filter(Boolean)
 }
 
+function isLeadgenStripeActive(): boolean {
+  return process.env.LEADGEN_STRIPE_ACTIVE?.trim() === 'true'
+}
+
 async function sendOnboardingEmail(input: {
   companyName: string
   portalKey: string
@@ -350,7 +354,7 @@ export async function POST(request: NextRequest) {
         reason: string
       } = {
     status: 'skipped',
-    reason: 'No Stripe secret key configured',
+    reason: 'Leadgen Stripe provisioning is disabled (set LEADGEN_STRIPE_ACTIVE=true to enable).',
   }
 
   const billingEmail =
@@ -362,7 +366,7 @@ export async function POST(request: NextRequest) {
     [cleanString(body.accountFirstName), cleanString(body.accountLastName)].filter(Boolean).join(' ') ||
     companyName
 
-  if (billingEmail) {
+  if (isLeadgenStripeActive() && billingEmail) {
     try {
       const provisioned = await provisionLeadBillingForOnboarding({
         portalKey,
@@ -407,6 +411,11 @@ export async function POST(request: NextRequest) {
         status: 'failed',
         error: error instanceof Error ? error.message : 'Unknown Stripe provisioning error',
       }
+    }
+  } else if (!isLeadgenStripeActive()) {
+    stripeProvisioning = {
+      status: 'skipped',
+      reason: 'Leadgen Stripe provisioning is disabled (set LEADGEN_STRIPE_ACTIVE=true to enable).',
     }
   } else {
     stripeProvisioning = {

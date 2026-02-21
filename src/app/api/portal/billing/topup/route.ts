@@ -35,10 +35,24 @@ function getPortalKeyFromUser(user: { publicMetadata?: Record<string, unknown> }
   return portalKey
 }
 
+function isLeadgenStripeActive(): boolean {
+  return process.env.LEADGEN_STRIPE_ACTIVE?.trim() === 'true'
+}
+
 export async function POST(request: NextRequest) {
   const { userId } = await auth()
   if (!userId) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (!isLeadgenStripeActive()) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Self-serve Stripe top-ups are currently disabled. Please contact support to reorder lead packages.',
+      },
+      { status: 409 }
+    )
   }
 
   const stripe = getStripeClient()
