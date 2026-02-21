@@ -7,69 +7,117 @@ import {
   getLeadgenIntentByPortalKeyInConvex,
   getOrganizationSnapshotInConvex,
 } from '@/lib/convex'
+import { resolveInternalPortalPreviewToken } from '@/lib/internal-portal-preview'
 import { getStripeClient } from '@/lib/stripe'
 
-export default async function PortalPage() {
+type SearchParams = Record<string, string | string[] | undefined>
+
+function getFirstParam(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) return value[0] || ''
+  return value || ''
+}
+
+export default async function PortalPage({
+  searchParams,
+}: {
+  searchParams?: Promise<SearchParams>
+}) {
+  const params = (await searchParams) || {}
+  const previewToken = getFirstParam(params.preview_token).trim()
+  const previewPortalKey = previewToken ? await resolveInternalPortalPreviewToken(previewToken) : null
+  const isPreviewRequest = Boolean(previewToken)
+  const isPreviewMode = Boolean(previewPortalKey)
+
   const { userId } = await auth()
-  if (!userId) {
+  if (isPreviewRequest && !isPreviewMode) {
+    return (
+      <main className="min-h-screen bg-[var(--bg-primary)] px-4 py-12">
+        <div className="mx-auto max-w-2xl rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-lg">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Preview Link Expired</h1>
+          <p className="mt-3 text-[var(--text-secondary)]">
+            This internal preview link is invalid or expired. Open the client dashboard and click
+            <span className="font-semibold"> View Client Portal </span>
+            again to generate a fresh link.
+          </p>
+          <div className="mt-6">
+            <Link
+              href="/internal/clients"
+              className="inline-flex rounded-xl bg-[var(--accent)] px-4 py-2 font-semibold text-white hover:bg-[var(--accent-hover)]"
+            >
+              Back to Clients Dashboard
+            </Link>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  if (!userId && !isPreviewMode) {
     redirect('/sign-in?redirect_url=/portal')
   }
 
   const clerk = await clerkClient()
-  const user = await clerk.users.getUser(userId)
-  const emailAddress =
-    user.emailAddresses.find((email) => email.id === user.primaryEmailAddressId)?.emailAddress ||
-    user.emailAddresses[0]?.emailAddress ||
-    ''
+  let emailAddress = ''
+  let portalKey: string | null = previewPortalKey
+  let userPublicMetadata: Record<string, unknown> | null = null
 
-  let portalKey =
-    (typeof user.publicMetadata?.portalKey === 'string' && user.publicMetadata.portalKey.trim()) ||
-    (typeof user.publicMetadata?.portal_key === 'string' && user.publicMetadata.portal_key.trim()) ||
-    null
+  if (userId) {
+    const user = await clerk.users.getUser(userId)
+    userPublicMetadata = (user.publicMetadata as Record<string, unknown> | null) || null
+    emailAddress =
+      user.emailAddresses.find((email) => email.id === user.primaryEmailAddressId)?.emailAddress ||
+      user.emailAddresses[0]?.emailAddress ||
+      ''
 
-  // Self-heal: if the Clerk user is missing portalKey metadata (common if they created an account
-  // before being invited), try mapping by billing email to a leadgen intent, then attach portalKey.
-  if (!portalKey) {
-    if (emailAddress) {
-      const intent = await getLeadgenIntentByBillingEmailInConvex({ billingEmail: emailAddress })
-      if (intent?.portalKey) {
-        portalKey = intent.portalKey
-        try {
-          await clerk.users.updateUser(userId, {
-            publicMetadata: {
-              ...(user.publicMetadata || {}),
-              portalKey,
-            },
-          })
-        } catch (error) {
-          console.warn('Failed to backfill Clerk portalKey metadata:', error)
-        }
-      }
-    }
-  }
+    if (!portalKey) {
+      portalKey =
+        (typeof userPublicMetadata?.portalKey === 'string' && userPublicMetadata.portalKey.trim()) ||
+        (typeof userPublicMetadata?.portal_key === 'string' && userPublicMetadata.portal_key.trim()) ||
+        null
 
-  // Secondary self-heal path: map by Stripe customer metadata (works even if Convex isn't reachable).
-  if (!portalKey && emailAddress) {
-    const stripe = getStripeClient()
-    if (stripe) {
-      try {
-        const list = await stripe.customers.list({ email: emailAddress, limit: 10 })
-        const matched = list.data.find((customer) => customer.metadata?.portal_key)?.metadata?.portal_key?.trim()
-        if (matched) {
-          portalKey = matched
+      // Self-heal: if the Clerk user is missing portalKey metadata (common if they created an account
+      // before being invited), try mapping by billing email to a leadgen intent, then attach portalKey.
+      if (!portalKey && emailAddress) {
+        const intent = await getLeadgenIntentByBillingEmailInConvex({ billingEmail: emailAddress })
+        if (intent?.portalKey) {
+          portalKey = intent.portalKey
           try {
             await clerk.users.updateUser(userId, {
               publicMetadata: {
-                ...(user.publicMetadata || {}),
+                ...(userPublicMetadata || {}),
                 portalKey,
               },
             })
           } catch (error) {
-            console.warn('Failed to backfill Clerk portalKey metadata from Stripe:', error)
+            console.warn('Failed to backfill Clerk portalKey metadata:', error)
           }
         }
-      } catch (error) {
-        console.warn('Failed to map portalKey from Stripe customer metadata:', error)
+      }
+
+      // Secondary self-heal path: map by Stripe customer metadata (works even if Convex isn't reachable).
+      if (!portalKey && emailAddress) {
+        const stripe = getStripeClient()
+        if (stripe) {
+          try {
+            const list = await stripe.customers.list({ email: emailAddress, limit: 10 })
+            const matched = list.data.find((customer) => customer.metadata?.portal_key)?.metadata?.portal_key?.trim()
+            if (matched) {
+              portalKey = matched
+              try {
+                await clerk.users.updateUser(userId, {
+                  publicMetadata: {
+                    ...(userPublicMetadata || {}),
+                    portalKey,
+                  },
+                })
+              } catch (error) {
+                console.warn('Failed to backfill Clerk portalKey metadata from Stripe:', error)
+              }
+            }
+          } catch (error) {
+            console.warn('Failed to map portalKey from Stripe customer metadata:', error)
+          }
+        } 
       }
     }
   }
@@ -123,9 +171,15 @@ export default async function PortalPage() {
         <h1 className="text-3xl font-bold text-[var(--text-primary)]">
           Client Portal
         </h1>
-        <p className="mt-3 text-[var(--text-secondary)]">
-          You are signed in{emailAddress ? ` as ${emailAddress}` : ''}.
-        </p>
+        {isPreviewMode ? (
+          <p className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
+            Internal preview mode. You are viewing this portal as <code>{portalKey}</code>.
+          </p>
+        ) : (
+          <p className="mt-3 text-[var(--text-secondary)]">
+            You are signed in{emailAddress ? ` as ${emailAddress}` : ''}.
+          </p>
+        )}
 
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-5">

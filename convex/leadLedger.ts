@@ -943,3 +943,43 @@ export const getOrganizationSnapshot = query({
     }
   },
 })
+
+export const listOrganizationsForOps = query({
+  args: {
+    authSecret: v.string(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+
+    const limit =
+      typeof args.limit === 'number' && Number.isFinite(args.limit)
+        ? Math.max(1, Math.min(1000, Math.floor(args.limit)))
+        : 500
+
+    const organizations = await ctx.db.query('organizations').collect()
+    return organizations
+      .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0))
+      .slice(0, limit)
+  },
+})
+
+export const listOnboardingSubmissionsForOps = query({
+  args: {
+    authSecret: v.string(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+
+    const limit =
+      typeof args.limit === 'number' && Number.isFinite(args.limit)
+        ? Math.max(1, Math.min(1000, Math.floor(args.limit)))
+        : 500
+
+    const submissions = await ctx.db.query('onboardingSubmissions').collect()
+    return submissions
+      .sort((a, b) => (b.createdAt || b._creationTime || 0) - (a.createdAt || a._creationTime || 0))
+      .slice(0, limit)
+  },
+})

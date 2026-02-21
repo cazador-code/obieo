@@ -207,6 +207,42 @@ export async function getOrganizationSnapshotInConvex(input: {
   }
 }
 
+export interface OrganizationRecordForOps {
+  _id: string
+  portalKey: string
+  name?: string
+  billingModel?: BillingModel
+  onboardingStatus?: string
+  onboardingCompletedAt?: number
+  prepaidLeadCredits?: number
+  leadCommitmentTotal?: number
+  leadUnitPriceCents?: number
+  leadChargeThreshold?: number
+  stripeCustomerId?: string
+  isActive?: boolean
+  createdAt: number
+  updatedAt: number
+}
+
+export async function listOrganizationsForOpsInConvex(input?: {
+  limit?: number
+}): Promise<OrganizationRecordForOps[]> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return []
+
+  try {
+    const result = await client.query(api.leadLedger.listOrganizationsForOps, {
+      authSecret,
+      ...(input?.limit ? { limit: input.limit } : {}),
+    })
+    return result as OrganizationRecordForOps[]
+  } catch (error) {
+    console.error('Convex listOrganizationsForOps failed:', error)
+    return []
+  }
+}
+
 export type LeadgenIntentStatus = 'checkout_created' | 'paid' | 'invited' | 'onboarding_completed'
 
 export interface LeadgenIntentSnapshot {
@@ -231,6 +267,25 @@ export interface LeadgenIntentSnapshot {
   utmContent?: string
   createdAt: number
   updatedAt: number
+}
+
+export async function listLeadgenIntentsForOpsInConvex(input?: {
+  limit?: number
+}): Promise<LeadgenIntentSnapshot[]> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return []
+
+  try {
+    const result = await client.query(api.leadgen.listLeadgenIntentsForOps, {
+      authSecret,
+      ...(input?.limit ? { limit: input.limit } : {}),
+    })
+    return result as LeadgenIntentSnapshot[]
+  } catch (error) {
+    console.error('Convex listLeadgenIntentsForOps failed:', error)
+    return []
+  }
 }
 
 export async function findActiveLeadgenIntentInConvex(input: {
@@ -465,6 +520,37 @@ export async function submitClientOnboardingInConvex(input: {
     console.error('Convex submitClientOnboarding failed:', error)
     if (opts?.throwOnError) throw error
     return null
+  }
+}
+
+export interface OnboardingSubmissionForOps {
+  _id: string
+  portalKey: string
+  companyName: string
+  accountLoginEmail?: string
+  billingContactEmail?: string
+  billingModel?: BillingModel
+  status: 'submitted' | 'processed' | 'rejected'
+  createdAt: number
+  processedAt?: number
+}
+
+export async function listOnboardingSubmissionsForOpsInConvex(input?: {
+  limit?: number
+}): Promise<OnboardingSubmissionForOps[]> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return []
+
+  try {
+    const result = await client.query(api.leadLedger.listOnboardingSubmissionsForOps, {
+      authSecret,
+      ...(input?.limit ? { limit: input.limit } : {}),
+    })
+    return result as OnboardingSubmissionForOps[]
+  } catch (error) {
+    console.error('Convex listOnboardingSubmissionsForOps failed:', error)
+    return []
   }
 }
 

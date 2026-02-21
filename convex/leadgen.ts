@@ -288,3 +288,23 @@ export const getLeadgenIntentByPortalKey = query({
     return intent
   },
 })
+
+export const listLeadgenIntentsForOps = query({
+  args: {
+    authSecret: v.string(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+
+    const limit =
+      typeof args.limit === 'number' && Number.isFinite(args.limit)
+        ? Math.max(1, Math.min(1000, Math.floor(args.limit)))
+        : 500
+
+    const intents = (await ctx.db.query('leadgenIntents').collect()) as LeadgenIntentRecord[]
+    return intents
+      .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0))
+      .slice(0, limit)
+  },
+})
