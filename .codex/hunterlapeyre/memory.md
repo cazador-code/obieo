@@ -56,6 +56,62 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
 - E2E:
 
 ## Session Notes (append, newest first)
+### 2026-02-22
+- What we did:
+  - Diagnosed Mark Roesel onboarding failures with live Clerk API checks and confirmed two separate causes: wrong domain typo (`bestchouce...`) and missing Clerk `public_metadata.portalKey` on the created user.
+  - Applied immediate production unblock by patching Clerk metadata for `user_3A2El5h1NBMdWVcZvxRoA9nb2ww` to `portalKey=roofs-by-mark-48913e`.
+  - Shipped permanent backend self-heal in `src/app/api/public/leadgen/onboarding-complete/route.ts`: when `portalKey` metadata is missing, validate signed-in primary email against intent billing email, then backfill `portalKey` and continue.
+  - Built and verified, then committed and pushed `61d253c` to `origin/main`.
+  - Closure analyzers: security-reviewer `pass`; code-simplifier `warn` (2 medium, 3 minor) on `src/app/api/public/leadgen/onboarding-complete/route.ts`.
+- Commands used:
+  - `curl -sS -H "Authorization: Bearer $CLERK_SECRET_KEY" "https://api.clerk.com/v1/users?email_address=..."`
+  - `curl -sS -H "Authorization: Bearer $CLERK_SECRET_KEY" "https://api.clerk.com/v1/invitations?limit=500&offset=0"`
+  - `curl -sS -X PATCH -H "Authorization: Bearer $CLERK_SECRET_KEY" -H "Content-Type: application/json" "https://api.clerk.com/v1/users/<user_id>/metadata" --data '{"public_metadata":{"portalKey":"..."}}'`
+  - `npm run build`
+  - `git add src/app/api/public/leadgen/onboarding-complete/route.ts`
+  - `git commit -m "Fix onboarding account link fallback for Clerk metadata gaps"`
+  - `git push origin main`
+  - `python3 /Users/hunterlapeyre/.codex/skills/security-reviewer/scripts/run_security_review.py --repo "$PWD" --pretty`
+  - `python3 /Users/hunterlapeyre/.codex/skills/code-simplifier/scripts/run_code_simplifier.py --repo "$PWD" --pretty`
+- Patterns discovered:
+  - `Account is not linked to this organization` can be a metadata-link drift issue even when the user is correctly invited and authenticated; matching by primary email to paid intent is a safe self-heal gate.
+  - For onboarding incidents, fastest truth path is: Clerk users by email -> Clerk invitations by email -> user `public_metadata.portalKey` -> intent `portalKey`.
+- Gotchas:
+  - Invite typo domains create real divergence (`bestchouce` vs `bestchoice`) and look like OTP failures from user perspective.
+  - Existing API behavior previously hard-failed when `public_metadata.portalKey` was empty, even with valid login and token.
+  - code-simplifier still flags readability nits in the updated route (non-blocking).
+- Next-time start:
+  - For any onboarding-link report, run the four-step truth sequence (user, invite, metadata, intent) before UI debugging.
+  - Keep the self-heal guardrails: only backfill portal metadata when signed-in primary email equals intent billing email.
+
+### 2026-02-21
+- What we did:
+  - Built internal clients dashboard at `/internal/clients` with Convex + Clerk aggregated status rows and lifecycle summary cards.
+  - Added internal portal preview authority: dashboard now issues signed `preview_token` links and `/portal` can render in preview mode for a target `portalKey`.
+  - Hardened `/portal` preview behavior with explicit expired/invalid preview-link handling instead of fallback redirects.
+  - Fixed production build break in `src/proxy.ts` by passing `NextFetchEvent` to `clerkProxy(request, event)`; `npm run build` succeeded after patch and commit `b90fec4` was pushed to `origin/main`.
+  - Closure analyzers: security-reviewer `pass`; code-simplifier `warn` (1 medium, 1 minor in `src/proxy.ts`).
+- Commands used:
+  - `npm run lint`
+  - `npm run build`
+  - `git status --short`
+  - `git rev-parse --abbrev-ref --symbolic-full-name @{u}`
+  - `git rev-list --left-right --count HEAD...@{u}`
+  - `git commit -m "Fix Clerk proxy middleware signature for production build"`
+  - `git push origin main`
+  - `pkill -f "next dev" || true && rm -f .next/dev/lock`
+- Patterns discovered:
+  - For this app/router setup, internal route auth should be handled before Clerk middleware in `src/proxy.ts`; misordered auth handling causes unstable proxy behavior and local request resets.
+  - Vercel build failures are fastest to resolve by reproducing with local `npm run build` first, then patching from the exact TS error.
+  - Internal dashboard pages should degrade gracefully when Clerk listing APIs fail (return partial data, avoid 500).
+- Gotchas:
+  - Clerk production keys are domain-locked (`obieo.com`), so local `127.0.0.1` browser usage can fail in `ClerkProvider` with origin/domain mismatch even when app code is correct.
+  - `next dev` lock conflicts recur if prior processes are still alive; killing only one port is insufficient when another dev server still holds `.next/dev/lock`.
+  - code-simplifier warning remained on `src/proxy.ts` (readability/style only, non-blocking).
+- Next-time start:
+  - Verify deployment from latest `main` commit first, then validate `/internal/clients` and one `View Client Portal` click on production domain where Clerk keys are valid.
+  - For local debugging, use test/dev Clerk keys before portal UX checks to avoid false failures from domain restrictions.
+
 ### YYYY-MM-DD
 - What we did:
 - What we learned:

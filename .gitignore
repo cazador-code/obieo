@@ -65,6 +65,7 @@ docs/claude-capabilities-map.md
 # SEO Machine tool (separate repo)
 .seomachine/
 .env*.local
+.tools/
 
 # Remotion (video generation - WIP)
 remotion/
