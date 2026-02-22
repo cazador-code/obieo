@@ -126,6 +126,7 @@ async function sendOpsActivationNotice(input: {
   billingModel?: string
   chargeKind?: string
   loginUrl: string
+  onboardingUrl?: string
   invitationId?: string
 }) {
   const apiKey = process.env.RESEND_API_KEY
@@ -146,6 +147,9 @@ async function sendOpsActivationNotice(input: {
       <p><strong>Source ID:</strong> ${input.sourceId}</p>
       <p><strong>Billing Model:</strong> ${input.billingModel || 'N/A'}</p>
       <p><strong>Charge Kind:</strong> ${input.chargeKind || 'N/A'}</p>
+      <p><strong>Onboarding URL:</strong> ${
+        input.onboardingUrl ? `<a href="${input.onboardingUrl}">${input.onboardingUrl}</a>` : 'N/A'
+      }</p>
       <p><strong>Login URL:</strong> <a href="${input.loginUrl}">${input.loginUrl}</a></p>
       <p><strong>Clerk Invitation ID:</strong> ${input.invitationId || 'N/A'}</p>
     `,
@@ -156,22 +160,35 @@ async function sendCustomerPaymentNotice(input: {
   email: string
   companyName?: string
   loginUrl: string
+  onboardingUrl?: string
 }) {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return
 
   const resend = new Resend(apiKey)
+  const subject = input.onboardingUrl
+    ? 'Payment received - complete your onboarding form'
+    : 'Payment received - your Obieo portal access is ready'
+  const onboardingBlock = input.onboardingUrl
+    ? `
+      <p><strong>Step 1: Complete your onboarding form (ZIP codes + service areas)</strong></p>
+      <p><a href="${input.onboardingUrl}">${input.onboardingUrl}</a></p>
+      <p><strong>Step 2:</strong> If prompted, create your password and continue. You should land on the onboarding form.</p>
+    `
+    : `
+      <p>Please look for a separate account invitation email from Clerk to finish setup and create your password.</p>
+    `
   await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL || 'noreply@obieo.com',
     to: [input.email],
-    subject: 'Payment received - your Obieo portal access is ready',
+    subject,
     html: `
       <p>Hi ${input.companyName || 'there'},</p>
       <p>We received your payment and have prepared your account.</p>
-      <p>Please look for a separate account invitation email from Clerk to finish setup and create your password.</p>
+      ${onboardingBlock}
       <p>After setup, you can log in here:</p>
       <p><a href="${input.loginUrl}">${input.loginUrl}</a></p>
-      <p>If you don't see the invitation within a few minutes, reply to this email and we will resend it.</p>
+      <p>If anything is unclear, reply to this email and we will help right away.</p>
     `,
   })
 }
@@ -188,6 +205,7 @@ export async function activateCustomer(input: {
   companyName?: string
   invitationId?: string
   loginUrl: string
+  onboardingUrl?: string
 }> {
   const customer = input.stripe
     ? await getCustomer(input.stripe, input.candidate.customerId)
@@ -216,6 +234,9 @@ export async function activateCustomer(input: {
     input.candidate.journey === 'leadgen_payment_first' && portalKey
       ? await getLeadgenIntentByPortalKeyInConvex({ portalKey })
       : null
+  const onboardingUrl = leadgenIntent?.token
+    ? `${getAppBaseUrl()}/leadgen/onboarding?token=${encodeURIComponent(leadgenIntent.token)}`
+    : undefined
 
   if (
     !input.forceResendInvitation &&
@@ -228,6 +249,7 @@ export async function activateCustomer(input: {
       portalKey,
       companyName,
       loginUrl: getPortalLoginUrl(),
+      onboardingUrl,
     }
   }
 
@@ -240,6 +262,7 @@ export async function activateCustomer(input: {
       portalKey,
       companyName,
       loginUrl: getPortalLoginUrl(),
+      onboardingUrl,
     }
   }
 
@@ -265,11 +288,8 @@ export async function activateCustomer(input: {
 
   // For payment-first leadgen, redirect invite to the onboarding form instead of the portal.
   let redirectUrl = getInvitationRedirectUrl()
-  if (input.candidate.journey === 'leadgen_payment_first') {
-    const onboardingToken = leadgenIntent?.token
-    if (onboardingToken) {
-      redirectUrl = `${getAppBaseUrl()}/leadgen/onboarding?token=${encodeURIComponent(onboardingToken)}`
-    }
+  if (onboardingUrl) {
+    redirectUrl = onboardingUrl
   }
 
   const invitation = await clerk.invitations.createInvitation({
@@ -311,6 +331,7 @@ export async function activateCustomer(input: {
       email,
       companyName,
       loginUrl,
+      onboardingUrl,
     })
   } catch (error) {
     console.error('Failed to send customer payment notice:', error)
@@ -326,6 +347,7 @@ export async function activateCustomer(input: {
       billingModel: input.candidate.billingModel,
       chargeKind: input.candidate.chargeKind,
       loginUrl,
+      onboardingUrl,
       invitationId: invitation.id,
     })
   } catch (error) {
@@ -339,5 +361,6 @@ export async function activateCustomer(input: {
     companyName,
     invitationId: invitation.id,
     loginUrl,
+    onboardingUrl,
   }
 }

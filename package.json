@@ -12,6 +12,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
+    "leadgen:initiate-paid": "node scripts/leadgen-initiate-paid-client.mjs",
     "clerk:create-workspace": "node scripts/clerk-create-workspace.mjs",
     "stripe:invoice": "node scripts/stripe-send-invoice.mjs",
     "stripe:lead-subscription": "node scripts/stripe-upsert-org-subscription.mjs"
