@@ -38,6 +38,17 @@ function getPortalKeyFromUser(user: { publicMetadata?: Record<string, unknown> }
   return portalKey ? portalKey.trim() : null
 }
 
+function getPrimaryEmailFromUser(user: {
+  emailAddresses?: Array<{ id: string; emailAddress: string }>
+  primaryEmailAddressId?: string | null
+}): string | null {
+  const emailAddresses = Array.isArray(user.emailAddresses) ? user.emailAddresses : []
+  if (emailAddresses.length === 0) return null
+  const primary = emailAddresses.find((entry) => entry.id === user.primaryEmailAddressId)
+  const email = (primary?.emailAddress || emailAddresses[0]?.emailAddress || '').trim().toLowerCase()
+  return email || null
+}
+
 export async function POST(request: NextRequest) {
   const { userId } = await auth()
   if (!userId) {
@@ -71,12 +82,36 @@ export async function POST(request: NextRequest) {
   const clerk = await clerkClient()
   const user = await clerk.users.getUser(userId)
   const portalKey = getPortalKeyFromUser(user)
-  if (!portalKey || portalKey !== intent.portalKey) {
+
+  // Self-heal: if the user was created from an invite but portal metadata did not persist,
+  // trust the signed-in primary email when it matches the paid intent billing email.
+  if (portalKey && portalKey !== intent.portalKey) {
     return NextResponse.json(
       { success: false, error: 'Account is not linked to this organization. Please contact support.' },
       { status: 403 }
     )
   }
+  if (!portalKey) {
+    const userEmail = getPrimaryEmailFromUser(user)
+    const intentEmail = intent.billingEmail.trim().toLowerCase()
+    if (!userEmail || userEmail !== intentEmail) {
+      return NextResponse.json(
+        { success: false, error: 'Account is not linked to this organization. Please contact support.' },
+        { status: 403 }
+      )
+    }
+    try {
+      await clerk.users.updateUser(userId, {
+        publicMetadata: {
+          ...(user.publicMetadata || {}),
+          portalKey: intent.portalKey,
+        },
+      })
+    } catch (error) {
+      console.warn('Failed to backfill Clerk portalKey metadata during onboarding completion:', error)
+    }
+  }
+  const resolvedPortalKey = intent.portalKey
 
   const payload = (body.onboardingPayload || {}) as Record<string, unknown>
   const serviceAreas = normalizeStringArray(payload.serviceAreas)
@@ -109,7 +144,7 @@ export async function POST(request: NextRequest) {
 
   // Ensure org is present and has correct paid-in-full billing defaults.
   await upsertOrganizationInConvex({
-    portalKey,
+    portalKey: resolvedPortalKey,
     name: intent.companyName,
     stripeCustomerId: intent.stripeCustomerId || undefined,
     billingModel,
@@ -123,7 +158,7 @@ export async function POST(request: NextRequest) {
 
   // Persist onboarding payload in the same structures as internal onboarding for audit.
   await submitClientOnboardingInConvex({
-    portalKey,
+    portalKey: resolvedPortalKey,
     companyName: intent.companyName,
     accountLoginEmail: intent.billingEmail,
     businessPhone: cleanString(payload.businessPhone) || undefined,
@@ -150,11 +185,11 @@ export async function POST(request: NextRequest) {
 
   // Mark onboarding completion status on org + leadgen intent.
   await upsertOrganizationInConvex({
-    portalKey,
+    portalKey: resolvedPortalKey,
     onboardingStatus: 'completed',
     onboardingCompletedAt: Date.now(),
   })
-  await markLeadgenOnboardingCompletedInConvex({ portalKey })
+  await markLeadgenOnboardingCompletedInConvex({ portalKey: resolvedPortalKey })
 
-  return NextResponse.json({ success: true, portalKey })
+  return NextResponse.json({ success: true, portalKey: resolvedPortalKey })
 }
