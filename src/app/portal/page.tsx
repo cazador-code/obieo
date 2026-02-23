@@ -24,6 +24,7 @@ export default async function PortalPage({
 }) {
   const params = (await searchParams) || {}
   const previewToken = getFirstParam(params.preview_token).trim()
+  const resumeOnboarding = getFirstParam(params.resume_onboarding).trim() === '1'
   const previewPortalKey = previewToken ? await resolveInternalPortalPreviewToken(previewToken) : null
   const isPreviewRequest = Boolean(previewToken)
   const isPreviewMode = Boolean(previewPortalKey)
@@ -158,10 +159,14 @@ export default async function PortalPage({
   const snapshot = await getOrganizationSnapshotInConvex({ portalKey })
   const org = snapshot?.organization as Record<string, unknown> | undefined
   const onboardingStatus = typeof org?.onboardingStatus === 'string' ? org.onboardingStatus : null
+  let onboardingIntentToken: string | null = null
   if (onboardingStatus !== 'completed') {
     const intent = await getLeadgenIntentByPortalKeyInConvex({ portalKey })
+    onboardingIntentToken = intent?.token || null
     if (intent?.token) {
-      redirect(`/leadgen/onboarding?token=${encodeURIComponent(intent.token)}`)
+      if (!resumeOnboarding) {
+        redirect(`/leadgen/onboarding?token=${encodeURIComponent(intent.token)}`)
+      }
     }
   }
 
@@ -180,6 +185,23 @@ export default async function PortalPage({
             You are signed in{emailAddress ? ` as ${emailAddress}` : ''}.
           </p>
         )}
+
+        {onboardingStatus !== 'completed' && onboardingIntentToken ? (
+          <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3">
+            <p className="text-sm font-semibold text-amber-900">Setup paused</p>
+            <p className="mt-1 text-sm text-amber-800">
+              Your onboarding draft is saved. Click below whenever you&apos;re ready to finish setup.
+            </p>
+            <div className="mt-3">
+              <Link
+                href={`/leadgen/onboarding?token=${encodeURIComponent(onboardingIntentToken)}`}
+                className="inline-flex rounded-xl bg-[var(--accent)] px-4 py-2 font-semibold text-white hover:bg-[var(--accent-hover)]"
+              >
+                Finish Setup
+              </Link>
+            </div>
+          </div>
+        ) : null}
 
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-5">

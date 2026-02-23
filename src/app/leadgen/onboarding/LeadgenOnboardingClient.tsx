@@ -332,7 +332,8 @@ export default function LeadgenOnboardingClient({ token }: { token: string }) {
       return
     }
 
-    setSaveNotice(`Draft saved at ${new Date(snapshot.savedAt).toLocaleString()}. You can complete this later.`)
+    setSaveNotice(`Draft saved at ${new Date(snapshot.savedAt).toLocaleString()}. Redirecting to your portal...`)
+    window.location.assign('/portal?resume_onboarding=1')
   }
 
   if (loading) {
