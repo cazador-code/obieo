@@ -934,6 +934,9 @@ export const getOrganizationSnapshot = query({
           deliveredLeads.reduce((sum, event) => sum + (event.quantity || 1), 0) -
           usageRecordedLeads.reduce((sum, event) => sum + (event.quantity || 1), 0),
       },
+      recentLeadEvents: [...leadEvents]
+        .sort((a, b) => (b.deliveredAt || b.createdAt || 0) - (a.deliveredAt || a.createdAt || 0))
+        .slice(0, 50),
       replacementRequests: replacementRequests
         .sort((a, b) => b.requestedAt - a.requestedAt)
         .slice(0, 50),

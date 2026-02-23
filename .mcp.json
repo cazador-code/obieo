@@ -22,9 +22,8 @@
         "-y",
         "mcp-remote",
         "https://mcp.airtable.com/mcp",
-        "3334",
-        "--static-oauth-client-info",
-        "{\"client_id\":\"8a135df9-5640-4e7a-a422-21f13edaa347\"}",
+        "--header",
+        "Authorization:Bearer ${AIRTABLE_PAT}",
         "--debug"
       ]
     }

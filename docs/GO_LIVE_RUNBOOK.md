@@ -59,7 +59,7 @@ This means customers never need to touch the internal intake password page.
 7. Activation creates a Clerk invitation email:
    - customer sets password
    - customer signs in at `/sign-in`
-8. Next step (not fully built yet): customer portal shows leads, replacements, buy-more, etc.
+8. Customer portal shows lead counts and a recent lead feed. Replacements and other controls continue to expand.
 
 ---
 
@@ -84,6 +84,10 @@ This means customers never need to touch the internal intake password page.
 
 ### Stripe webhooks
 - `POST /api/webhooks/stripe`
+
+### Lead delivery webhooks
+- GHL: `POST /api/webhooks/ghl/lead-delivered`
+- Airtable: `POST /api/webhooks/airtable/lead-delivered`
 
 ---
 
@@ -138,6 +142,9 @@ Set these in `.env.local` (do not commit secrets).
   - `STRIPE_PAID_IN_FULL_PRICE_ID=price_...` ($1,600 one-time)
 - `RESEND_API_KEY=...`
 - `RESEND_FROM_EMAIL=noreply@obieo.com` (must be verified in Resend)
+- `AIRTABLE_LEAD_DELIVERED_WEBHOOK_SECRET=...` (Bearer secret used by Airtable automation webhook action)
+- Optional fallback map when Airtable payload does not include portal key:
+  - `AIRTABLE_PORTAL_KEY_MAP_JSON={"business name":"portal-key"}`
 - `CONVEX_URL=https://<your-deployment>.convex.cloud`
 - `CONVEX_DEPLOY_KEY=...` (don't commit)
 - `CONVEX_AUTH_ADAPTER_SECRET=...` (must match Convex env var)

@@ -32,6 +32,17 @@ Generate a Stripe Checkout link for a leadgen customer (paid-in-full or pay-per-
     - `invoice.paid`
 
 ## Steps
+0. Fast manual initiation path (when client already paid in Ignition/Whop/manual)
+   - Run from repo root:
+     - `npm run leadgen:initiate-paid -- --company-name "Client Name" --billing-email "owner@company.com" --payment-provider ignition --source "codex-manual-trigger"`
+   - If client says they still cannot access onboarding:
+     - `npm run leadgen:initiate-paid -- --company-name "Client Name" --billing-email "owner@company.com" --payment-provider ignition --source "codex-manual-trigger" --force-resend`
+   - Expected output includes:
+     - `portalKey`
+     - `status` (`paid` or `invited`)
+     - `onboardingUrl` (send this directly to the client for ZIP/service-area form)
+     - `activation.invitationId`
+
 1. Stripe catalog pin (one-time setup)
    - Stripe → Product catalog → create product “40 Lead Package (Paid in Full)” with a **one-time** $1,600 price.
    - Copy the **Price ID** (`price_...`) and set `STRIPE_PAID_IN_FULL_PRICE_ID` in Vercel Production.
@@ -92,6 +103,13 @@ Generate a Stripe Checkout link for a leadgen customer (paid-in-full or pay-per-
 - App
   - Visiting `/portal` while signed in does not redirect-loop.
   - “Buy More Leads” can create an invoice and shows an `in_...` id.
+  - Public onboarding UX handoff checks:
+    - `/leadgen/onboarding?token=...` shows both `Complete Onboarding` and `Save & Complete Later`.
+    - Clicking `Save & Complete Later` redirects to `/portal?resume_onboarding=1`.
+    - `/portal?resume_onboarding=1` shows a visible `Finish Setup` button and does not force redirect.
+    - Clicking `Finish Setup` returns to onboarding and restores saved draft values.
+    - Clerk avatar menu includes a direct `Portal` action.
+    - Cursor remains visible when Clerk `Manage account` modal is open.
 
 ## Rollback / Undo
 - Disable the flow immediately:
@@ -107,4 +125,3 @@ Generate a Stripe Checkout link for a leadgen customer (paid-in-full or pay-per-
   - Remove `obieo_activation_invite_*` fields from the Stripe customer metadata and resend the webhook event.
 - Avoid local Node `v25.x` for builds; use Node 20 (`.nvmrc`).
 - If the internal payment-link page is not prompting for auth, verify the env vars exist in **Vercel Production** and try incognito. If you get `503 Internal tools auth is not configured.`, those env vars are missing (fail-closed).
-
