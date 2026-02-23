@@ -17,6 +17,8 @@ type CompleteResponse =
   | { success: true; portalKey: string }
   | { success: false; error: string }
 
+const DRAFT_STORAGE_KEY_PREFIX = 'obieo-public-leadgen-onboarding-draft:v1'
+
 function cleanString(value: string) {
   return value.trim()
 }
@@ -57,6 +59,96 @@ async function parseJson<T>(res: Response): Promise<T | null> {
   }
 }
 
+type OnboardingDraftForm = {
+  serviceAreasRaw: string
+  targetZipCodesRaw: string
+  serviceTypes: string[]
+  operatingHoursStart: string
+  operatingHoursEnd: string
+  leadRoutingPhonesRaw: string
+  leadRoutingEmailsRaw: string
+  leadNotificationPhone: string
+  leadNotificationEmail: string
+  leadProspectEmail: string
+  businessPhone: string
+  businessAddress: string
+  desiredLeadVolumeDaily: number
+}
+
+type OnboardingDraftSnapshot = {
+  savedAt: number
+  form: OnboardingDraftForm
+}
+
+function getDraftStorageKey(token: string) {
+  return `${DRAFT_STORAGE_KEY_PREFIX}:${token}`
+}
+
+function safeReadDraft(storageKey: string): unknown | null {
+  try {
+    const raw = localStorage.getItem(storageKey)
+    if (!raw) return null
+    return JSON.parse(raw) as unknown
+  } catch {
+    return null
+  }
+}
+
+function safeWriteDraft(storageKey: string, payload: unknown): boolean {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(payload))
+    return true
+  } catch {
+    return false
+  }
+}
+
+function safeClearDraft(storageKey: string) {
+  try {
+    localStorage.removeItem(storageKey)
+  } catch {
+    // ignore
+  }
+}
+
+function parseOnboardingDraft(value: unknown): OnboardingDraftSnapshot | null {
+  if (!value || typeof value !== 'object') return null
+  const data = value as Record<string, unknown>
+  const rawForm = data.form
+  if (!rawForm || typeof rawForm !== 'object') return null
+
+  const form = rawForm as Record<string, unknown>
+  const parsedServiceTypes = Array.isArray(form.serviceTypes)
+    ? form.serviceTypes.filter(
+        (entry): entry is string => typeof entry === 'string' && SERVICE_TYPES.includes(entry as (typeof SERVICE_TYPES)[number])
+      )
+    : []
+
+  return {
+    savedAt: typeof data.savedAt === 'number' && Number.isFinite(data.savedAt) ? data.savedAt : Date.now(),
+    form: {
+      serviceAreasRaw: typeof form.serviceAreasRaw === 'string' ? form.serviceAreasRaw : '',
+      targetZipCodesRaw: typeof form.targetZipCodesRaw === 'string' ? form.targetZipCodesRaw : '',
+      serviceTypes: parsedServiceTypes.length > 0 ? parsedServiceTypes : ['Roofing'],
+      operatingHoursStart: typeof form.operatingHoursStart === 'string' ? form.operatingHoursStart : '09:00',
+      operatingHoursEnd: typeof form.operatingHoursEnd === 'string' ? form.operatingHoursEnd : '17:00',
+      leadRoutingPhonesRaw: typeof form.leadRoutingPhonesRaw === 'string' ? form.leadRoutingPhonesRaw : '',
+      leadRoutingEmailsRaw: typeof form.leadRoutingEmailsRaw === 'string' ? form.leadRoutingEmailsRaw : '',
+      leadNotificationPhone: typeof form.leadNotificationPhone === 'string' ? form.leadNotificationPhone : '',
+      leadNotificationEmail: typeof form.leadNotificationEmail === 'string' ? form.leadNotificationEmail : '',
+      leadProspectEmail: typeof form.leadProspectEmail === 'string' ? form.leadProspectEmail : '',
+      businessPhone: typeof form.businessPhone === 'string' ? form.businessPhone : '',
+      businessAddress: typeof form.businessAddress === 'string' ? form.businessAddress : '',
+      desiredLeadVolumeDaily:
+        typeof form.desiredLeadVolumeDaily === 'number' &&
+        Number.isFinite(form.desiredLeadVolumeDaily) &&
+        form.desiredLeadVolumeDaily > 0
+          ? Math.floor(form.desiredLeadVolumeDaily)
+          : 6,
+    },
+  }
+}
+
 export default function LeadgenOnboardingClient({ token }: { token: string }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -78,6 +170,28 @@ export default function LeadgenOnboardingClient({ token }: { token: string }) {
 
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saveNotice, setSaveNotice] = useState<string | null>(null)
+  const draftStorageKey = useMemo(() => getDraftStorageKey(token), [token])
+
+  useEffect(() => {
+    const draft = parseOnboardingDraft(safeReadDraft(draftStorageKey))
+    if (!draft) return
+    setServiceAreasRaw(draft.form.serviceAreasRaw)
+    setTargetZipCodesRaw(draft.form.targetZipCodesRaw)
+    setServiceTypes(draft.form.serviceTypes)
+    setOperatingHoursStart(draft.form.operatingHoursStart)
+    setOperatingHoursEnd(draft.form.operatingHoursEnd)
+    setLeadRoutingPhonesRaw(draft.form.leadRoutingPhonesRaw)
+    setLeadRoutingEmailsRaw(draft.form.leadRoutingEmailsRaw)
+    setLeadNotificationPhone(draft.form.leadNotificationPhone)
+    setLeadNotificationEmail(draft.form.leadNotificationEmail)
+    setLeadProspectEmail(draft.form.leadProspectEmail)
+    setBusinessPhone(draft.form.businessPhone)
+    setBusinessAddress(draft.form.businessAddress)
+    setDesiredLeadVolumeDaily(draft.form.desiredLeadVolumeDaily)
+    setSaveNotice(`Draft restored from ${new Date(draft.savedAt).toLocaleString()}.`)
+  }, [draftStorageKey])
 
   useEffect(() => {
     let mounted = true
@@ -159,6 +273,7 @@ export default function LeadgenOnboardingClient({ token }: { token: string }) {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setSubmitError(null)
+    setSaveError(null)
 
     if (!validation.ok) {
       setSubmitError(validation.errors[0] || 'Please fix the form.')
@@ -179,12 +294,45 @@ export default function LeadgenOnboardingClient({ token }: { token: string }) {
       if (!res.ok || !data.success) {
         throw new Error((data as { error?: string }).error || 'Failed to complete onboarding')
       }
+      safeClearDraft(draftStorageKey)
       window.location.assign('/portal')
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'Failed to complete onboarding')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function handleSaveForLater() {
+    setSubmitError(null)
+    setSaveError(null)
+
+    const snapshot: OnboardingDraftSnapshot = {
+      savedAt: Date.now(),
+      form: {
+        serviceAreasRaw,
+        targetZipCodesRaw,
+        serviceTypes,
+        operatingHoursStart,
+        operatingHoursEnd,
+        leadRoutingPhonesRaw,
+        leadRoutingEmailsRaw,
+        leadNotificationPhone,
+        leadNotificationEmail,
+        leadProspectEmail,
+        businessPhone,
+        businessAddress,
+        desiredLeadVolumeDaily,
+      },
+    }
+
+    const saved = safeWriteDraft(draftStorageKey, snapshot)
+    if (!saved) {
+      setSaveError('Could not save your draft in this browser. Please keep this tab open and try again.')
+      return
+    }
+
+    setSaveNotice(`Draft saved at ${new Date(snapshot.savedAt).toLocaleString()}. You can complete this later.`)
   }
 
   if (loading) {
@@ -373,15 +521,36 @@ export default function LeadgenOnboardingClient({ token }: { token: string }) {
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-xl bg-[var(--accent)] px-4 py-3 font-semibold text-white hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {submitting ? 'Submitting...' : 'Complete Onboarding'}
-        </button>
+        {saveError && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+            {saveError}
+          </div>
+        )}
+
+        {saveNotice && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+            {saveNotice}
+          </div>
+        )}
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={handleSaveForLater}
+            className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Save & Complete Later
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded-xl bg-[var(--accent)] px-4 py-3 font-semibold text-white hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {submitting ? 'Submitting...' : 'Complete Onboarding'}
+          </button>
+        </div>
       </form>
     </div>
   )
 }
-
