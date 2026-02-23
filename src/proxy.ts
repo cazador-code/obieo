@@ -1,5 +1,5 @@
 import { clerkMiddleware } from '@clerk/nextjs/server'
-import type { NextFetchEvent, NextRequest } from 'next/server'
+import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 /* ------------------------------------------------------------------ */
@@ -67,17 +67,11 @@ function requiresInternalBasicAuth(pathname: string): boolean {
   )
 }
 
-/* ------------------------------------------------------------------ */
-/*  Combined proxy                                                     */
-/* ------------------------------------------------------------------ */
-
-const clerkProxy = clerkMiddleware()
-
-export default function proxy(request: NextRequest, event: NextFetchEvent) {
+export default clerkMiddleware((_auth, request: NextRequest) => {
   const { pathname } = request.nextUrl
   const hostname = request.headers.get('host') || ''
 
-  // 1. Internal basic-auth guard (runs before any rewrite)
+  // 1. Internal basic-auth guard (validate first, then continue to rewrite logic)
   if (requiresInternalBasicAuth(pathname)) {
     const expectedUser = process.env.INTERNAL_LEADGEN_BASIC_AUTH_USER || ''
     const expectedPass = process.env.INTERNAL_LEADGEN_BASIC_AUTH_PASS || ''
@@ -92,17 +86,10 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
       timingSafeEqual(creds.user, expectedUser) &&
       timingSafeEqual(creds.pass, expectedPass)
     if (!ok) return unauthorized()
-
-    return NextResponse.next()
   }
 
   // 2. Subdomain routing for app.obieo.com
   if (isAppHostname(hostname)) {
-    // API routes are shared — don't rewrite
-    if (pathname.startsWith('/api/')) {
-      return clerkProxy(request, event)
-    }
-
     // Static assets / Next.js internals — don't rewrite
     if (
       pathname.startsWith('/_next/') ||
@@ -113,15 +100,20 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
       return NextResponse.next()
     }
 
+    // API routes are shared — don't rewrite
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.next()
+    }
+
     // Rewrite to /app/* route group
     const url = request.nextUrl.clone()
     url.pathname = `/app${pathname}`
     return NextResponse.rewrite(url)
   }
 
-  // 3. www.obieo.com or any other hostname — Clerk handles session, pass through
-  return clerkProxy(request, event)
-}
+  // 3. www.obieo.com or any other hostname — pass through
+  return NextResponse.next()
+})
 
 export const config = {
   matcher: [
