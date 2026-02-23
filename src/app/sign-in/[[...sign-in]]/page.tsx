@@ -11,10 +11,12 @@ export default async function SignInPage({
   const params = (await searchParams) || {}
   const raw = params.redirect_url
   const redirectUrl = Array.isArray(raw) ? raw[0] : raw
+  const resolvedRedirectUrl =
+    typeof redirectUrl === 'string' && redirectUrl.startsWith('/') ? redirectUrl : '/portal'
 
   // Prevent redirect loops when a signed-in user lands on /sign-in.
   if (userId) {
-    redirect(typeof redirectUrl === 'string' && redirectUrl ? redirectUrl : '/portal')
+    redirect(resolvedRedirectUrl)
   }
 
   return (
@@ -23,6 +25,10 @@ export default async function SignInPage({
         path="/sign-in"
         routing="path"
         signUpUrl="/sign-up"
+        forceRedirectUrl={resolvedRedirectUrl}
+        fallbackRedirectUrl="/portal"
+        signUpForceRedirectUrl={resolvedRedirectUrl}
+        signUpFallbackRedirectUrl="/portal"
       />
     </main>
   )
