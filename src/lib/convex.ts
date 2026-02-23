@@ -173,17 +173,33 @@ export async function grantLeadCreditsFromInvoiceInConvex(input: {
   }
 }
 
+export interface LeadEventSnapshot {
+  _id: string
+  source: string
+  sourceExternalId: string
+  deliveredAt: number
+  createdAt: number
+  status: 'delivered' | 'credited' | 'invalid'
+  quantity: number
+  billableQuantity?: number
+  name?: string
+  email?: string
+  phone?: string
+  city?: string
+  state?: string
+}
+
+export interface OrganizationSnapshotInConvex {
+  organization: Record<string, unknown>
+  leadCounts: { total: number; usageRecorded: number; unbilled: number }
+  recentLeadEvents: LeadEventSnapshot[]
+  replacementRequests: unknown[]
+  billingEvents: unknown[]
+}
+
 export async function getOrganizationSnapshotInConvex(input: {
   portalKey: string
-}): Promise<
-  | {
-      organization: Record<string, unknown>
-      leadCounts: { total: number; usageRecorded: number; unbilled: number }
-      replacementRequests: unknown[]
-      billingEvents: unknown[]
-    }
-  | null
-> {
+}): Promise<OrganizationSnapshotInConvex | null> {
   const client = getConvexClient()
   const authSecret = getConvexAuthSecret()
   if (!client || !authSecret) return null
@@ -193,14 +209,7 @@ export async function getOrganizationSnapshotInConvex(input: {
       authSecret,
       portalKey: input.portalKey,
     })
-    return result as
-      | {
-          organization: Record<string, unknown>
-          leadCounts: { total: number; usageRecorded: number; unbilled: number }
-          replacementRequests: unknown[]
-          billingEvents: unknown[]
-        }
-      | null
+    return result as OrganizationSnapshotInConvex | null
   } catch (error) {
     console.error('Convex getOrganizationSnapshot failed:', error)
     return null
