@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useSyncExternalStore, useRef } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { motion, useMotionValue, useSpring } from 'framer-motion'
 
 type CursorState = 'default' | 'hover' | 'button' | 'view' | 'hidden'
@@ -28,16 +28,24 @@ function getCursorDisabledServerSnapshot() {
   return true // Disable on server
 }
 
+function hasOpenClerkOverlay() {
+  return Boolean(
+    document.querySelector(
+      '.cl-userButtonPopoverCard, .cl-userButtonPopoverActions, .cl-modalBackdrop, .cl-userProfile-root'
+    )
+  )
+}
 
 export function CustomCursor() {
   const [cursorState, setCursorState] = useState<CursorState>('default')
-  const hasSetupRef = useRef(false)
+  const [isClerkOverlayOpen, setIsClerkOverlayOpen] = useState(false)
 
   const isDisabled = useSyncExternalStore(
     subscribeToCursorDisabled,
     getCursorDisabledSnapshot,
     getCursorDisabledServerSnapshot
   )
+  const shouldUseCustomCursor = !isDisabled && !isClerkOverlayOpen
 
   const cursorX = useMotionValue(0)
   const cursorY = useMotionValue(0)
@@ -52,21 +60,37 @@ export function CustomCursor() {
   const outerXSpring = useSpring(cursorX, outerSpringConfig)
   const outerYSpring = useSpring(cursorY, outerSpringConfig)
 
-  // Setup cursor hiding and mark as mounted
+  // Detect Clerk popovers/modals so we can restore the native cursor above those layers.
   useEffect(() => {
-    if (isDisabled || hasSetupRef.current) return
+    const updateOverlayState = () => setIsClerkOverlayOpen(hasOpenClerkOverlay())
+    updateOverlayState()
 
-    hasSetupRef.current = true
-    document.body.style.cursor = 'none'
+    const observer = new MutationObserver(() => {
+      updateOverlayState()
+    })
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style', 'aria-hidden', 'data-state'],
+    })
 
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
+
+  // Toggle native cursor visibility globally.
+  useEffect(() => {
+    document.body.style.cursor = shouldUseCustomCursor ? 'none' : 'auto'
     return () => {
       document.body.style.cursor = 'auto'
     }
-  }, [isDisabled])
+  }, [shouldUseCustomCursor])
 
   // Track mouse position
   useEffect(() => {
-    if (isDisabled || !hasSetupRef.current) return
+    if (!shouldUseCustomCursor) return
 
     const handleMouseMove = (e: MouseEvent) => {
       cursorX.set(e.clientX)
@@ -85,11 +109,11 @@ export function CustomCursor() {
       document.removeEventListener('mouseleave', handleMouseLeave)
       document.removeEventListener('mouseenter', handleMouseEnter)
     }
-  }, [isDisabled, cursorX, cursorY])
+  }, [shouldUseCustomCursor, cursorX, cursorY])
 
   // Detect hoverable elements
   useEffect(() => {
-    if (isDisabled || !hasSetupRef.current) return
+    if (!shouldUseCustomCursor) return
 
     const handleMouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement
@@ -121,10 +145,10 @@ export function CustomCursor() {
     return () => {
       document.removeEventListener('mouseover', handleMouseOver)
     }
-  }, [isDisabled])
+  }, [shouldUseCustomCursor])
 
   // Don't render on server or when disabled
-  if (isDisabled) return null
+  if (!shouldUseCustomCursor) return null
 
   // Use a key to force re-render after mount
   if (typeof window === 'undefined') return null

@@ -19,6 +19,23 @@ interface AppChromeProps {
   children: ReactNode
 }
 
+function PortalMenuIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 20 20"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 9.5 10 4l7 5.5V17a1 1 0 0 1-1 1h-4v-5H8v5H4a1 1 0 0 1-1-1V9.5Z" />
+    </svg>
+  )
+}
+
 export default function AppChrome({ children }: AppChromeProps) {
   const pathname = usePathname()
   const isInternalRoute = pathname.startsWith('/internal')
@@ -35,7 +52,17 @@ export default function AppChrome({ children }: AppChromeProps) {
           <SignUpButton />
         </SignedOut>
         <SignedIn>
-          <UserButton />
+          <UserButton>
+            <UserButton.MenuItems>
+              <UserButton.Action label="manageAccount" />
+              <UserButton.Link
+                label="Portal"
+                href="/portal"
+                labelIcon={<PortalMenuIcon />}
+              />
+              <UserButton.Action label="signOut" />
+            </UserButton.MenuItems>
+          </UserButton>
         </SignedIn>
       </div>
       <SmoothScroll>
