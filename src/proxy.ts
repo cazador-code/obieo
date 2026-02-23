@@ -2,6 +2,24 @@ import { clerkMiddleware } from '@clerk/nextjs/server'
 import type { NextFetchEvent, NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
+/* ------------------------------------------------------------------ */
+/*  Subdomain routing                                                  */
+/* ------------------------------------------------------------------ */
+
+const APP_HOSTNAMES = new Set([
+  'app.obieo.com',
+  'app.localhost:3000',
+  'app.localhost',
+])
+
+function isAppHostname(host: string): boolean {
+  return APP_HOSTNAMES.has(host)
+}
+
+/* ------------------------------------------------------------------ */
+/*  Internal basic-auth guard                                          */
+/* ------------------------------------------------------------------ */
+
 const INTERNAL_AUTH_BASE_PATHS = [
   '/internal/leadgen/payment-link',
   '/internal/clients',
@@ -49,28 +67,60 @@ function requiresInternalBasicAuth(pathname: string): boolean {
   )
 }
 
+/* ------------------------------------------------------------------ */
+/*  Combined proxy                                                     */
+/* ------------------------------------------------------------------ */
+
 const clerkProxy = clerkMiddleware()
 
 export default function proxy(request: NextRequest, event: NextFetchEvent) {
-  if (!requiresInternalBasicAuth(request.nextUrl.pathname)) {
-    return clerkProxy(request, event)
+  const { pathname } = request.nextUrl
+  const hostname = request.headers.get('host') || ''
+
+  // 1. Internal basic-auth guard (runs before any rewrite)
+  if (requiresInternalBasicAuth(pathname)) {
+    const expectedUser = process.env.INTERNAL_LEADGEN_BASIC_AUTH_USER || ''
+    const expectedPass = process.env.INTERNAL_LEADGEN_BASIC_AUTH_PASS || ''
+    if (!expectedUser || !expectedPass) {
+      return new NextResponse('Internal tools auth is not configured.', { status: 503 })
+    }
+
+    const creds = decodeBasicAuthHeader(request.headers.get('authorization') || '')
+    if (!creds) return unauthorized()
+
+    const ok =
+      timingSafeEqual(creds.user, expectedUser) &&
+      timingSafeEqual(creds.pass, expectedPass)
+    if (!ok) return unauthorized()
+
+    return NextResponse.next()
   }
 
-  const expectedUser = process.env.INTERNAL_LEADGEN_BASIC_AUTH_USER || ''
-  const expectedPass = process.env.INTERNAL_LEADGEN_BASIC_AUTH_PASS || ''
-  if (!expectedUser || !expectedPass) {
-    return new NextResponse('Internal tools auth is not configured.', { status: 503 })
+  // 2. Subdomain routing for app.obieo.com
+  if (isAppHostname(hostname)) {
+    // API routes are shared — don't rewrite
+    if (pathname.startsWith('/api/')) {
+      return clerkProxy(request, event)
+    }
+
+    // Static assets / Next.js internals — don't rewrite
+    if (
+      pathname.startsWith('/_next/') ||
+      pathname.startsWith('/favicon') ||
+      pathname === '/robots.txt' ||
+      pathname === '/sitemap.xml'
+    ) {
+      return NextResponse.next()
+    }
+
+    // Rewrite to /app/* route group
+    const url = request.nextUrl.clone()
+    url.pathname = `/app${pathname}`
+    return NextResponse.rewrite(url)
   }
 
-  const creds = decodeBasicAuthHeader(request.headers.get('authorization') || '')
-  if (!creds) return unauthorized()
-
-  const ok =
-    timingSafeEqual(creds.user, expectedUser) &&
-    timingSafeEqual(creds.pass, expectedPass)
-  if (!ok) return unauthorized()
-
-  return NextResponse.next()
+  // 3. www.obieo.com or any other hostname — Clerk handles session, pass through
+  return clerkProxy(request, event)
 }
 
 export const config = {

@@ -235,7 +235,7 @@ export async function activateCustomer(input: {
       ? await getLeadgenIntentByPortalKeyInConvex({ portalKey })
       : null
   const onboardingUrl = leadgenIntent?.token
-    ? `${getAppBaseUrl()}/leadgen/onboarding?token=${encodeURIComponent(leadgenIntent.token)}`
+    ? `${getAppBaseUrl()}/onboarding?token=${encodeURIComponent(leadgenIntent.token)}`
     : undefined
 
   if (

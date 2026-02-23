@@ -6,15 +6,32 @@ import {
   getLeadgenIntentByBillingEmailInConvex,
   getLeadgenIntentByPortalKeyInConvex,
   getOrganizationSnapshotInConvex,
+  type LeadEventSnapshot,
 } from '@/lib/convex'
 import { resolveInternalPortalPreviewToken } from '@/lib/internal-portal-preview'
 import { getStripeClient } from '@/lib/stripe'
+
+export const dynamic = 'force-dynamic'
 
 type SearchParams = Record<string, string | string[] | undefined>
 
 function getFirstParam(value: string | string[] | undefined): string {
   if (Array.isArray(value)) return value[0] || ''
   return value || ''
+}
+
+const leadDateFormatter = new Intl.DateTimeFormat('en-US', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+})
+
+function formatLeadTimestamp(timestampMs: number): string {
+  return leadDateFormatter.format(new Date(timestampMs))
+}
+
+function formatLeadSummary(lead: LeadEventSnapshot): string {
+  const pieces = [lead.name || '', lead.city || '', lead.state || ''].filter(Boolean)
+  return pieces.length > 0 ? pieces.join(' - ') : lead.sourceExternalId
 }
 
 export default async function PortalPage({
@@ -138,18 +155,18 @@ export default async function PortalPage({
             email and click the button again, or reply to the payment email and we&apos;ll re-send the invite.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href="/contact"
+            <a
+              href="https://www.obieo.com/contact"
               className="inline-flex rounded-xl bg-[var(--accent)] px-4 py-2 font-semibold text-white hover:bg-[var(--accent-hover)]"
             >
               Contact Support
-            </Link>
-            <Link
-              href="/"
+            </a>
+            <a
+              href="https://www.obieo.com"
               className="inline-flex rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-2 font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
             >
               Back to Home
-            </Link>
+            </a>
           </div>
         </div>
       </main>
@@ -158,6 +175,8 @@ export default async function PortalPage({
 
   const snapshot = await getOrganizationSnapshotInConvex({ portalKey })
   const org = snapshot?.organization as Record<string, unknown> | undefined
+  const leadCounts = snapshot?.leadCounts || { total: 0, usageRecorded: 0, unbilled: 0 }
+  const recentLeadEvents = snapshot?.recentLeadEvents || []
   const onboardingStatus = typeof org?.onboardingStatus === 'string' ? org.onboardingStatus : null
   let onboardingIntentToken: string | null = null
   if (onboardingStatus !== 'completed') {
@@ -165,7 +184,7 @@ export default async function PortalPage({
     onboardingIntentToken = intent?.token || null
     if (intent?.token) {
       if (!resumeOnboarding) {
-        redirect(`/leadgen/onboarding?token=${encodeURIComponent(intent.token)}`)
+        redirect(`/onboarding?token=${encodeURIComponent(intent.token)}`)
       }
     }
   }
@@ -194,7 +213,7 @@ export default async function PortalPage({
             </p>
             <div className="mt-3">
               <Link
-                href={`/leadgen/onboarding?token=${encodeURIComponent(onboardingIntentToken)}`}
+                href={`/onboarding?token=${encodeURIComponent(onboardingIntentToken)}`}
                 className="inline-flex rounded-xl bg-[var(--accent)] px-4 py-2 font-semibold text-white hover:bg-[var(--accent-hover)]"
               >
                 Finish Setup
@@ -208,10 +227,20 @@ export default async function PortalPage({
             <h2 className="text-lg font-semibold text-[var(--text-primary)]">
               Leads
             </h2>
-            <p className="mt-2 text-sm text-[var(--text-secondary)]">
-              Lead feed wiring is in progress. This card will show delivered leads,
-              timestamps, and lead status.
-            </p>
+            <dl className="mt-3 grid grid-cols-3 gap-3">
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Total</dt>
+                <dd className="mt-1 text-xl font-semibold text-[var(--text-primary)]">{leadCounts.total}</dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Billed</dt>
+                <dd className="mt-1 text-xl font-semibold text-[var(--text-primary)]">{leadCounts.usageRecorded}</dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Unbilled</dt>
+                <dd className="mt-1 text-xl font-semibold text-[var(--text-primary)]">{leadCounts.unbilled}</dd>
+              </div>
+            </dl>
           </section>
 
           <LeadTopUpCard />
@@ -227,13 +256,48 @@ export default async function PortalPage({
           </section>
         </div>
 
+        <section className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-5">
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Recent Leads</h2>
+          {recentLeadEvents.length === 0 ? (
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+              No leads yet. New leads will appear here automatically as they are delivered.
+            </p>
+          ) : (
+            <ul className="mt-3 divide-y divide-[var(--border)] rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
+              {recentLeadEvents.slice(0, 25).map((lead) => (
+                <li key={lead._id} className="px-4 py-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">{formatLeadSummary(lead)}</p>
+                      <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                        {lead.source.toUpperCase()} - {lead.sourceExternalId}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)]">
+                        {lead.status}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                        Qty {lead.quantity}
+                      </p>
+                      <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                        {formatLeadTimestamp(lead.deliveredAt || lead.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
         <div className="mt-8">
-          <Link
-            href="/"
+          <a
+            href="https://www.obieo.com"
             className="inline-flex rounded-xl bg-[var(--accent)] px-4 py-2 font-semibold text-white hover:bg-[var(--accent-hover)]"
           >
             Back to Obieo Home
-          </Link>
+          </a>
         </div>
       </div>
     </main>

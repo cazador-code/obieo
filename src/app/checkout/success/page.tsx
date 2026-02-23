@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { ActivateFromStripeSession } from './success_client'
 
 export default async function CheckoutSuccessPage({
@@ -30,12 +29,12 @@ export default async function CheckoutSuccessPage({
         </div>
 
         <div className="mt-6">
-          <Link
-            href="/sign-in"
+          <a
+            href="https://app.obieo.com/sign-in"
             className="inline-flex rounded-xl bg-[var(--accent)] px-5 py-3 font-semibold text-white hover:bg-[var(--accent-hover)]"
           >
             Go to login
-          </Link>
+          </a>
           <p className="mt-2 text-xs text-[var(--text-muted)]">
             If you just paid, give it 1-2 minutes for the invite to arrive.
           </p>

@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { getInternalClientsDashboardData, type InternalClientRow } from '@/lib/internal-clients'
 import { createInternalPortalPreviewToken } from '@/lib/internal-portal-preview'
 
+export const dynamic = 'force-dynamic'
+
 type SearchParams = Record<string, string | string[] | undefined>
 
 const STAGE_OPTIONS = [

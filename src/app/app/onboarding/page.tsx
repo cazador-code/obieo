@@ -15,7 +15,7 @@ export default async function LeadgenOnboardingPage({
   const token = typeof tokenParam === 'string' ? tokenParam : Array.isArray(tokenParam) ? tokenParam[0] : ''
 
   if (!userId) {
-    const redirectUrl = token ? `/leadgen/onboarding?token=${encodeURIComponent(token)}` : '/leadgen/onboarding'
+    const redirectUrl = token ? `/onboarding?token=${encodeURIComponent(token)}` : '/onboarding'
     redirect(`/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`)
   }
 
@@ -31,4 +31,3 @@ export default async function LeadgenOnboardingPage({
     </main>
   )
 }
-

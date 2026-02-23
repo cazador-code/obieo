@@ -272,7 +272,7 @@ export async function POST(request: NextRequest) {
       forceResendInvitation,
     })
 
-    const onboardingUrl = `${getAppBaseUrl()}/leadgen/onboarding?token=${encodeURIComponent(token)}`
+    const onboardingUrl = `${getAppBaseUrl()}/onboarding?token=${encodeURIComponent(token)}`
 
     return NextResponse.json({
       success: true,

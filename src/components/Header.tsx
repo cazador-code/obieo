@@ -124,10 +124,16 @@ export default function Header() {
                   {item.name}
                 </Link>
               ))}
-              <div className="pt-4">
+              <div className="pt-4 space-y-2">
                 <CalendlyButton source="header-mobile" className="w-full px-4 py-3 bg-[var(--accent)] text-white text-base font-semibold rounded-lg hover:bg-[var(--accent-hover)] transition-colors text-center">
                   Book a Call
                 </CalendlyButton>
+                <a
+                  href="https://app.obieo.com"
+                  className="block px-4 py-3 text-base font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] rounded-lg transition-colors text-center"
+                >
+                  Client Login
+                </a>
               </div>
             </div>
           </motion.div>

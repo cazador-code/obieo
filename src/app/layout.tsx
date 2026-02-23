@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { ClerkProvider } from "@clerk/nextjs";
+import { headers } from "next/headers";
 import "@fontsource-variable/dm-sans";
 import "@fontsource-variable/outfit";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -71,47 +71,62 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <ClerkProvider>
+  const headersList = await headers();
+  const host = headersList.get("host") || "";
+  const isAppSubdomain = host.startsWith("app.");
+
+  // app.obieo.com gets a bare shell — the /app/ layout adds its own chrome
+  if (isAppSubdomain) {
+    return (
       <html lang="en" suppressHydrationWarning>
-        <head>
-          {/* Google Tag Manager - must be first */}
-          <Script id="gtm" strategy="afterInteractive">
-            {`
-              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-              })(window,document,'script','dataLayer','GTM-TMBFS7H7');
-            `}
-          </Script>
-          {/* Facebook Pixel managed via GTM */}
-        </head>
-        <body
-          className="antialiased bg-[var(--bg-primary)] text-[var(--text-primary)]"
-        >
-          {/* Google Tag Manager (noscript) */}
-          <noscript>
-            <iframe
-              src="https://www.googletagmanager.com/ns.html?id=GTM-TMBFS7H7"
-              height="0"
-              width="0"
-              style={{ display: 'none', visibility: 'hidden' }}
-            />
-          </noscript>
-          <BookingModalProvider>
-            <ThemeProvider>
-              <AppChrome>{children}</AppChrome>
-            </ThemeProvider>
-          </BookingModalProvider>
+        <body className="antialiased bg-[var(--bg-primary)] text-[var(--text-primary)]">
+          {children}
           <Analytics />
         </body>
       </html>
-    </ClerkProvider>
+    );
+  }
+
+  // www.obieo.com gets the full marketing experience
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Google Tag Manager - must be first */}
+        <Script id="gtm" strategy="afterInteractive">
+          {`
+            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+            })(window,document,'script','dataLayer','GTM-TMBFS7H7');
+          `}
+        </Script>
+        {/* Facebook Pixel managed via GTM */}
+      </head>
+      <body
+        className="antialiased bg-[var(--bg-primary)] text-[var(--text-primary)]"
+      >
+        {/* Google Tag Manager (noscript) */}
+        <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-TMBFS7H7"
+            height="0"
+            width="0"
+            style={{ display: 'none', visibility: 'hidden' }}
+          />
+        </noscript>
+        <BookingModalProvider>
+          <ThemeProvider>
+            <AppChrome>{children}</AppChrome>
+          </ThemeProvider>
+        </BookingModalProvider>
+        <Analytics />
+      </body>
+    </html>
   );
 }

@@ -333,7 +333,7 @@ export async function getInternalClientsDashboardData(): Promise<InternalClients
       clerkUsers: Array.from(row.clerkUsers.values()).sort(),
       invitationEmails: Array.from(row.invitationEmails.values()).sort(),
       lastUpdatedAt: Number.isFinite(lastUpdatedAt) && lastUpdatedAt > 0 ? lastUpdatedAt : null,
-      onboardingLink: onboardingToken ? `/leadgen/onboarding?token=${encodeURIComponent(onboardingToken)}` : null,
+      onboardingLink: onboardingToken ? `/onboarding?token=${encodeURIComponent(onboardingToken)}` : null,
     }
   })
 
