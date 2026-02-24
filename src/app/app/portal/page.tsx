@@ -190,9 +190,9 @@ export default async function PortalPage({
   }
 
   return (
-    <main className="min-h-screen bg-[var(--bg-primary)] px-4 py-12">
-      <div className="mx-auto max-w-4xl rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-lg">
-        <h1 className="text-3xl font-bold text-[var(--text-primary)]">
+    <main className="min-h-screen bg-[var(--bg-primary)] px-4 py-12 md:py-20">
+      <div className="mx-auto max-w-5xl">
+        <h1 className="font-[family-name:var(--font-display)] text-4xl font-bold tracking-tight text-[var(--text-primary)] md:text-5xl">
           Client Portal
         </h1>
         {isPreviewMode ? (
@@ -222,65 +222,68 @@ export default async function PortalPage({
           </div>
         ) : null}
 
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
-          <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-5">
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-              Leads
-            </h2>
-            <dl className="mt-3 grid grid-cols-3 gap-3">
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Total</dt>
-                <dd className="mt-1 text-xl font-semibold text-[var(--text-primary)]">{leadCounts.total}</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Billed</dt>
-                <dd className="mt-1 text-xl font-semibold text-[var(--text-primary)]">{leadCounts.usageRecorded}</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Unbilled</dt>
-                <dd className="mt-1 text-xl font-semibold text-[var(--text-primary)]">{leadCounts.unbilled}</dd>
-              </div>
-            </dl>
-          </section>
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
+          <div className="flex flex-col gap-6">
+            <section className="rounded-2xl border-0 bg-[var(--bg-card)] p-6 shadow-md ring-1 ring-[var(--border)]">
+              <h2 className="font-[family-name:var(--font-display)] text-xl font-bold text-[var(--text-primary)]">
+                Leads
+              </h2>
+              <dl className="mt-4 grid grid-cols-3 gap-3">
+                <div>
+                  <dt className="text-xs font-semibold text-[var(--text-secondary)]">Total</dt>
+                  <dd className="mt-1 font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight text-[var(--text-primary)]">{leadCounts.total}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold text-[var(--text-secondary)]">Billed</dt>
+                  <dd className="mt-1 font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight text-[var(--text-primary)]">{leadCounts.usageRecorded}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold text-[var(--text-secondary)]">Unbilled</dt>
+                  <dd className="mt-1 font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight text-[var(--text-primary)]">{leadCounts.unbilled}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section className="flex-grow rounded-2xl border-0 bg-[var(--bg-card)] p-6 shadow-md ring-1 ring-[var(--border)]">
+              <h2 className="font-[family-name:var(--font-display)] text-xl font-bold text-[var(--text-primary)]">
+                Lead Replacements
+              </h2>
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                Replacement requests will live here with policy checks for the
+                15-minute contact and 7-day submission windows.
+              </p>
+            </section>
+          </div>
 
           <LeadTopUpCard />
-
-          <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-5">
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-              Lead Replacements
-            </h2>
-            <p className="mt-2 text-sm text-[var(--text-secondary)]">
-              Replacement requests will live here with policy checks for the
-              15-minute contact and 7-day submission windows.
-            </p>
-          </section>
         </div>
 
-        <section className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-5">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Recent Leads</h2>
+        <section className="mt-8 rounded-2xl border-0 bg-[var(--bg-card)] p-6 shadow-md ring-1 ring-[var(--border)]">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-primary)]">Recent Leads</h2>
           {recentLeadEvents.length === 0 ? (
             <p className="mt-2 text-sm text-[var(--text-secondary)]">
               No leads yet. New leads will appear here automatically as they are delivered.
             </p>
           ) : (
-            <ul className="mt-3 divide-y divide-[var(--border)] rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
+            <ul className="mt-4 divide-y divide-[var(--border)] rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)]">
               {recentLeadEvents.slice(0, 25).map((lead) => (
-                <li key={lead._id} className="px-4 py-3">
+                <li key={lead._id} className="group px-5 py-4 transition-colors hover:bg-[var(--bg-card)]">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">{formatLeadSummary(lead)}</p>
-                      <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                      <p className="font-[family-name:var(--font-display)] text-lg font-semibold tracking-tight text-[var(--text-primary)]">{formatLeadSummary(lead)}</p>
+                      <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]"></span>
                         {lead.source.toUpperCase()} - {lead.sourceExternalId}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)]">
+                      <p className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold tracking-widest text-emerald-700 uppercase">
                         {lead.status}
                       </p>
-                      <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                      <p className="mt-2 font-[family-name:var(--font-display)] text-lg font-bold text-[var(--text-primary)]">
                         Qty {lead.quantity}
                       </p>
-                      <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                      <p className="mt-0.5 text-xs text-[var(--text-muted)]">
                         {formatLeadTimestamp(lead.deliveredAt || lead.createdAt)}
                       </p>
                     </div>
@@ -291,10 +294,10 @@ export default async function PortalPage({
           )}
         </section>
 
-        <div className="mt-8">
+        <div className="mt-10 text-center">
           <a
             href="https://www.obieo.com"
-            className="inline-flex rounded-xl bg-[var(--accent)] px-4 py-2 font-semibold text-white hover:bg-[var(--accent-hover)]"
+            className="inline-flex rounded-xl border-2 border-[var(--border)] bg-transparent px-6 py-3 font-semibold text-[var(--text-secondary)] transition-all hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
           >
             Back to Obieo Home
           </a>
