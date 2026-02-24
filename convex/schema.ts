@@ -157,6 +157,25 @@ export default defineSchema({
     .index('by_portalKey', ['portalKey'])
     .index('by_portal_and_status', ['portalKey', 'status']),
 
+  portalProfileEdits: defineTable({
+    organizationId: v.id('organizations'),
+    portalKey: v.string(),
+    actorType: v.union(v.literal('client'), v.literal('admin_preview')),
+    actorUserId: v.optional(v.string()),
+    actorEmail: v.optional(v.string()),
+    actorInternalUser: v.optional(v.string()),
+    changedKeys: v.array(v.string()),
+    beforeProfileJson: v.string(),
+    afterProfileJson: v.string(),
+    beforeTargetZipCodes: v.array(v.string()),
+    afterTargetZipCodes: v.array(v.string()),
+    addedTargetZipCodes: v.array(v.string()),
+    removedTargetZipCodes: v.array(v.string()),
+    createdAt: v.number(),
+  })
+    .index('by_portalKey', ['portalKey'])
+    .index('by_portal_and_createdAt', ['portalKey', 'createdAt']),
+
   leadReplacementRequests: defineTable({
     organizationId: v.id('organizations'),
     portalKey: v.string(),

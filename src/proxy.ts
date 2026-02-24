@@ -25,6 +25,7 @@ const INTERNAL_AUTH_BASE_PATHS = [
   '/internal/clients',
   '/api/internal/leadgen/payment-link',
   '/api/internal/leadgen/payment-confirmation',
+  '/api/internal/portal/profile',
 ] as const
 
 function unauthorized(): NextResponse {

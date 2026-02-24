@@ -87,6 +87,69 @@ async function getOrganizationByPortalKey(
     .first()) as OrganizationRecord | null
 }
 
+type PortalProfileSnapshot = {
+  serviceAreas: string[]
+  targetZipCodes: string[]
+  leadDeliveryPhones: string[]
+  leadDeliveryEmails: string[]
+  leadNotificationPhone?: string
+  leadNotificationEmail?: string
+  leadProspectEmail?: string
+}
+
+const PORTAL_PROFILE_KEYS = [
+  'serviceAreas',
+  'targetZipCodes',
+  'leadDeliveryPhones',
+  'leadDeliveryEmails',
+  'leadNotificationPhone',
+  'leadNotificationEmail',
+  'leadProspectEmail',
+] as const
+
+function normalizeList(values: unknown): string[] {
+  if (!Array.isArray(values)) return []
+  return values
+    .map((value) => (typeof value === 'string' ? value.trim() : ''))
+    .filter(Boolean)
+}
+
+function normalizeOptionalValue(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined
+  const cleaned = value.trim()
+  return cleaned.length > 0 ? cleaned : undefined
+}
+
+function getPortalProfileFromOrganization(org: OrganizationRecord): PortalProfileSnapshot {
+  return {
+    serviceAreas: normalizeList(org.serviceAreas),
+    targetZipCodes: normalizeList(org.targetZipCodes),
+    leadDeliveryPhones: normalizeList(org.leadDeliveryPhones),
+    leadDeliveryEmails: normalizeList(org.leadDeliveryEmails),
+    leadNotificationPhone: normalizeOptionalValue(org.leadNotificationPhone),
+    leadNotificationEmail: normalizeOptionalValue(org.leadNotificationEmail),
+    leadProspectEmail: normalizeOptionalValue(org.leadProspectEmail),
+  }
+}
+
+function sameList(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) return false
+  }
+  return true
+}
+
+function diffAdded(before: string[], after: string[]): string[] {
+  const beforeSet = new Set(before)
+  return after.filter((value) => !beforeSet.has(value))
+}
+
+function diffRemoved(before: string[], after: string[]): string[] {
+  const afterSet = new Set(after)
+  return before.filter((value) => !afterSet.has(value))
+}
+
 export const upsertOrganization = mutation({
   args: {
     authSecret: v.string(),
@@ -366,6 +429,104 @@ export const submitClientOnboarding = mutation({
       submissionId,
       organizationId,
       portalKey: args.portalKey,
+    }
+  },
+})
+
+export const updatePortalProfile = mutation({
+  args: {
+    authSecret: v.string(),
+    portalKey: v.string(),
+    serviceAreas: v.array(v.string()),
+    targetZipCodes: v.array(v.string()),
+    leadDeliveryPhones: v.array(v.string()),
+    leadDeliveryEmails: v.array(v.string()),
+    leadNotificationPhone: v.optional(v.string()),
+    leadNotificationEmail: v.optional(v.string()),
+    leadProspectEmail: v.optional(v.string()),
+    actorType: v.union(v.literal('client'), v.literal('admin_preview')),
+    actorUserId: v.optional(v.string()),
+    actorEmail: v.optional(v.string()),
+    actorInternalUser: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+    const now = Date.now()
+
+    const organization = await getOrganizationByPortalKey(ctx, args.portalKey)
+    if (!organization) {
+      throw new Error(`Unknown portal key: ${args.portalKey}`)
+    }
+
+    const beforeProfile = getPortalProfileFromOrganization(organization)
+    const afterProfile: PortalProfileSnapshot = {
+      serviceAreas: args.serviceAreas,
+      targetZipCodes: args.targetZipCodes,
+      leadDeliveryPhones: args.leadDeliveryPhones,
+      leadDeliveryEmails: args.leadDeliveryEmails,
+      leadNotificationPhone: normalizeOptionalValue(args.leadNotificationPhone),
+      leadNotificationEmail: normalizeOptionalValue(args.leadNotificationEmail),
+      leadProspectEmail: normalizeOptionalValue(args.leadProspectEmail),
+    }
+
+    const changedKeys = PORTAL_PROFILE_KEYS.filter((key) => {
+      const beforeValue = beforeProfile[key]
+      const afterValue = afterProfile[key]
+      if (Array.isArray(beforeValue) && Array.isArray(afterValue)) {
+        return !sameList(beforeValue, afterValue)
+      }
+      return beforeValue !== afterValue
+    })
+
+    const addedTargetZipCodes = diffAdded(beforeProfile.targetZipCodes, afterProfile.targetZipCodes)
+    const removedTargetZipCodes = diffRemoved(beforeProfile.targetZipCodes, afterProfile.targetZipCodes)
+
+    const nextOrganization: Record<string, unknown> = {
+      ...organization,
+      serviceAreas: afterProfile.serviceAreas,
+      targetZipCodes: afterProfile.targetZipCodes,
+      leadDeliveryPhones: afterProfile.leadDeliveryPhones,
+      leadDeliveryEmails: afterProfile.leadDeliveryEmails,
+      leadNotificationPhone: afterProfile.leadNotificationPhone,
+      leadNotificationEmail: afterProfile.leadNotificationEmail,
+      leadProspectEmail: afterProfile.leadProspectEmail,
+      updatedAt: now,
+    }
+
+    if (!afterProfile.leadNotificationPhone) delete nextOrganization.leadNotificationPhone
+    if (!afterProfile.leadNotificationEmail) delete nextOrganization.leadNotificationEmail
+    if (!afterProfile.leadProspectEmail) delete nextOrganization.leadProspectEmail
+
+    delete nextOrganization._id
+    delete nextOrganization._creationTime
+
+    await (ctx.db as any).replace(organization._id, nextOrganization)
+
+    const editId = await (ctx.db as any).insert('portalProfileEdits', {
+      organizationId: organization._id,
+      portalKey: args.portalKey,
+      actorType: args.actorType,
+      actorUserId: args.actorUserId,
+      actorEmail: args.actorEmail,
+      actorInternalUser: args.actorInternalUser,
+      changedKeys,
+      beforeProfileJson: JSON.stringify(beforeProfile),
+      afterProfileJson: JSON.stringify(afterProfile),
+      beforeTargetZipCodes: beforeProfile.targetZipCodes,
+      afterTargetZipCodes: afterProfile.targetZipCodes,
+      addedTargetZipCodes,
+      removedTargetZipCodes,
+      createdAt: now,
+    })
+
+    return {
+      editId,
+      portalKey: args.portalKey,
+      changedKeys,
+      addedTargetZipCodes,
+      removedTargetZipCodes,
+      savedAt: now,
+      profile: afterProfile,
     }
   },
 })

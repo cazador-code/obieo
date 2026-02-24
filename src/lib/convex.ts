@@ -1,5 +1,6 @@
 import { ConvexHttpClient } from 'convex/browser'
 import type { BillingModel } from '@/lib/billing-models'
+import type { PortalEditableProfile } from '@/lib/portal-profile'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 
@@ -231,6 +232,55 @@ export interface OrganizationRecordForOps {
   isActive?: boolean
   createdAt: number
   updatedAt: number
+}
+
+export interface UpdatePortalProfileInConvexInput {
+  portalKey: string
+  profile: PortalEditableProfile
+  actorType: 'client' | 'admin_preview'
+  actorUserId?: string
+  actorEmail?: string
+  actorInternalUser?: string
+}
+
+export interface UpdatePortalProfileInConvexResult {
+  editId: string
+  portalKey: string
+  changedKeys: string[]
+  addedTargetZipCodes: string[]
+  removedTargetZipCodes: string[]
+  savedAt: number
+  profile: PortalEditableProfile
+}
+
+export async function updatePortalProfileInConvex(
+  input: UpdatePortalProfileInConvexInput
+): Promise<UpdatePortalProfileInConvexResult | null> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const result = await (client as any).mutation('leadLedger:updatePortalProfile', {
+      authSecret,
+      portalKey: input.portalKey,
+      serviceAreas: input.profile.serviceAreas,
+      targetZipCodes: input.profile.targetZipCodes,
+      leadDeliveryPhones: input.profile.leadDeliveryPhones,
+      leadDeliveryEmails: input.profile.leadDeliveryEmails,
+      leadNotificationPhone: input.profile.leadNotificationPhone,
+      leadNotificationEmail: input.profile.leadNotificationEmail,
+      leadProspectEmail: input.profile.leadProspectEmail,
+      actorType: input.actorType,
+      actorUserId: input.actorUserId,
+      actorEmail: input.actorEmail,
+      actorInternalUser: input.actorInternalUser,
+    })
+    return result as UpdatePortalProfileInConvexResult
+  } catch (error) {
+    console.error('Convex updatePortalProfile failed:', error)
+    return null
+  }
 }
 
 export async function listOrganizationsForOpsInConvex(input?: {

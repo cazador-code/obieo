@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import LeadTopUpCard from './LeadTopUpCard'
+import PortalProfileEditor from './PortalProfileEditor'
 import {
   getLeadgenIntentByBillingEmailInConvex,
   getLeadgenIntentByPortalKeyInConvex,
@@ -9,6 +10,7 @@ import {
   type LeadEventSnapshot,
 } from '@/lib/convex'
 import { resolveInternalPortalPreviewToken } from '@/lib/internal-portal-preview'
+import { profileFromOrganization } from '@/lib/portal-profile'
 import { getStripeClient } from '@/lib/stripe'
 
 export const dynamic = 'force-dynamic'
@@ -175,6 +177,7 @@ export default async function PortalPage({
 
   const snapshot = await getOrganizationSnapshotInConvex({ portalKey })
   const org = snapshot?.organization as Record<string, unknown> | undefined
+  const initialPortalProfile = profileFromOrganization(org)
   const leadCounts = snapshot?.leadCounts || { total: 0, usageRecorded: 0, unbilled: 0 }
   const recentLeadEvents = snapshot?.recentLeadEvents || []
   const onboardingStatus = typeof org?.onboardingStatus === 'string' ? org.onboardingStatus : null
@@ -257,6 +260,12 @@ export default async function PortalPage({
 
           <LeadTopUpCard />
         </div>
+
+        <PortalProfileEditor
+          initialProfile={initialPortalProfile}
+          isPreviewMode={isPreviewMode}
+          previewToken={isPreviewMode ? previewToken : undefined}
+        />
 
         <section className="mt-8 rounded-2xl border-0 bg-[var(--bg-card)] p-6 shadow-md ring-1 ring-[var(--border)]">
           <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-primary)]">Recent Leads</h2>
