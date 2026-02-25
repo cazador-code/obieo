@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth, clerkClient } from '@clerk/nextjs/server'
-import { updatePortalProfileInConvex } from '@/lib/convex'
+import { updatePortalProfileInConvex, getOrganizationSnapshotInConvex } from '@/lib/convex'
 import { sendPortalProfileChangeNotification } from '@/lib/portal-profile-notifications'
 import { normalizePortalEditableProfile } from '@/lib/portal-profile'
 
@@ -65,9 +65,22 @@ export async function PATCH(request: NextRequest) {
     primaryEmailAddressId: user.primaryEmailAddressId,
   })
 
+  // For client saves, preserve current ZIP codes and service areas (require approval workflow)
+  const snapshot = await getOrganizationSnapshotInConvex({ portalKey })
+  const currentOrg = snapshot?.organization as Record<string, unknown> | undefined
+  const profileForSave = {
+    ...validation.profile,
+    targetZipCodes: Array.isArray(currentOrg?.targetZipCodes)
+      ? (currentOrg.targetZipCodes as string[])
+      : validation.profile.targetZipCodes,
+    serviceAreas: Array.isArray(currentOrg?.serviceAreas)
+      ? (currentOrg.serviceAreas as string[])
+      : validation.profile.serviceAreas,
+  }
+
   const result = await updatePortalProfileInConvex({
     portalKey,
-    profile: validation.profile,
+    profile: profileForSave,
     actorType: 'client',
     actorUserId: userId,
     actorEmail: email || undefined,
