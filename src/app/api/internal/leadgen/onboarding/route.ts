@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { jwtVerify } from 'jose'
 import { Resend } from 'resend'
 import { submitClientOnboardingInConvex, upsertOrganizationInConvex } from '@/lib/convex'
 import { provisionLeadBillingForOnboarding } from '@/lib/stripe-onboarding'
 import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
+import { verifyInternalToolToken } from '@/lib/internal-tool-auth'
 import {
   BILLING_MODEL_LABELS,
   getBillingModelDefaults,
@@ -11,8 +11,6 @@ import {
 } from '@/lib/billing-models'
 
 export const runtime = 'nodejs'
-const INTERNAL_TOKEN_ISSUER = process.env.INTERNAL_TOOL_TOKEN_ISSUER?.trim() || 'obieo-internal-tool'
-const INTERNAL_TOKEN_AUDIENCE = process.env.INTERNAL_TOOL_TOKEN_AUDIENCE?.trim() || 'obieo-internal-api'
 
 interface OnboardingPayload {
   companyId?: string
@@ -40,28 +38,6 @@ interface OnboardingPayload {
   leadChargeThreshold?: number
   leadUnitPriceCents?: number
   notes?: string
-}
-
-function getJwtSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET
-  if (!secret || secret.length < 32) {
-    throw new Error('JWT_SECRET must be set and at least 32 characters')
-  }
-  return new TextEncoder().encode(secret)
-}
-
-async function verifyAuthToken(token: string): Promise<boolean> {
-  try {
-    const secret = getJwtSecret()
-    const verified = await jwtVerify(token, secret, {
-      issuer: INTERNAL_TOKEN_ISSUER,
-      audience: INTERNAL_TOKEN_AUDIENCE,
-      algorithms: ['HS256'],
-    })
-    return verified.payload.authorized === true
-  } catch {
-    return false
-  }
 }
 
 function cleanString(value: unknown): string | null {
@@ -208,7 +184,7 @@ export async function POST(request: NextRequest) {
   }
 
   const token = authHeader.slice(7)
-  const authorized = await verifyAuthToken(token)
+  const authorized = await verifyInternalToolToken(token)
   if (!authorized) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
   }

@@ -1,34 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import { Resend } from 'resend';
-import { jwtVerify } from 'jose';
 import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
-
-const INTERNAL_TOKEN_ISSUER = process.env.INTERNAL_TOOL_TOKEN_ISSUER?.trim() || 'obieo-internal-tool';
-const INTERNAL_TOKEN_AUDIENCE = process.env.INTERNAL_TOOL_TOKEN_AUDIENCE?.trim() || 'obieo-internal-api';
-
-// Security: JWT verification for protected endpoint
-function getJwtSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET;
-  if (!secret || secret.length < 32) {
-    throw new Error('JWT_SECRET must be set and at least 32 characters');
-  }
-  return new TextEncoder().encode(secret);
-}
-
-async function verifyAuthToken(token: string): Promise<boolean> {
-  try {
-    const secret = getJwtSecret();
-    const verified = await jwtVerify(token, secret, {
-      issuer: INTERNAL_TOKEN_ISSUER,
-      audience: INTERNAL_TOKEN_AUDIENCE,
-      algorithms: ['HS256'],
-    });
-    return verified.payload.authorized === true;
-  } catch {
-    return false;
-  }
-}
+import { verifyInternalToolToken } from '@/lib/internal-tool-auth';
 
 // Configure for longer execution time (Vercel Pro supports up to 300s)
 export const maxDuration = 300;
@@ -221,7 +195,7 @@ export async function POST(request: NextRequest) {
   }
 
   const token = authHeader.slice(7); // Remove 'Bearer ' prefix
-  const isAuthenticated = await verifyAuthToken(token);
+  const isAuthenticated = await verifyInternalToolToken(token);
   if (!isAuthenticated) {
     return NextResponse.json(
       { error: 'Unauthorized - invalid or expired token' },

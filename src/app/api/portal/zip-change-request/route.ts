@@ -6,6 +6,8 @@ import { sendPortalZipChangeRequestNotification } from '@/lib/portal-profile-not
 export const runtime = 'nodejs'
 
 const ZIP_RE = /^\d{5}$/
+const MAX_ZIPS_PER_LIST = 100
+const MAX_NOTE_LENGTH = 2000
 
 function normalizeString(value: unknown): string | null {
   if (typeof value !== 'string') return null
@@ -73,6 +75,20 @@ export async function POST(request: NextRequest) {
   const removeZipCodes = normalizeStringArray(body.removeZipCodes)
   const note = normalizeString(body.note) || undefined
 
+  if (addZipCodes.length > MAX_ZIPS_PER_LIST || removeZipCodes.length > MAX_ZIPS_PER_LIST) {
+    return NextResponse.json(
+      { success: false, error: `Limit ${MAX_ZIPS_PER_LIST} ZIPs per add/remove list.` },
+      { status: 400 }
+    )
+  }
+
+  if (note && note.length > MAX_NOTE_LENGTH) {
+    return NextResponse.json(
+      { success: false, error: `Note must be ${MAX_NOTE_LENGTH} characters or fewer.` },
+      { status: 400 }
+    )
+  }
+
   if (!hasZipRequestNotificationConfig()) {
     return NextResponse.json(
       {
@@ -115,7 +131,17 @@ export async function POST(request: NextRequest) {
   }
 
   const clerk = await clerkClient()
-  const user = await clerk.users.getUser(userId)
+  const user = await clerk.users.getUser(userId).catch((error) => {
+    console.error('Failed to load Clerk user for ZIP change request:', error)
+    return null
+  })
+  if (!user) {
+    return NextResponse.json(
+      { success: false, error: 'Unable to fetch user from Clerk' },
+      { status: 502 }
+    )
+  }
+
   const portalKey = getPortalKeyFromMetadata((user.publicMetadata as Record<string, unknown> | null) || null)
   if (!portalKey) {
     return NextResponse.json(

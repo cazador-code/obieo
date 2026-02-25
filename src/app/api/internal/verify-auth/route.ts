@@ -1,53 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SignJWT, jwtVerify } from 'jose';
 import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import {
+  createInternalToolToken,
+  isInternalToolJwtConfigured,
+  verifyInternalToolToken,
+} from '@/lib/internal-tool-auth';
 
 // JWT configuration
 // This is an internal tool gate, not customer auth. Keep it stable and low-friction.
 const TOKEN_EXPIRATION = process.env.INTERNAL_TOOL_TOKEN_EXPIRATION?.trim() || '30d';
-const TOKEN_ISSUER = process.env.INTERNAL_TOOL_TOKEN_ISSUER?.trim() || 'obieo-internal-tool';
-const TOKEN_AUDIENCE = process.env.INTERNAL_TOOL_TOKEN_AUDIENCE?.trim() || 'obieo-internal-api';
-
-// Get the secret as Uint8Array for jose
-function getJwtSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET;
-  if (!secret || secret.length < 32) {
-    throw new Error('JWT_SECRET must be set and at least 32 characters');
-  }
-  return new TextEncoder().encode(secret);
-}
-
-function isJwtSecretConfigured(): boolean {
-  const secret = process.env.JWT_SECRET;
-  return Boolean(secret && secret.length >= 32);
-}
 
 // Create a signed JWT with expiration
 async function createToken(): Promise<string> {
-  const secret = getJwtSecret();
-  return new SignJWT({ authorized: true })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setIssuer(TOKEN_ISSUER)
-    .setAudience(TOKEN_AUDIENCE)
-    .setExpirationTime(TOKEN_EXPIRATION)
-    .sign(secret);
+  return createInternalToolToken(TOKEN_EXPIRATION);
 }
 
 // Verify a JWT token
 async function verifyToken(token: string): Promise<boolean> {
-  try {
-    const secret = getJwtSecret();
-    const verified = await jwtVerify(token, secret, {
-      issuer: TOKEN_ISSUER,
-      audience: TOKEN_AUDIENCE,
-      algorithms: ['HS256'],
-    });
-    return verified.payload.authorized === true;
-  } catch {
-    // Token is invalid or expired
-    return false;
-  }
+  return verifyInternalToolToken(token);
 }
 
 export async function POST(request: NextRequest) {
@@ -71,7 +41,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!isJwtSecretConfigured()) {
+    if (!isInternalToolJwtConfigured()) {
       console.error('JWT_SECRET not configured or too short');
       return NextResponse.json(
         { valid: false, error: 'Server misconfigured: JWT_SECRET is missing or too short.' },

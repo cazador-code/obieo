@@ -274,6 +274,11 @@ export default function InternalManualOnboardingPage() {
         submissionId?: string
         organizationId?: string
       }>(response)
+      if (response.status === 401) {
+        clearStoredAuthToken()
+        setIsAuthenticated(false)
+        throw new Error('Session expired. Refresh and authenticate again.')
+      }
 
       if (!response.ok || !payload?.success || !payload.portalKey || !payload.submissionId || !payload.organizationId) {
         throw new Error(payload?.error || `Failed to store onboarding answers (HTTP ${response.status})`)

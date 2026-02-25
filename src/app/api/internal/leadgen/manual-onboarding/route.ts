@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { jwtVerify } from 'jose'
 import { submitClientOnboardingInConvex } from '@/lib/convex'
 import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { getBillingModelDefaults, normalizeBillingModel } from '@/lib/billing-models'
+import { verifyInternalToolToken } from '@/lib/internal-tool-auth'
 
 export const runtime = 'nodejs'
-const INTERNAL_TOKEN_ISSUER = process.env.INTERNAL_TOOL_TOKEN_ISSUER?.trim() || 'obieo-internal-tool'
-const INTERNAL_TOKEN_AUDIENCE = process.env.INTERNAL_TOOL_TOKEN_AUDIENCE?.trim() || 'obieo-internal-api'
+const MIN_TARGET_ZIP_COUNT = 5
+const MAX_TARGET_ZIP_COUNT = 10
 
 interface ManualOnboardingPayload {
   companyId?: string
@@ -35,28 +35,6 @@ interface ManualOnboardingPayload {
   leadUnitPriceCents?: number
   notes?: string
   captureMethod?: string
-}
-
-function getJwtSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET
-  if (!secret || secret.length < 32) {
-    throw new Error('JWT_SECRET must be set and at least 32 characters')
-  }
-  return new TextEncoder().encode(secret)
-}
-
-async function verifyAuthToken(token: string): Promise<boolean> {
-  try {
-    const secret = getJwtSecret()
-    const verified = await jwtVerify(token, secret, {
-      issuer: INTERNAL_TOKEN_ISSUER,
-      audience: INTERNAL_TOKEN_AUDIENCE,
-      algorithms: ['HS256'],
-    })
-    return verified.payload.authorized === true
-  } catch {
-    return false
-  }
 }
 
 function cleanString(value: unknown): string | null {
@@ -166,7 +144,7 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.slice(7)
-    const authorized = await verifyAuthToken(token)
+    const authorized = await verifyInternalToolToken(token)
     if (!authorized) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
@@ -211,6 +189,18 @@ export async function POST(request: NextRequest) {
     if (serviceAreas.length === 0) {
       return NextResponse.json(
         { success: false, error: 'At least one service area is required' },
+        { status: 400 }
+      )
+    }
+    if (targetZipCodes.length < MIN_TARGET_ZIP_COUNT) {
+      return NextResponse.json(
+        { success: false, error: `At least ${MIN_TARGET_ZIP_COUNT} target ZIP codes are required` },
+        { status: 400 }
+      )
+    }
+    if (targetZipCodes.length > MAX_TARGET_ZIP_COUNT) {
+      return NextResponse.json(
+        { success: false, error: `Maximum ${MAX_TARGET_ZIP_COUNT} target ZIP codes allowed` },
         { status: 400 }
       )
     }
