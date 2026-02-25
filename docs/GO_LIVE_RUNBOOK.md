@@ -1,6 +1,6 @@
 # Obieo Lead Intake + Stripe Billing + Activation (Go-Live Runbook)
 
-Last updated: 2026-02-13
+Last updated: 2026-02-25
 
 This document captures what we built, how it works end-to-end, how to test locally, and what needs to happen to go live.
 
@@ -255,6 +255,21 @@ Notes:
 ---
 
 ## 8) Go-Live Checklist (Production)
+
+### 0. Release sync guard (Convex + Vercel)
+Keep app code and Convex functions in lockstep.
+
+This repo includes a GitHub Actions workflow:
+- `.github/workflows/convex-deploy-prod.yml`
+
+What it does:
+- Runs on every push to `main` that touches Convex/app-bridge files.
+- Deploys Convex functions with `npx convex deploy --yes`.
+- Fails fast if `CONVEX_DEPLOY_KEY` is missing.
+
+Required setup (one-time):
+- In GitHub repo settings, add Actions secret `CONVEX_DEPLOY_KEY`.
+- Use a Convex production deploy key for your `striped-camel-978` deployment.
 
 ### 1. Hosting env vars
 On Vercel (or your host), set all required env vars (no `.env.local` in prod).
