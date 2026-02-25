@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { updatePortalProfileInConvex, getOrganizationSnapshotInConvex } from '@/lib/convex'
 import { sendPortalProfileChangeNotification } from '@/lib/portal-profile-notifications'
-import { normalizePortalEditableProfile } from '@/lib/portal-profile'
+import { normalizePortalEditableProfile, profileFromOrganization } from '@/lib/portal-profile'
 
 export const runtime = 'nodejs'
 
@@ -68,14 +68,32 @@ export async function PATCH(request: NextRequest) {
   // For client saves, preserve current ZIP codes and service areas (require approval workflow)
   const snapshot = await getOrganizationSnapshotInConvex({ portalKey })
   const currentOrg = snapshot?.organization as Record<string, unknown> | undefined
+  if (!currentOrg) {
+    return NextResponse.json(
+      { success: false, error: 'Organization not found for this portal.' },
+      { status: 404 }
+    )
+  }
+
+  const hasLockedCoverageFields =
+    Array.isArray(currentOrg.targetZipCodes) &&
+    Array.isArray(currentOrg.serviceAreas)
+  if (!hasLockedCoverageFields) {
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          'Coverage settings are not initialized for this portal yet. Contact support to update ZIP codes and service areas.',
+      },
+      { status: 409 }
+    )
+  }
+
+  const currentProfile = profileFromOrganization(currentOrg)
   const profileForSave = {
     ...validation.profile,
-    targetZipCodes: Array.isArray(currentOrg?.targetZipCodes)
-      ? (currentOrg.targetZipCodes as string[])
-      : validation.profile.targetZipCodes,
-    serviceAreas: Array.isArray(currentOrg?.serviceAreas)
-      ? (currentOrg.serviceAreas as string[])
-      : validation.profile.serviceAreas,
+    targetZipCodes: currentProfile.targetZipCodes,
+    serviceAreas: currentProfile.serviceAreas,
   }
 
   const result = await updatePortalProfileInConvex({

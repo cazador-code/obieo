@@ -23,13 +23,11 @@ export default function ZipRequestActions({ request }: { request: ZipChangeReque
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          authorization: 'Basic ' + btoa('admin:admin'),
         },
         body: JSON.stringify({
           requestId: request._id,
           decision,
           resolutionNotes: decision === 'reject' ? rejectNotes.trim() : undefined,
-          resolvedBy: 'dashboard-admin',
         }),
       })
 

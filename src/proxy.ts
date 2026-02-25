@@ -26,6 +26,7 @@ const INTERNAL_AUTH_BASE_PATHS = [
   '/api/internal/leadgen/payment-link',
   '/api/internal/leadgen/payment-confirmation',
   '/api/internal/portal/profile',
+  '/api/internal/zip-change-request/resolve',
 ] as const
 
 function unauthorized(): NextResponse {

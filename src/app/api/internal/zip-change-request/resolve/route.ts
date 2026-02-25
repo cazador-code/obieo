@@ -3,27 +3,82 @@ import { resolveZipChangeRequestInConvex } from '@/lib/convex'
 
 export const runtime = 'nodejs'
 
-function verifyBasicAuth(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader?.startsWith('Basic ')) return false
+function unauthorizedResponse(): NextResponse {
+  return new NextResponse('Authorization required.', {
+    status: 401,
+    headers: {
+      'WWW-Authenticate': 'Basic realm="Obieo Internal", charset="UTF-8"',
+    },
+  })
+}
 
-  const expected = process.env.INTERNAL_API_BASIC_AUTH
-  if (!expected) return true // No auth configured = allow (dev only)
-
-  try {
-    const decoded = Buffer.from(authHeader.slice(6), 'base64').toString()
-    return decoded === expected
-  } catch {
-    return false
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let out = 0
+  for (let i = 0; i < a.length; i += 1) {
+    out |= a.charCodeAt(i) ^ b.charCodeAt(i)
   }
+  return out === 0
+}
+
+function decodeBasicAuthHeader(value: string): { user: string; pass: string } | null {
+  const [scheme, encoded] = value.split(' ')
+  if (scheme !== 'Basic' || !encoded) return null
+
+  let decoded = ''
+  try {
+    decoded = Buffer.from(encoded, 'base64').toString('utf8')
+  } catch {
+    return null
+  }
+
+  const idx = decoded.indexOf(':')
+  if (idx < 0) return null
+
+  const user = decoded.slice(0, idx).trim()
+  const pass = decoded.slice(idx + 1)
+  if (!user || !pass) return null
+
+  return { user, pass }
+}
+
+function requireInternalBasicAuth(
+  request: NextRequest
+): { ok: true; user: string } | { ok: false; response: NextResponse } {
+  const expectedUser = process.env.INTERNAL_LEADGEN_BASIC_AUTH_USER || ''
+  const expectedPass = process.env.INTERNAL_LEADGEN_BASIC_AUTH_PASS || ''
+  if (!expectedUser || !expectedPass) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { success: false, error: 'Internal tools auth is not configured.' },
+        { status: 503 }
+      ),
+    }
+  }
+
+  const creds = decodeBasicAuthHeader(request.headers.get('authorization') || '')
+  if (!creds) {
+    return { ok: false, response: unauthorizedResponse() }
+  }
+
+  const ok =
+    timingSafeEqual(creds.user, expectedUser) &&
+    timingSafeEqual(creds.pass, expectedPass)
+  if (!ok) {
+    return { ok: false, response: unauthorizedResponse() }
+  }
+
+  return { ok: true, user: creds.user }
 }
 
 export async function POST(request: NextRequest) {
-  if (!verifyBasicAuth(request)) {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+  const authResult = requireInternalBasicAuth(request)
+  if (!authResult.ok) {
+    return authResult.response
   }
 
-  let body: { requestId?: unknown; decision?: unknown; resolutionNotes?: unknown; resolvedBy?: unknown }
+  let body: { requestId?: unknown; decision?: unknown; resolutionNotes?: unknown }
   try {
     body = await request.json()
   } catch {
@@ -47,7 +102,7 @@ export async function POST(request: NextRequest) {
       requestId: body.requestId.trim(),
       decision: body.decision,
       resolutionNotes: typeof body.resolutionNotes === 'string' ? body.resolutionNotes.trim().slice(0, 1000) : undefined,
-      resolvedBy: typeof body.resolvedBy === 'string' ? body.resolvedBy.trim() : 'admin',
+      resolvedBy: authResult.user,
     })
 
     if (!result) {
