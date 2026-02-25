@@ -43,12 +43,17 @@ function getPrimaryEmail(user: {
 
 function hasZipRequestNotificationConfig(): boolean {
   const apiKey = process.env.RESEND_API_KEY?.trim()
-  const recipients =
+  const recipientsRaw =
     process.env.ONBOARDING_NOTIFICATION_EMAILS ||
     process.env.LEAD_OPS_NOTIFICATION_EMAILS ||
     process.env.NOTIFICATION_EMAIL ||
     ''
-  return Boolean(apiKey && recipients.trim())
+  const recipients = recipientsRaw
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+
+  return Boolean(apiKey && recipients.length > 0)
 }
 
 export async function POST(request: NextRequest) {

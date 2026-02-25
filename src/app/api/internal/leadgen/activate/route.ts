@@ -6,6 +6,8 @@ import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { activateCustomer, getActivationCandidateFromCheckout } from '@/lib/stripe-activation'
 
 export const runtime = 'nodejs'
+const INTERNAL_TOKEN_ISSUER = process.env.INTERNAL_TOOL_TOKEN_ISSUER?.trim() || 'obieo-internal-tool'
+const INTERNAL_TOKEN_AUDIENCE = process.env.INTERNAL_TOOL_TOKEN_AUDIENCE?.trim() || 'obieo-internal-api'
 
 type RequestBody = {
   sessionId?: unknown
@@ -24,8 +26,12 @@ function getJwtSecret(): Uint8Array {
 async function verifyAuthToken(token: string): Promise<boolean> {
   try {
     const secret = getJwtSecret()
-    await jwtVerify(token, secret)
-    return true
+    const verified = await jwtVerify(token, secret, {
+      issuer: INTERNAL_TOKEN_ISSUER,
+      audience: INTERNAL_TOKEN_AUDIENCE,
+      algorithms: ['HS256'],
+    })
+    return verified.payload.authorized === true
   } catch {
     return false
   }

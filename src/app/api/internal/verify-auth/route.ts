@@ -5,6 +5,8 @@ import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 // JWT configuration
 // This is an internal tool gate, not customer auth. Keep it stable and low-friction.
 const TOKEN_EXPIRATION = process.env.INTERNAL_TOOL_TOKEN_EXPIRATION?.trim() || '30d';
+const TOKEN_ISSUER = process.env.INTERNAL_TOOL_TOKEN_ISSUER?.trim() || 'obieo-internal-tool';
+const TOKEN_AUDIENCE = process.env.INTERNAL_TOOL_TOKEN_AUDIENCE?.trim() || 'obieo-internal-api';
 
 // Get the secret as Uint8Array for jose
 function getJwtSecret(): Uint8Array {
@@ -26,6 +28,8 @@ async function createToken(): Promise<string> {
   return new SignJWT({ authorized: true })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
+    .setIssuer(TOKEN_ISSUER)
+    .setAudience(TOKEN_AUDIENCE)
     .setExpirationTime(TOKEN_EXPIRATION)
     .sign(secret);
 }
@@ -34,8 +38,12 @@ async function createToken(): Promise<string> {
 async function verifyToken(token: string): Promise<boolean> {
   try {
     const secret = getJwtSecret();
-    await jwtVerify(token, secret);
-    return true;
+    const verified = await jwtVerify(token, secret, {
+      issuer: TOKEN_ISSUER,
+      audience: TOKEN_AUDIENCE,
+      algorithms: ['HS256'],
+    });
+    return verified.payload.authorized === true;
   } catch {
     // Token is invalid or expired
     return false;

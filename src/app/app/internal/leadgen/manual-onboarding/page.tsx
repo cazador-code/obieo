@@ -94,6 +94,18 @@ async function parseJsonResponse<T>(response: Response): Promise<T | null> {
   }
 }
 
+function getStoredAuthToken(): string | null {
+  return sessionStorage.getItem(STORED_AUTH_KEY)
+}
+
+function setStoredAuthToken(token: string): void {
+  sessionStorage.setItem(STORED_AUTH_KEY, token)
+}
+
+function clearStoredAuthToken(): void {
+  sessionStorage.removeItem(STORED_AUTH_KEY)
+}
+
 export default function InternalManualOnboardingPage() {
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -106,7 +118,7 @@ export default function InternalManualOnboardingPage() {
   const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null)
 
   useEffect(() => {
-    const token = localStorage.getItem(STORED_AUTH_KEY)
+    const token = getStoredAuthToken()
     if (!token) {
       setCheckingAuth(false)
       return
@@ -121,7 +133,7 @@ export default function InternalManualOnboardingPage() {
         })
 
         if (!response.ok) {
-          localStorage.removeItem(STORED_AUTH_KEY)
+          clearStoredAuthToken()
           setIsAuthenticated(false)
           return
         }
@@ -130,11 +142,11 @@ export default function InternalManualOnboardingPage() {
         if (data?.valid) {
           setIsAuthenticated(true)
         } else {
-          localStorage.removeItem(STORED_AUTH_KEY)
+          clearStoredAuthToken()
           setIsAuthenticated(false)
         }
       } catch {
-        localStorage.removeItem(STORED_AUTH_KEY)
+        clearStoredAuthToken()
         setIsAuthenticated(false)
       } finally {
         setCheckingAuth(false)
@@ -168,7 +180,7 @@ export default function InternalManualOnboardingPage() {
 
       const data = await parseJsonResponse<{ valid?: boolean; token?: string; error?: string }>(response)
       if (response.ok && data?.valid && data.token) {
-        localStorage.setItem(STORED_AUTH_KEY, data.token)
+        setStoredAuthToken(data.token)
         setIsAuthenticated(true)
         return
       }
@@ -190,7 +202,7 @@ export default function InternalManualOnboardingPage() {
     setSubmitError(null)
     setSubmitResult(null)
 
-    const authToken = localStorage.getItem(STORED_AUTH_KEY)
+    const authToken = getStoredAuthToken()
     if (!authToken) {
       setSubmitError('Session expired. Refresh and authenticate again.')
       return
@@ -297,7 +309,11 @@ export default function InternalManualOnboardingPage() {
             Internal tool for recording onboarding answers collected by phone or chat.
           </p>
           <form onSubmit={handlePasswordSubmit} className="mt-5 space-y-4">
+            <label htmlFor="manual-onboarding-password" className="sr-only">
+              Internal tool password
+            </label>
             <input
+              id="manual-onboarding-password"
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -361,8 +377,11 @@ export default function InternalManualOnboardingPage() {
         <form onSubmit={handleSubmit} className="mt-6 space-y-6">
           <section className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Company Name *</label>
+              <label htmlFor="companyName" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                Company Name *
+              </label>
               <input
+                id="companyName"
                 value={form.companyName}
                 onChange={(event) => setField('companyName', event.target.value)}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
@@ -370,8 +389,11 @@ export default function InternalManualOnboardingPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Portal Key (optional)</label>
+              <label htmlFor="portalKey" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                Portal Key (optional)
+              </label>
               <input
+                id="portalKey"
                 value={form.portalKey}
                 onChange={(event) => setField('portalKey', event.target.value)}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
@@ -379,8 +401,11 @@ export default function InternalManualOnboardingPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Account Login Email</label>
+              <label htmlFor="accountLoginEmail" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                Account Login Email
+              </label>
               <input
+                id="accountLoginEmail"
                 type="email"
                 value={form.accountLoginEmail}
                 onChange={(event) => setField('accountLoginEmail', event.target.value)}
@@ -389,8 +414,11 @@ export default function InternalManualOnboardingPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Business Phone</label>
+              <label htmlFor="businessPhone" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                Business Phone
+              </label>
               <input
+                id="businessPhone"
                 value={form.businessPhone}
                 onChange={(event) => setField('businessPhone', event.target.value)}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
@@ -398,8 +426,11 @@ export default function InternalManualOnboardingPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">First Name</label>
+              <label htmlFor="accountFirstName" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                First Name
+              </label>
               <input
+                id="accountFirstName"
                 value={form.accountFirstName}
                 onChange={(event) => setField('accountFirstName', event.target.value)}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
@@ -407,8 +438,11 @@ export default function InternalManualOnboardingPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Last Name</label>
+              <label htmlFor="accountLastName" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                Last Name
+              </label>
               <input
+                id="accountLastName"
                 value={form.accountLastName}
                 onChange={(event) => setField('accountLastName', event.target.value)}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
@@ -416,8 +450,11 @@ export default function InternalManualOnboardingPage() {
               />
             </div>
             <div className="md:col-span-2">
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Business Address</label>
+              <label htmlFor="businessAddress" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                Business Address
+              </label>
               <input
+                id="businessAddress"
                 value={form.businessAddress}
                 onChange={(event) => setField('businessAddress', event.target.value)}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
@@ -440,10 +477,11 @@ export default function InternalManualOnboardingPage() {
               </p>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+              <label htmlFor="serviceAreasText" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
                 Service Areas * (comma or new line)
               </label>
               <textarea
+                id="serviceAreasText"
                 value={form.serviceAreasText}
                 onChange={(event) => setField('serviceAreasText', event.target.value)}
                 className="min-h-28 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
@@ -451,10 +489,11 @@ export default function InternalManualOnboardingPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+              <label htmlFor="targetZipCodesText" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
                 Target ZIPs (comma or new line)
               </label>
               <textarea
+                id="targetZipCodesText"
                 value={form.targetZipCodesText}
                 onChange={(event) => setField('targetZipCodesText', event.target.value)}
                 className="min-h-28 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
@@ -462,10 +501,11 @@ export default function InternalManualOnboardingPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+              <label htmlFor="serviceTypesText" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
                 Service Types (comma or new line)
               </label>
               <textarea
+                id="serviceTypesText"
                 value={form.serviceTypesText}
                 onChange={(event) => setField('serviceTypesText', event.target.value)}
                 className="min-h-28 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
@@ -473,10 +513,11 @@ export default function InternalManualOnboardingPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+              <label htmlFor="leadRoutingPhonesText" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
                 Lead Destination Phones * (comma or new line)
               </label>
               <textarea
+                id="leadRoutingPhonesText"
                 value={form.leadRoutingPhonesText}
                 onChange={(event) => setField('leadRoutingPhonesText', event.target.value)}
                 className="min-h-28 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
@@ -485,8 +526,11 @@ export default function InternalManualOnboardingPage() {
               <p className="mt-1 text-xs text-[var(--text-muted)]">At least one destination phone or destination email is required.</p>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Lead Destination Emails</label>
+              <label htmlFor="leadRoutingEmailsText" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                Lead Destination Emails
+              </label>
               <textarea
+                id="leadRoutingEmailsText"
                 value={form.leadRoutingEmailsText}
                 onChange={(event) => setField('leadRoutingEmailsText', event.target.value)}
                 className="min-h-28 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
@@ -496,8 +540,11 @@ export default function InternalManualOnboardingPage() {
             </div>
             <div className="grid gap-4">
               <div>
-                <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Alert Phone</label>
+                <label htmlFor="leadNotificationPhone" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                  Alert Phone
+                </label>
                 <input
+                  id="leadNotificationPhone"
                   value={form.leadNotificationPhone}
                   onChange={(event) => setField('leadNotificationPhone', event.target.value)}
                   className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
@@ -506,8 +553,11 @@ export default function InternalManualOnboardingPage() {
                 <p className="mt-1 text-xs text-[var(--text-muted)]">Optional alert contact only.</p>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Alert Email</label>
+                <label htmlFor="leadNotificationEmail" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                  Alert Email
+                </label>
                 <input
+                  id="leadNotificationEmail"
                   type="email"
                   value={form.leadNotificationEmail}
                   onChange={(event) => setField('leadNotificationEmail', event.target.value)}
@@ -521,8 +571,11 @@ export default function InternalManualOnboardingPage() {
 
           <section className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Business Email For Prospects</label>
+              <label htmlFor="leadProspectEmail" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                Business Email For Prospects
+              </label>
               <input
+                id="leadProspectEmail"
                 type="email"
                 value={form.leadProspectEmail}
                 onChange={(event) => setField('leadProspectEmail', event.target.value)}
@@ -532,8 +585,11 @@ export default function InternalManualOnboardingPage() {
               <p className="mt-1 text-xs text-[var(--text-muted)]">Customer-facing business email for prospect messaging context.</p>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Billing Contact Name</label>
+              <label htmlFor="billingContactName" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                Billing Contact Name
+              </label>
               <input
+                id="billingContactName"
                 value={form.billingContactName}
                 onChange={(event) => setField('billingContactName', event.target.value)}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
@@ -541,8 +597,11 @@ export default function InternalManualOnboardingPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Billing Contact Email</label>
+              <label htmlFor="billingContactEmail" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                Billing Contact Email
+              </label>
               <input
+                id="billingContactEmail"
                 type="email"
                 value={form.billingContactEmail}
                 onChange={(event) => setField('billingContactEmail', event.target.value)}
@@ -551,8 +610,11 @@ export default function InternalManualOnboardingPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Desired Leads Per Day</label>
+              <label htmlFor="desiredLeadVolumeDaily" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                Desired Leads Per Day
+              </label>
               <input
+                id="desiredLeadVolumeDaily"
                 type="number"
                 min={1}
                 value={form.desiredLeadVolumeDaily}
@@ -561,8 +623,11 @@ export default function InternalManualOnboardingPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Operating Hours Start</label>
+              <label htmlFor="operatingHoursStart" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                Operating Hours Start
+              </label>
               <input
+                id="operatingHoursStart"
                 type="time"
                 value={form.operatingHoursStart}
                 onChange={(event) => setField('operatingHoursStart', event.target.value)}
@@ -570,8 +635,11 @@ export default function InternalManualOnboardingPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Operating Hours End</label>
+              <label htmlFor="operatingHoursEnd" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                Operating Hours End
+              </label>
               <input
+                id="operatingHoursEnd"
                 type="time"
                 value={form.operatingHoursEnd}
                 onChange={(event) => setField('operatingHoursEnd', event.target.value)}
@@ -581,15 +649,17 @@ export default function InternalManualOnboardingPage() {
           </section>
 
           <section className="grid gap-4 md:grid-cols-2">
-            <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-semibold text-[var(--text-primary)]">Billing Model</label>
+            <fieldset className="md:col-span-2">
+              <legend className="mb-2 block text-sm font-semibold text-[var(--text-primary)]">Billing Model</legend>
               <div className="grid gap-2 md:grid-cols-2">
                 {(['pay_per_lead_perpetual', 'commitment_40_with_10_upfront'] as BillingModel[]).map((model) => {
                   const selected = form.billingModel === model
                   return (
                     <button
                       key={model}
+                      id={`billingModel-${model}`}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => applyBillingModel(model)}
                       className={[
                         'rounded-xl border p-3 text-left text-sm',
@@ -603,10 +673,13 @@ export default function InternalManualOnboardingPage() {
                   )
                 })}
               </div>
-            </div>
+            </fieldset>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Price Per Lead (USD)</label>
+              <label htmlFor="leadUnitPriceDollars" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                Price Per Lead (USD)
+              </label>
               <input
+                id="leadUnitPriceDollars"
                 type="number"
                 min={1}
                 step={1}
@@ -616,8 +689,11 @@ export default function InternalManualOnboardingPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Charge Threshold (leads)</label>
+              <label htmlFor="leadChargeThreshold" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                Charge Threshold (leads)
+              </label>
               <input
+                id="leadChargeThreshold"
                 type="number"
                 min={1}
                 value={form.leadChargeThreshold}
@@ -627,8 +703,11 @@ export default function InternalManualOnboardingPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">Capture Method</label>
+              <label htmlFor="captureMethod" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+                Capture Method
+              </label>
               <select
+                id="captureMethod"
                 value={form.captureMethod}
                 onChange={(event) => setField('captureMethod', event.target.value)}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
@@ -643,10 +722,11 @@ export default function InternalManualOnboardingPage() {
           </section>
 
           <section>
-            <label className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
+            <label htmlFor="notes" className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
               Notes / Raw Answers
             </label>
             <textarea
+              id="notes"
               value={form.notes}
               onChange={(event) => setField('notes', event.target.value)}
               className="min-h-36 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
