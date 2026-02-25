@@ -1147,3 +1147,200 @@ export const listOnboardingSubmissionsForOps = query({
       .slice(0, limit)
   },
 })
+
+export const submitZipChangeRequest = mutation({
+  args: {
+    authSecret: v.string(),
+    portalKey: v.string(),
+    requestedZipCodes: v.array(v.string()),
+    reason: v.optional(v.string()),
+    requestedBy: v.optional(v.string()),
+    requestedByEmail: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+
+    const organization = await getOrganizationByPortalKey(ctx, args.portalKey)
+    if (!organization) {
+      throw new Error(`Unknown portal key: ${args.portalKey}`)
+    }
+
+    const existing = await ctx.db
+      .query('zipChangeRequests')
+      .withIndex('by_portal_and_status', (q) =>
+        q.eq('portalKey', args.portalKey).eq('status', 'pending')
+      )
+      .first()
+
+    if (existing) {
+      throw new Error('A ZIP change request is already pending. Wait for it to be reviewed before submitting another.')
+    }
+
+    const currentZipCodes = normalizeList(organization.targetZipCodes)
+    const requestedZipCodes = normalizeList(args.requestedZipCodes)
+    const addedZipCodes = diffAdded(currentZipCodes, requestedZipCodes)
+    const removedZipCodes = diffRemoved(currentZipCodes, requestedZipCodes)
+
+    if (addedZipCodes.length === 0 && removedZipCodes.length === 0) {
+      throw new Error('No changes detected between current and requested ZIP codes.')
+    }
+
+    const now = Date.now()
+    const requestId = await ctx.db.insert('zipChangeRequests', {
+      organizationId: organization._id,
+      portalKey: args.portalKey,
+      status: 'pending',
+      currentZipCodes,
+      requestedZipCodes,
+      addedZipCodes,
+      removedZipCodes,
+      reason: args.reason,
+      requestedBy: args.requestedBy,
+      requestedByEmail: args.requestedByEmail,
+      requestedAt: now,
+    })
+
+    await queueEmailNotifications(ctx, {
+      organizationId: organization._id,
+      portalKey: args.portalKey,
+      kind: 'zip_change_requested',
+      subject: `ZIP change request: ${organization.name || args.portalKey}`,
+      body: [
+        `ZIP change request submitted for ${organization.name || args.portalKey}.`,
+        `Added: ${addedZipCodes.length > 0 ? addedZipCodes.join(', ') : 'none'}`,
+        `Removed: ${removedZipCodes.length > 0 ? removedZipCodes.join(', ') : 'none'}`,
+        args.reason ? `Reason: ${args.reason}` : '',
+      ].filter(Boolean).join('\n'),
+      payload: {
+        requestId,
+        portalKey: args.portalKey,
+        addedZipCodes,
+        removedZipCodes,
+        reason: args.reason,
+      },
+    })
+
+    return {
+      requestId,
+      status: 'pending' as const,
+      addedZipCodes,
+      removedZipCodes,
+    }
+  },
+})
+
+export const resolveZipChangeRequest = mutation({
+  args: {
+    authSecret: v.string(),
+    requestId: v.id('zipChangeRequests'),
+    decision: v.union(v.literal('approve'), v.literal('reject')),
+    resolutionNotes: v.optional(v.string()),
+    resolvedBy: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+
+    const request = await ctx.db.get(args.requestId)
+    if (!request) {
+      throw new Error('ZIP change request not found')
+    }
+
+    if (request.status !== 'pending') {
+      return { updated: false, reason: 'Request is not in pending status' }
+    }
+
+    const organization = await getOrganizationByPortalKey(ctx, request.portalKey)
+    if (!organization) {
+      throw new Error(`Organization not found for portal key: ${request.portalKey}`)
+    }
+
+    const now = Date.now()
+    const nextStatus = args.decision === 'approve' ? 'approved' : 'rejected'
+
+    await ctx.db.patch(request._id, {
+      status: nextStatus,
+      resolvedBy: args.resolvedBy,
+      resolvedAt: now,
+      resolutionNotes: args.resolutionNotes,
+    })
+
+    if (args.decision === 'approve') {
+      await ctx.db.patch(organization._id, {
+        targetZipCodes: request.requestedZipCodes,
+        updatedAt: now,
+      })
+    }
+
+    await queueEmailNotifications(ctx, {
+      organizationId: organization._id,
+      portalKey: request.portalKey,
+      kind: 'zip_change_resolved',
+      subject: `ZIP change ${nextStatus}: ${organization.name || request.portalKey}`,
+      body: args.decision === 'approve'
+        ? `ZIP change request approved for ${organization.name || request.portalKey}. New ZIPs are now active.`
+        : `ZIP change request rejected for ${organization.name || request.portalKey}. ${args.resolutionNotes || ''}`,
+      payload: {
+        requestId: request._id,
+        decision: args.decision,
+        portalKey: request.portalKey,
+        resolutionNotes: args.resolutionNotes,
+      },
+    })
+
+    return {
+      updated: true,
+      requestId: request._id,
+      status: nextStatus,
+      portalKey: request.portalKey,
+    }
+  },
+})
+
+export const getPendingZipChangeRequest = query({
+  args: {
+    authSecret: v.string(),
+    portalKey: v.string(),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+
+    return await ctx.db
+      .query('zipChangeRequests')
+      .withIndex('by_portal_and_status', (q) =>
+        q.eq('portalKey', args.portalKey).eq('status', 'pending')
+      )
+      .first()
+  },
+})
+
+export const getLatestZipChangeRequest = query({
+  args: {
+    authSecret: v.string(),
+    portalKey: v.string(),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+
+    const all = await ctx.db
+      .query('zipChangeRequests')
+      .withIndex('by_portalKey', (q) => q.eq('portalKey', args.portalKey))
+      .collect()
+
+    if (all.length === 0) return null
+    return all.sort((a, b) => b.requestedAt - a.requestedAt)[0]
+  },
+})
+
+export const listPendingZipChangeRequestsForOps = query({
+  args: {
+    authSecret: v.string(),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+
+    return await ctx.db
+      .query('zipChangeRequests')
+      .filter((q) => q.eq(q.field('status'), 'pending'))
+      .collect()
+  },
+})
