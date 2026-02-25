@@ -4,10 +4,12 @@ import { redirect } from 'next/navigation'
 import LeadTopUpCard from './LeadTopUpCard'
 import PortalProfileEditor from './PortalProfileEditor'
 import {
+  getLatestZipChangeRequestInConvex,
   getLeadgenIntentByBillingEmailInConvex,
   getLeadgenIntentByPortalKeyInConvex,
   getOrganizationSnapshotInConvex,
   type LeadEventSnapshot,
+  type ZipChangeRequestSnapshot,
 } from '@/lib/convex'
 import { resolveInternalPortalPreviewToken } from '@/lib/internal-portal-preview'
 import { profileFromOrganization } from '@/lib/portal-profile'
@@ -176,6 +178,7 @@ export default async function PortalPage({
   }
 
   const snapshot = await getOrganizationSnapshotInConvex({ portalKey })
+  const latestZipRequest = await getLatestZipChangeRequestInConvex({ portalKey })
   const org = snapshot?.organization as Record<string, unknown> | undefined
   const initialPortalProfile = profileFromOrganization(org)
   const leadCounts = snapshot?.leadCounts || { total: 0, usageRecorded: 0, unbilled: 0 }
@@ -265,6 +268,10 @@ export default async function PortalPage({
           initialProfile={initialPortalProfile}
           isPreviewMode={isPreviewMode}
           previewToken={isPreviewMode ? previewToken : undefined}
+          latestZipRequest={latestZipRequest}
+          serviceAreas={
+            Array.isArray(org?.serviceAreas) ? (org.serviceAreas as string[]) : []
+          }
         />
 
         <section className="mt-8 rounded-2xl border-0 bg-[var(--bg-card)] p-6 shadow-md ring-1 ring-[var(--border)]">
