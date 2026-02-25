@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getInternalClientsDashboardData, type InternalClientRow } from '@/lib/internal-clients'
 import { createInternalPortalPreviewToken } from '@/lib/internal-portal-preview'
+import ZipRequestActions from './ZipRequestActions'
 
 export const dynamic = 'force-dynamic'
 
@@ -121,7 +122,7 @@ export default async function InternalClientsPage({
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-7">
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-4">
               <div className="text-xs uppercase tracking-wide text-[var(--text-muted)]">Total</div>
               <div className="mt-1 text-2xl font-bold text-[var(--text-primary)]">{summary.total}</div>
@@ -145,6 +146,10 @@ export default async function InternalClientsPage({
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-4">
               <div className="text-xs uppercase tracking-wide text-[var(--text-muted)]">Onboarding</div>
               <div className="mt-1 text-2xl font-bold text-violet-700">{summary.onboarding}</div>
+            </div>
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-4">
+              <div className="text-xs uppercase tracking-wide text-[var(--text-muted)]">ZIP Requests</div>
+              <div className="mt-1 text-2xl font-bold text-rose-700">{summary.pendingZipRequests}</div>
             </div>
           </div>
 
@@ -223,6 +228,13 @@ export default async function InternalClientsPage({
                         <div className="text-xs text-[var(--text-secondary)]">
                           onboarding: {row.onboardingStatus || 'none'}
                         </div>
+                        {row.pendingZipRequest && (
+                          <div className="mt-2">
+                            <span className="inline-flex rounded-full border border-rose-300 bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">
+                              ZIP change pending
+                            </span>
+                          </div>
+                        )}
                       </td>
                       <td className="border-b border-[var(--border)] px-3 py-3 text-sm text-[var(--text-secondary)]">
                         <div>model: {formatBillingModel(row.billingModel)}</div>
@@ -266,6 +278,16 @@ export default async function InternalClientsPage({
                           >
                             Payment Confirmation
                           </Link>
+                          {row.pendingZipRequest && (
+                            <details className="rounded-lg border border-rose-200 bg-rose-50 p-2">
+                              <summary className="cursor-pointer text-xs font-semibold text-rose-700">
+                                Review ZIP Request
+                              </summary>
+                              <div className="mt-2">
+                                <ZipRequestActions request={row.pendingZipRequest} />
+                              </div>
+                            </details>
+                          )}
                         </div>
                       </td>
                     </tr>

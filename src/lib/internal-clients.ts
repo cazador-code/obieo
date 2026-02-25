@@ -6,9 +6,11 @@ import {
   type LeadgenIntentSnapshot,
   type OnboardingSubmissionForOps,
   type OrganizationRecordForOps,
+  type ZipChangeRequestSnapshot,
   listLeadgenIntentsForOpsInConvex,
   listOnboardingSubmissionsForOpsInConvex,
   listOrganizationsForOpsInConvex,
+  listPendingZipChangeRequestsForOpsInConvex,
 } from '@/lib/convex'
 
 type ClientStage = 'active' | 'invited' | 'paid' | 'checkout' | 'onboarding' | 'setup'
@@ -33,6 +35,7 @@ export interface InternalClientRow {
   invitationEmails: string[]
   lastUpdatedAt: number | null
   onboardingLink: string | null
+  pendingZipRequest: ZipChangeRequestSnapshot | null
 }
 
 export interface InternalClientsSummary {
@@ -42,6 +45,7 @@ export interface InternalClientsSummary {
   paid: number
   checkout: number
   onboarding: number
+  pendingZipRequests: number
 }
 
 export interface InternalClientsDashboardData {
@@ -185,13 +189,19 @@ async function listAllClerkInvitations(): Promise<ClerkInvitationLike[]> {
 }
 
 export async function getInternalClientsDashboardData(): Promise<InternalClientsDashboardData> {
-  const [organizations, intents, submissions, users, invitations] = await Promise.all([
+  const [organizations, intents, submissions, users, invitations, pendingZipRequests] = await Promise.all([
     listOrganizationsForOpsInConvex({ limit: 1000 }),
     listLeadgenIntentsForOpsInConvex({ limit: 1000 }),
     listOnboardingSubmissionsForOpsInConvex({ limit: 1000 }),
     listAllClerkUsers(),
     listAllClerkInvitations(),
+    listPendingZipChangeRequestsForOpsInConvex(),
   ])
+
+  const zipRequestByPortalKey = new Map<string, ZipChangeRequestSnapshot>()
+  for (const req of pendingZipRequests) {
+    zipRequestByPortalKey.set(req.portalKey, req)
+  }
 
   const byPortalKey = new Map<string, ClientAccumulator>()
 
@@ -334,6 +344,7 @@ export async function getInternalClientsDashboardData(): Promise<InternalClients
       invitationEmails: Array.from(row.invitationEmails.values()).sort(),
       lastUpdatedAt: Number.isFinite(lastUpdatedAt) && lastUpdatedAt > 0 ? lastUpdatedAt : null,
       onboardingLink: onboardingToken ? `/onboarding?token=${encodeURIComponent(onboardingToken)}` : null,
+      pendingZipRequest: zipRequestByPortalKey.get(row.portalKey) || null,
     }
   })
 
@@ -350,6 +361,7 @@ export async function getInternalClientsDashboardData(): Promise<InternalClients
     paid: rows.filter((row) => row.stage === 'paid').length,
     checkout: rows.filter((row) => row.stage === 'checkout').length,
     onboarding: rows.filter((row) => row.stage === 'onboarding').length,
+    pendingZipRequests: pendingZipRequests.length,
   }
 
   return { rows, summary }
