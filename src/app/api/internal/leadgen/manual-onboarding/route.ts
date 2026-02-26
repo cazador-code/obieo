@@ -3,10 +3,13 @@ import { submitClientOnboardingInConvex } from '@/lib/convex'
 import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { getBillingModelDefaults, normalizeBillingModel } from '@/lib/billing-models'
 import { verifyInternalToolToken } from '@/lib/internal-tool-auth'
+import {
+  dedupeStringList,
+  getTargetZipCountError,
+  normalizeTargetZipCodes,
+} from '@/lib/leadgen-target-zips'
 
 export const runtime = 'nodejs'
-const MIN_TARGET_ZIP_COUNT = 5
-const MAX_TARGET_ZIP_COUNT = 10
 
 interface ManualOnboardingPayload {
   companyId?: string
@@ -74,10 +77,6 @@ function normalizeStringList(value: unknown): string[] {
   }
 
   return []
-}
-
-function unique(values: string[]): string[] {
-  return Array.from(new Set(values))
 }
 
 function normalizePositiveInt(value: unknown, fallback: number): number {
@@ -175,7 +174,7 @@ export async function POST(request: NextRequest) {
     const requestedPortalKey = cleanString(body.portalKey)
     const portalKey = buildPortalKey(companyName, requestedPortalKey)
     const serviceAreas = normalizeStringList(body.serviceAreas)
-    const targetZipCodes = normalizeStringList(body.targetZipCodes)
+    const targetZipCodes = normalizeTargetZipCodes(body.targetZipCodes)
     const serviceTypes = normalizeStringList(body.serviceTypes)
     const leadRoutingPhones = normalizeStringList(body.leadRoutingPhones)
     const leadRoutingEmails = normalizeStringList(body.leadRoutingEmails)
@@ -192,21 +191,16 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    if (targetZipCodes.length < MIN_TARGET_ZIP_COUNT) {
+    const targetZipCountError = getTargetZipCountError(targetZipCodes.length)
+    if (targetZipCountError) {
       return NextResponse.json(
-        { success: false, error: `At least ${MIN_TARGET_ZIP_COUNT} target ZIP codes are required` },
-        { status: 400 }
-      )
-    }
-    if (targetZipCodes.length > MAX_TARGET_ZIP_COUNT) {
-      return NextResponse.json(
-        { success: false, error: `Maximum ${MAX_TARGET_ZIP_COUNT} target ZIP codes allowed` },
+        { success: false, error: targetZipCountError },
         { status: 400 }
       )
     }
 
-    const normalizedLeadRoutingPhones = unique(leadRoutingPhones)
-    const normalizedLeadRoutingEmails = unique(leadRoutingEmails.map((email) => email.toLowerCase()))
+    const normalizedLeadRoutingPhones = dedupeStringList(leadRoutingPhones)
+    const normalizedLeadRoutingEmails = dedupeStringList(leadRoutingEmails.map((email) => email.toLowerCase()))
 
     if (normalizedLeadRoutingPhones.length === 0 && normalizedLeadRoutingEmails.length === 0) {
       const hasNonRoutingContacts = Boolean(

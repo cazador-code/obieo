@@ -4,6 +4,7 @@ import { submitClientOnboardingInConvex, upsertOrganizationInConvex } from '@/li
 import { provisionLeadBillingForOnboarding } from '@/lib/stripe-onboarding'
 import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { verifyInternalToolToken } from '@/lib/internal-tool-auth'
+import { getTargetZipCountError, normalizeTargetZipCodes } from '@/lib/leadgen-target-zips'
 import {
   BILLING_MODEL_LABELS,
   getBillingModelDefaults,
@@ -221,7 +222,7 @@ export async function POST(request: NextRequest) {
   const portalKey = buildPortalKey(companyName, requestedPortalKey)
 
   const serviceAreas = normalizeStringArray(body.serviceAreas)
-  const targetZipCodes = normalizeStringArray(body.targetZipCodes)
+  const targetZipCodes = normalizeTargetZipCodes(body.targetZipCodes)
   const serviceTypes = normalizeStringArray(body.serviceTypes)
   const leadRoutingPhones = normalizeStringArray(body.leadRoutingPhones)
   const leadRoutingEmails = normalizeStringArray(body.leadRoutingEmails)
@@ -231,11 +232,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'At least one service area is required' }, { status: 400 })
   }
 
-  if (targetZipCodes.length < 5) {
-    return NextResponse.json({ success: false, error: 'At least 5 target ZIP codes are required' }, { status: 400 })
-  }
-  if (targetZipCodes.length > 10) {
-    return NextResponse.json({ success: false, error: 'Maximum 10 target ZIP codes allowed' }, { status: 400 })
+  const targetZipCountError = getTargetZipCountError(targetZipCodes.length)
+  if (targetZipCountError) {
+    return NextResponse.json({ success: false, error: targetZipCountError }, { status: 400 })
   }
 
   if (serviceTypes.length === 0) {
