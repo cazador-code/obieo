@@ -1,6 +1,11 @@
 name: CodeRabbit -> Codex Fix Loop
 
 on:
+  push:
+    branches:
+      - codex/portal-zip-request-contact-roles
+    paths:
+      - .github/workflows/coderabbit-codex-loop.yml
   pull_request_review:
     types: [submitted]
   workflow_dispatch:
@@ -21,6 +26,7 @@ concurrency:
 jobs:
   codex-fix:
     if: >-
+      github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request_review' &&
        (github.event.review.user.login == 'coderabbitai[bot]' || github.event.review.user.login == 'coderabbitai'))
@@ -36,16 +42,37 @@ jobs:
           script: |
             const eventName = context.eventName;
             const rawInputPr = context.payload?.inputs?.pr_number;
-            const prNumber = eventName === 'workflow_dispatch'
-              ? Number(rawInputPr)
-              : Number(context.payload?.pull_request?.number);
+            const { owner, repo } = context.repo;
+
+            let prNumber = 0;
+            if (eventName === 'workflow_dispatch') {
+              prNumber = Number(rawInputPr);
+            } else if (eventName === 'pull_request_review') {
+              prNumber = Number(context.payload?.pull_request?.number);
+            } else if (eventName === 'push') {
+              const branch = (context.ref || '').replace('refs/heads/', '');
+              const head = `${owner}:${branch}`;
+              const { data: prs } = await github.rest.pulls.list({
+                owner,
+                repo,
+                state: 'open',
+                head,
+                per_page: 5,
+              });
+
+              if (!Array.isArray(prs) || prs.length === 0) {
+                core.setFailed(`No open PR found for head ${head}`);
+                return;
+              }
+              prNumber = Number(prs[0].number);
+              core.info(`Resolved PR #${prNumber} from push event on ${branch}`);
+            }
 
             if (!Number.isFinite(prNumber) || prNumber <= 0) {
               core.setFailed(`Invalid PR number: ${rawInputPr ?? 'none'}`);
               return;
             }
 
-            const { owner, repo } = context.repo;
             const { data: pr } = await github.rest.pulls.get({
               owner,
               repo,
