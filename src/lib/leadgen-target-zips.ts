@@ -1,5 +1,6 @@
 export const MIN_TARGET_ZIP_COUNT = 5
 export const MAX_TARGET_ZIP_COUNT = 10
+const TARGET_ZIP_RE = /^\d{5}$/
 
 function cleanString(value: unknown): string | null {
   if (typeof value !== 'string') return null
@@ -29,7 +30,38 @@ function normalizeFlexibleStringList(value: unknown): string[] {
 }
 
 export function normalizeTargetZipCodes(value: unknown): string[] {
-  return dedupeStringList(normalizeFlexibleStringList(value))
+  return parseTargetZipCodes(value).zipCodes
+}
+
+export function parseTargetZipCodes(value: unknown): {
+  zipCodes: string[]
+  invalidZipCodes: string[]
+} {
+  const rawZipCodes = normalizeFlexibleStringList(value)
+  const validZipCodes: string[] = []
+  const invalidZipCodes: string[] = []
+
+  for (const zipCode of rawZipCodes) {
+    if (TARGET_ZIP_RE.test(zipCode)) {
+      validZipCodes.push(zipCode)
+      continue
+    }
+    invalidZipCodes.push(zipCode)
+  }
+
+  return {
+    zipCodes: dedupeStringList(validZipCodes),
+    invalidZipCodes: dedupeStringList(invalidZipCodes),
+  }
+}
+
+export function getInvalidTargetZipError(invalidZipCodes: string[]): string | null {
+  if (invalidZipCodes.length === 0) return null
+  if (invalidZipCodes.length === 1) {
+    return `Invalid target ZIP code: ${invalidZipCodes[0]}. Use 5-digit ZIPs only.`
+  }
+
+  return `Invalid target ZIP codes: ${invalidZipCodes.join(', ')}. Use 5-digit ZIPs only.`
 }
 
 export function getTargetZipCountError(count: number): string | null {

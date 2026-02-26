@@ -5,8 +5,9 @@ import { getBillingModelDefaults, normalizeBillingModel } from '@/lib/billing-mo
 import { verifyInternalToolToken } from '@/lib/internal-tool-auth'
 import {
   dedupeStringList,
+  getInvalidTargetZipError,
   getTargetZipCountError,
-  normalizeTargetZipCodes,
+  parseTargetZipCodes,
 } from '@/lib/leadgen-target-zips'
 
 export const runtime = 'nodejs'
@@ -174,7 +175,7 @@ export async function POST(request: NextRequest) {
     const requestedPortalKey = cleanString(body.portalKey)
     const portalKey = buildPortalKey(companyName, requestedPortalKey)
     const serviceAreas = normalizeStringList(body.serviceAreas)
-    const targetZipCodes = normalizeTargetZipCodes(body.targetZipCodes)
+    const { zipCodes: targetZipCodes, invalidZipCodes } = parseTargetZipCodes(body.targetZipCodes)
     const serviceTypes = normalizeStringList(body.serviceTypes)
     const leadRoutingPhones = normalizeStringList(body.leadRoutingPhones)
     const leadRoutingEmails = normalizeStringList(body.leadRoutingEmails)
@@ -191,6 +192,14 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    const invalidTargetZipError = getInvalidTargetZipError(invalidZipCodes)
+    if (invalidTargetZipError) {
+      return NextResponse.json(
+        { success: false, error: invalidTargetZipError },
+        { status: 400 }
+      )
+    }
+
     const targetZipCountError = getTargetZipCountError(targetZipCodes.length)
     if (targetZipCountError) {
       return NextResponse.json(

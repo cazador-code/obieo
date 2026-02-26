@@ -8,8 +8,9 @@ import {
   type BillingModel,
 } from '@/lib/billing-models'
 import {
-  dedupeStringList,
+  getInvalidTargetZipError,
   getTargetZipCountError,
+  parseTargetZipCodes,
 } from '@/lib/leadgen-target-zips'
 
 const STORED_AUTH_KEY = 'obieo-audit-auth'
@@ -222,7 +223,13 @@ export default function InternalManualOnboardingPage() {
       return
     }
 
-    const targetZipCodes = dedupeStringList(parseList(form.targetZipCodesText))
+    const { zipCodes: targetZipCodes, invalidZipCodes } = parseTargetZipCodes(form.targetZipCodesText)
+    const invalidTargetZipError = getInvalidTargetZipError(invalidZipCodes)
+    if (invalidTargetZipError) {
+      setSubmitError(invalidTargetZipError)
+      return
+    }
+
     const targetZipCountError = getTargetZipCountError(targetZipCodes.length)
     if (targetZipCountError) {
       setSubmitError(targetZipCountError)

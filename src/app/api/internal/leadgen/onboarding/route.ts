@@ -4,7 +4,11 @@ import { submitClientOnboardingInConvex, upsertOrganizationInConvex } from '@/li
 import { provisionLeadBillingForOnboarding } from '@/lib/stripe-onboarding'
 import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { verifyInternalToolToken } from '@/lib/internal-tool-auth'
-import { getTargetZipCountError, normalizeTargetZipCodes } from '@/lib/leadgen-target-zips'
+import {
+  getInvalidTargetZipError,
+  getTargetZipCountError,
+  parseTargetZipCodes,
+} from '@/lib/leadgen-target-zips'
 import {
   BILLING_MODEL_LABELS,
   getBillingModelDefaults,
@@ -222,7 +226,7 @@ export async function POST(request: NextRequest) {
   const portalKey = buildPortalKey(companyName, requestedPortalKey)
 
   const serviceAreas = normalizeStringArray(body.serviceAreas)
-  const targetZipCodes = normalizeTargetZipCodes(body.targetZipCodes)
+  const { zipCodes: targetZipCodes, invalidZipCodes } = parseTargetZipCodes(body.targetZipCodes)
   const serviceTypes = normalizeStringArray(body.serviceTypes)
   const leadRoutingPhones = normalizeStringArray(body.leadRoutingPhones)
   const leadRoutingEmails = normalizeStringArray(body.leadRoutingEmails)
@@ -230,6 +234,11 @@ export async function POST(request: NextRequest) {
 
   if (serviceAreas.length === 0) {
     return NextResponse.json({ success: false, error: 'At least one service area is required' }, { status: 400 })
+  }
+
+  const invalidTargetZipError = getInvalidTargetZipError(invalidZipCodes)
+  if (invalidTargetZipError) {
+    return NextResponse.json({ success: false, error: invalidTargetZipError }, { status: 400 })
   }
 
   const targetZipCountError = getTargetZipCountError(targetZipCodes.length)
