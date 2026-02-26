@@ -6,6 +6,7 @@ import {
   submitZipChangeRequestInConvex,
 } from '@/lib/convex'
 import { checkAirtableZipConflictsForApproval, syncApprovedZipCodesToAirtable } from '@/lib/airtable-client-zips'
+import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -27,38 +28,16 @@ function cleanString(value: unknown): string | null {
 }
 
 async function parseRequestBody(request: NextRequest): Promise<ResolveZipChangePayload | null> {
+  try {
+    return (await request.json()) as ResolveZipChangePayload
+  } catch {
+    return null
+  }
+}
+
+function hasJsonContentType(request: NextRequest): boolean {
   const contentType = request.headers.get('content-type') || ''
-
-  if (contentType.includes('application/json')) {
-    try {
-      return (await request.json()) as ResolveZipChangePayload
-    } catch {
-      return null
-    }
-  }
-
-  if (
-    contentType.includes('application/x-www-form-urlencoded') ||
-    contentType.includes('multipart/form-data')
-  ) {
-    try {
-      const formData = await request.formData()
-      return {
-        requestId: formData.get('requestId'),
-        decision: formData.get('decision'),
-        resolutionNotes: formData.get('resolutionNotes'),
-        resolvedBy: formData.get('resolvedBy'),
-        portalKey: formData.get('portalKey'),
-        addZipCodes: formData.get('addZipCodes'),
-        removeZipCodes: formData.get('removeZipCodes'),
-        note: formData.get('note'),
-      }
-    } catch {
-      return null
-    }
-  }
-
-  return null
+  return contentType.toLowerCase().includes('application/json')
 }
 
 function normalizeStringArray(value: unknown): string[] {
@@ -79,6 +58,19 @@ function normalizeStringArray(value: unknown): string[] {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { success, remaining } = await auditLimiter.limit(ip)
+  if (!success) {
+    return rateLimitResponse(remaining)
+  }
+
+  if (!hasJsonContentType(request)) {
+    return NextResponse.json(
+      { success: false, error: 'Unsupported Media Type: application/json required.' },
+      { status: 415 }
+    )
+  }
+
   const body = await parseRequestBody(request)
   if (!body) {
     return NextResponse.json({ success: false, error: 'Invalid request body' }, { status: 400 })

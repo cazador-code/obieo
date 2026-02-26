@@ -8,6 +8,7 @@ type LeadEventRecord = Doc<'leadEvents'>
 
 const FIFTEEN_MINUTES_MS = 15 * 60 * 1000
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000
+const ZIP_CODE_RE = /^\d{5}$/
 
 const CREDIT_REASON_VALUES = [
   'lead_not_needed',
@@ -1217,6 +1218,20 @@ export const submitZipChangeRequest = mutation({
   handler: async (ctx, args) => {
     assertAuthorized(args.authSecret)
 
+    const requestedAddZipCodes = normalizeList(args.requestedAddZipCodes)
+    const requestedRemoveZipCodes = normalizeList(args.requestedRemoveZipCodes)
+    const invalidRequestedAddZipCodes = requestedAddZipCodes.filter((zip) => !ZIP_CODE_RE.test(zip))
+    const invalidRequestedRemoveZipCodes = requestedRemoveZipCodes.filter((zip) => !ZIP_CODE_RE.test(zip))
+    if (invalidRequestedAddZipCodes.length > 0 || invalidRequestedRemoveZipCodes.length > 0) {
+      return {
+        submitted: false as const,
+        reason: 'invalid_zip_format' as const,
+        message: 'ZIP codes must be exactly 5 digits (example: 70506).',
+        invalidRequestedAddZipCodes,
+        invalidRequestedRemoveZipCodes,
+      }
+    }
+
     const organization = await getOrganizationByPortalKey(ctx, args.portalKey)
     if (!organization) {
       return {
@@ -1243,8 +1258,8 @@ export const submitZipChangeRequest = mutation({
     const currentZipCodes = normalizeList(organization.targetZipCodes)
     const requestedZipCodes = applyZipChangeRequest(
       currentZipCodes,
-      normalizeList(args.requestedAddZipCodes),
-      normalizeList(args.requestedRemoveZipCodes)
+      requestedAddZipCodes,
+      requestedRemoveZipCodes
     )
     const addedZipCodes = diffAdded(currentZipCodes, requestedZipCodes)
     const removedZipCodes = diffRemoved(currentZipCodes, requestedZipCodes)

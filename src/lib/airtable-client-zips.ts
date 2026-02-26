@@ -8,6 +8,7 @@ const DEFAULT_CLIENT_NAME_FIELD_ID = 'fldcUUlwTa7ilHUUt'
 const DEFAULT_CLIENT_STATUS_FIELD_ID = 'fldih1MfZsOmH4SQ3'
 const DEFAULT_CLIENT_TARGET_ZIPS_FIELD_ID = 'fldkhT7xvvsypQIy9'
 const DEFAULT_ACTIVE_STATUS_NAMES = ['3. Ready to Launch', '4. Launched']
+const AIRTABLE_LIST_MAX_PAGES = 200
 
 type AirtableRawRecord = {
   id: string
@@ -171,8 +172,18 @@ async function listAirtableClientRecords(config: AirtableConfig): Promise<Airtab
   const fields = [config.nameFieldId, config.statusFieldId, config.targetZipFieldId]
   const results: AirtableClientRecord[] = []
   let offset: string | null = null
+  let pageCount = 0
 
   while (true) {
+    pageCount += 1
+    if (pageCount > AIRTABLE_LIST_MAX_PAGES) {
+      const message =
+        `Airtable pagination safety cap hit after ${AIRTABLE_LIST_MAX_PAGES} pages ` +
+        `for base ${config.baseId}, table ${config.tableId}. Last offset: ${offset ?? 'none'}.`
+      console.error(message)
+      throw new Error(message)
+    }
+
     const url = new URL(`https://api.airtable.com/v0/${config.baseId}/${config.tableId}`)
     url.searchParams.set('pageSize', '100')
     for (const field of fields) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { getOrganizationSnapshotInConvex, submitZipChangeRequestInConvex } from '@/lib/convex'
 import { sendPortalZipChangeRequestNotification } from '@/lib/portal-profile-notifications'
+import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -158,6 +159,12 @@ export async function POST(request: NextRequest) {
       { success: false, error: 'Portal is missing organization mapping. Please contact support.' },
       { status: 400 }
     )
+  }
+
+  const ip = getClientIp(request)
+  const { success: rateLimitOk, remaining } = await authLimiter.limit(ip)
+  if (!rateLimitOk) {
+    return rateLimitResponse(remaining)
   }
 
   const email = getPrimaryEmail({

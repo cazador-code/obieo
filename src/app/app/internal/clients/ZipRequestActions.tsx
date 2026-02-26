@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 
 type Props = {
   requestId: string
@@ -36,6 +36,7 @@ export default function ZipRequestActions({
   const [resolutionNotes, setResolutionNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const resolutionNotesFieldId = useId()
 
   const deltaSummary = useMemo(
     () => ({
@@ -100,11 +101,16 @@ export default function ZipRequestActions({
         Requested: {deltaSummary.requested}
       </p>
       {note ? <p className="mt-1 text-[11px] text-amber-800">Note: {note}</p> : null}
+      <label htmlFor={resolutionNotesFieldId} className="mt-2 block text-[11px] font-medium text-amber-900">
+        Resolution notes (optional)
+      </label>
       <textarea
+        id={resolutionNotesFieldId}
+        name="resolutionNotes"
         value={resolutionNotes}
         onChange={(event) => setResolutionNotes(event.target.value)}
         placeholder="Optional resolution note"
-        className="mt-2 min-h-[58px] w-full rounded-md border border-amber-300 bg-white px-2 py-1.5 text-xs text-[var(--text-primary)]"
+        className="mt-1 min-h-[58px] w-full rounded-md border border-amber-300 bg-white px-2 py-1.5 text-xs text-[var(--text-primary)]"
       />
       {error ? <p className="mt-2 rounded border border-red-200 bg-red-50 px-2 py-1 text-red-700">{error}</p> : null}
       {notice ? (
