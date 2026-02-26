@@ -6,6 +6,11 @@ import type { Id } from '../../convex/_generated/dataModel'
 
 let convexClient: ConvexHttpClient | null = null
 
+type DynamicConvexClient = {
+  mutation: (functionName: string, args: Record<string, unknown>) => Promise<unknown>
+  query: (functionName: string, args: Record<string, unknown>) => Promise<unknown>
+}
+
 function getConvexUrl(): string | null {
   const url = process.env.CONVEX_URL
   if (!url || !url.trim()) return null
@@ -27,6 +32,10 @@ function getConvexClient(): ConvexHttpClient | null {
   }
 
   return convexClient
+}
+
+function asDynamicConvexClient(client: ConvexHttpClient): DynamicConvexClient {
+  return client as unknown as DynamicConvexClient
 }
 
 export interface RecordLeadDeliveryInConvexInput {
@@ -261,7 +270,8 @@ export async function updatePortalProfileInConvex(
   if (!client || !authSecret) return null
 
   try {
-    const result = await (client as any).mutation('leadLedger:updatePortalProfile', {
+    const dynamicClient = asDynamicConvexClient(client)
+    const result = await dynamicClient.mutation('leadLedger:updatePortalProfile', {
       authSecret,
       portalKey: input.portalKey,
       serviceAreas: input.profile.serviceAreas,
@@ -677,5 +687,152 @@ export async function resolveLeadReplacementRequestInConvex(input: {
     status?: 'approved' | 'rejected'
     leadEventId?: string
     amountCents?: number
+  }
+}
+
+export interface SubmitZipChangeRequestInConvexResult {
+  submitted: boolean
+  reason?: 'portal_not_found' | 'already_pending' | 'no_effective_change'
+  message?: string
+  existingRequestId?: string
+  requestId?: string
+  portalKey?: string
+  currentZipCodes?: string[]
+  requestedZipCodes?: string[]
+  addedZipCodes?: string[]
+  removedZipCodes?: string[]
+  requestedAt?: number
+}
+
+export interface PendingZipChangeRequestForOps {
+  _id: string
+  organizationId: string
+  portalKey: string
+  status: 'pending' | 'approved' | 'rejected'
+  currentZipCodes: string[]
+  requestedZipCodes: string[]
+  addedZipCodes: string[]
+  removedZipCodes: string[]
+  note?: string
+  requestedBy?: string
+  requestedByEmail?: string
+  requestedAt: number
+  resolvedBy?: string
+  resolvedAt?: number
+  resolutionNotes?: string
+}
+
+export type ZipChangeRequestForOps = PendingZipChangeRequestForOps
+
+export interface ResolveZipChangeRequestInConvexResult {
+  updated: boolean
+  reason?: 'not_found' | 'not_pending' | 'portal_not_found'
+  message?: string
+  requestId?: string
+  status?: 'approved' | 'rejected'
+  portalKey?: string
+  requestedZipCodes?: string[]
+  addedZipCodes?: string[]
+  removedZipCodes?: string[]
+  changedKeys?: string[]
+  addedTargetZipCodes?: string[]
+  removedTargetZipCodes?: string[]
+  profileEditId?: string
+  resolvedAt?: number
+}
+
+export async function submitZipChangeRequestInConvex(
+  input: {
+    portalKey: string
+    requestedAddZipCodes: string[]
+    requestedRemoveZipCodes: string[]
+    note?: string
+    requestedBy?: string
+    requestedByEmail?: string
+  },
+  opts?: { throwOnError?: boolean }
+): Promise<SubmitZipChangeRequestInConvexResult | null> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const dynamicClient = asDynamicConvexClient(client)
+    const result = await dynamicClient.mutation('leadLedger:submitZipChangeRequest', {
+      authSecret,
+      ...input,
+    })
+    return result as SubmitZipChangeRequestInConvexResult
+  } catch (error) {
+    console.error('Convex submitZipChangeRequest failed:', error)
+    if (opts?.throwOnError) throw error
+    return null
+  }
+}
+
+export async function listPendingZipChangeRequestsForOpsInConvex(input?: {
+  limit?: number
+}): Promise<PendingZipChangeRequestForOps[]> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return []
+
+  try {
+    const dynamicClient = asDynamicConvexClient(client)
+    const result = await dynamicClient.query('leadLedger:listPendingZipChangeRequestsForOps', {
+      authSecret,
+      ...(input?.limit ? { limit: input.limit } : {}),
+    })
+    return result as PendingZipChangeRequestForOps[]
+  } catch (error) {
+    console.error('Convex listPendingZipChangeRequestsForOps failed:', error)
+    return []
+  }
+}
+
+export async function getZipChangeRequestForOpsInConvex(input: {
+  requestId: string
+}): Promise<ZipChangeRequestForOps | null> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const dynamicClient = asDynamicConvexClient(client)
+    const result = await dynamicClient.query('leadLedger:getZipChangeRequestForOps', {
+      authSecret,
+      ...input,
+    })
+    return (result as ZipChangeRequestForOps | null) || null
+  } catch (error) {
+    console.error('Convex getZipChangeRequestForOps failed:', error)
+    return null
+  }
+}
+
+export async function resolveZipChangeRequestInConvex(
+  input: {
+    requestId: string
+    decision: 'approve' | 'reject'
+    resolutionNotes?: string
+    resolvedBy?: string
+  },
+  opts?: { throwOnError?: boolean }
+): Promise<ResolveZipChangeRequestInConvexResult | null> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const dynamicClient = asDynamicConvexClient(client)
+    const result = await dynamicClient.mutation('leadLedger:resolveZipChangeRequest', {
+      authSecret,
+      ...input,
+    })
+    return result as ResolveZipChangeRequestInConvexResult
+  } catch (error) {
+    console.error('Convex resolveZipChangeRequest failed:', error)
+    if (opts?.throwOnError) throw error
+    return null
   }
 }

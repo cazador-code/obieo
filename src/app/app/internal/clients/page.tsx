@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getInternalClientsDashboardData, type InternalClientRow } from '@/lib/internal-clients'
 import { createInternalPortalPreviewToken } from '@/lib/internal-portal-preview'
+import ZipRequestActions from './ZipRequestActions'
 
 export const dynamic = 'force-dynamic'
 
@@ -113,6 +114,12 @@ export default async function InternalClientsPage({
                 Confirm Payment
               </Link>
               <Link
+                href="/internal/leadgen/manual-onboarding"
+                className="inline-flex rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-2 font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+              >
+                Manual Entry
+              </Link>
+              <Link
                 href="/internal/leadgen/onboarding"
                 className="inline-flex rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-2 font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
               >
@@ -121,7 +128,7 @@ export default async function InternalClientsPage({
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-7">
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-4">
               <div className="text-xs uppercase tracking-wide text-[var(--text-muted)]">Total</div>
               <div className="mt-1 text-2xl font-bold text-[var(--text-primary)]">{summary.total}</div>
@@ -145,6 +152,10 @@ export default async function InternalClientsPage({
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-4">
               <div className="text-xs uppercase tracking-wide text-[var(--text-muted)]">Onboarding</div>
               <div className="mt-1 text-2xl font-bold text-violet-700">{summary.onboarding}</div>
+            </div>
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-4">
+              <div className="text-xs uppercase tracking-wide text-[var(--text-muted)]">ZIP Requests</div>
+              <div className="mt-1 text-2xl font-bold text-amber-700">{summary.pendingZipRequests}</div>
             </div>
           </div>
 
@@ -266,6 +277,17 @@ export default async function InternalClientsPage({
                           >
                             Payment Confirmation
                           </Link>
+                          {row.pendingZipRequest ? (
+                            <ZipRequestActions
+                              requestId={row.pendingZipRequest.requestId}
+                              portalKey={row.portalKey}
+                              currentZipCodes={row.pendingZipRequest.currentZipCodes}
+                              requestedZipCodes={row.pendingZipRequest.requestedZipCodes}
+                              addedZipCodes={row.pendingZipRequest.addedZipCodes}
+                              removedZipCodes={row.pendingZipRequest.removedZipCodes}
+                              note={row.pendingZipRequest.note}
+                            />
+                          ) : null}
                         </div>
                       </td>
                     </tr>

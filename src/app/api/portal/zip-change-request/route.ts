@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth, clerkClient } from '@clerk/nextjs/server'
-import { getOrganizationSnapshotInConvex } from '@/lib/convex'
+import { getOrganizationSnapshotInConvex, submitZipChangeRequestInConvex } from '@/lib/convex'
 import { sendPortalZipChangeRequestNotification } from '@/lib/portal-profile-notifications'
+import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -56,6 +57,15 @@ function hasZipRequestNotificationConfig(): boolean {
     .filter(Boolean)
 
   return Boolean(apiKey && recipients.length > 0)
+}
+
+function cleanErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message
+  try {
+    return JSON.stringify(error)
+  } catch {
+    return String(error)
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -151,6 +161,12 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  const ip = getClientIp(request)
+  const { success: rateLimitOk, remaining } = await authLimiter.limit(ip)
+  if (!rateLimitOk) {
+    return rateLimitResponse(remaining)
+  }
+
   const email = getPrimaryEmail({
     emailAddresses: user.emailAddresses.map((entry) => ({ id: entry.id, emailAddress: entry.emailAddress })),
     primaryEmailAddressId: user.primaryEmailAddressId,
@@ -162,16 +178,52 @@ export async function POST(request: NextRequest) {
     ? org.targetZipCodes.filter((zip): zip is string => typeof zip === 'string')
     : []
 
+  const submitResult = await submitZipChangeRequestInConvex(
+    {
+      portalKey,
+      requestedAddZipCodes: addZipCodes,
+      requestedRemoveZipCodes: removeZipCodes,
+      note,
+      requestedBy: userId,
+      requestedByEmail: email || undefined,
+    },
+    { throwOnError: true }
+  ).catch((error) => {
+    console.error('Failed to create ZIP change request in Convex:', cleanErrorMessage(error))
+    return null
+  })
+
+  if (!submitResult) {
+    return NextResponse.json(
+      { success: false, error: 'Could not submit ZIP change request right now. Please try again.' },
+      { status: 500 }
+    )
+  }
+
+  if (!submitResult.submitted) {
+    if (submitResult.reason === 'already_pending') {
+      return NextResponse.json(
+        { success: false, error: submitResult.message || 'A ZIP change request is already pending for this client.' },
+        { status: 409 }
+      )
+    }
+
+    return NextResponse.json(
+      { success: false, error: submitResult.message || 'Could not submit ZIP change request.' },
+      { status: 400 }
+    )
+  }
+
   try {
     await sendPortalZipChangeRequestNotification({
       portalKey,
       actorType: 'client',
       actorLabel: email || userId,
-      requestedAddZipCodes: addZipCodes,
-      requestedRemoveZipCodes: removeZipCodes,
+      requestedAddZipCodes: submitResult.addedZipCodes || addZipCodes,
+      requestedRemoveZipCodes: submitResult.removedZipCodes || removeZipCodes,
       existingTargetZipCodes,
-      note,
-      requestedAt: Date.now(),
+      note: note ? `${note}\n\nRequest ID: ${submitResult.requestId}` : `Request ID: ${submitResult.requestId}`,
+      requestedAt: submitResult.requestedAt || Date.now(),
     })
   } catch (error) {
     console.error('Failed to send portal ZIP change request notification:', error)
@@ -184,9 +236,10 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     success: true,
     portalKey,
+    requestId: submitResult.requestId,
     requested: {
-      addZipCodes,
-      removeZipCodes,
+      addZipCodes: submitResult.addedZipCodes || addZipCodes,
+      removeZipCodes: submitResult.removedZipCodes || removeZipCodes,
       note,
     },
     message: 'ZIP change request submitted. Support will review and confirm updates.',
