@@ -220,8 +220,8 @@ jobs:
       - name: Validate OpenAI key is configured
         if: steps.findings.outputs.has_findings == 'true' && steps.pr.outputs.head_repo == github.repository
         run: |
-          if [ -z "${{ secrets.OPENAI_API_KEY }}" ]; then
-            echo "::error::Missing GitHub secret OPENAI_API_KEY. Add it in repo/org secrets first."
+          if [ -z "${{ secrets.OPENAI_API_KEY || secrets.CODEX_OPENAI_API_KEY }}" ]; then
+            echo "::error::Missing GitHub secret OPENAI_API_KEY (or CODEX_OPENAI_API_KEY). Add one in repo/org secrets first."
             exit 1
           fi
 
@@ -236,7 +236,7 @@ jobs:
         id: run_codex
         uses: openai/codex-action@v1
         with:
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          openai-api-key: ${{ secrets.OPENAI_API_KEY || secrets.CODEX_OPENAI_API_KEY }}
           prompt-file: ${{ steps.findings.outputs.prompt_file }}
           output-file: ${{ runner.temp }}/codex-coderabbit/final-message.md
           safety-strategy: drop-sudo
