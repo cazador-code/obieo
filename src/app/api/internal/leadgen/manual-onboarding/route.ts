@@ -253,7 +253,7 @@ export async function POST(request: NextRequest) {
           businessAddress: cleanString(body.businessAddress) || undefined,
           companyName,
           serviceAreas,
-          targetZipCodes: targetZipCodes.length > 0 ? targetZipCodes : undefined,
+          targetZipCodes,
           serviceTypes: serviceTypes.length > 0 ? serviceTypes : undefined,
           desiredLeadVolumeDaily: normalizeOptionalPositiveInt(body.desiredLeadVolumeDaily),
           operatingHoursStart: cleanString(body.operatingHoursStart) || undefined,

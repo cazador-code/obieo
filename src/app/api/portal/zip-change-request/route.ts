@@ -122,7 +122,8 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const overlap = addZipCodes.find((zip) => removeZipCodes.includes(zip))
+  const removeZipSet = new Set(removeZipCodes)
+  const overlap = addZipCodes.find((zip) => removeZipSet.has(zip))
   if (overlap) {
     return NextResponse.json(
       { success: false, error: `ZIP cannot be both add and remove in the same request: ${overlap}` },

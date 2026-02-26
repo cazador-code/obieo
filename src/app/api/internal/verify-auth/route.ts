@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import {
   createInternalToolToken,
@@ -18,6 +19,15 @@ async function createToken(): Promise<string> {
 // Verify a JWT token
 async function verifyToken(token: string): Promise<boolean> {
   return verifyInternalToolToken(token);
+}
+
+function timingSafePasswordMatch(inputPassword: string, expectedPassword: string): boolean {
+  const inputDigest = createHash('sha256').update(inputPassword).digest();
+  const expectedDigest = createHash('sha256').update(expectedPassword).digest();
+  if (inputDigest.length !== expectedDigest.length) {
+    return false;
+  }
+  return timingSafeEqual(inputDigest, expectedDigest);
 }
 
 export async function POST(request: NextRequest) {
@@ -57,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     // If password provided, check it and return new token
     if (password) {
-      if (password === correctPassword) {
+      if (typeof password === 'string' && timingSafePasswordMatch(password, correctPassword)) {
         const newToken = await createToken();
         return NextResponse.json({ valid: true, token: newToken });
       }

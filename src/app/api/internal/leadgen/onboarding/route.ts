@@ -97,6 +97,19 @@ function getOpsRecipients(): string[] {
     .filter(Boolean)
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function formatHtmlList(values: string[]): string {
+  return values.length > 0 ? values.map((value) => escapeHtml(value)).join(', ') : 'none'
+}
+
 function isLeadgenStripeActive(): boolean {
   return process.env.LEADGEN_STRIPE_ACTIVE?.trim() === 'true'
 }
@@ -125,14 +138,14 @@ async function sendOnboardingEmail(input: {
     subject: `Client Intake Completed: ${input.companyName}`,
     html: `
       <h2>Client Intake Completed</h2>
-      <p><strong>Company:</strong> ${input.companyName}</p>
-      <p><strong>Portal Key:</strong> ${input.portalKey}</p>
-      <p><strong>Billing Model:</strong> ${input.billingModelLabel}</p>
-      <p><strong>Service Areas:</strong> ${input.serviceAreas.join(', ')}</p>
-      <p><strong>Target ZIPs:</strong> ${input.targetZipCodes.join(', ')}</p>
-      <p><strong>Service Types:</strong> ${input.serviceTypes.join(', ')}</p>
-      <p><strong>Lead Routing Phones:</strong> ${input.leadRoutingPhones.join(', ')}</p>
-      <p><strong>Lead Routing Emails:</strong> ${input.leadRoutingEmails.join(', ')}</p>
+      <p><strong>Company:</strong> ${escapeHtml(input.companyName)}</p>
+      <p><strong>Portal Key:</strong> ${escapeHtml(input.portalKey)}</p>
+      <p><strong>Billing Model:</strong> ${escapeHtml(input.billingModelLabel)}</p>
+      <p><strong>Service Areas:</strong> ${formatHtmlList(input.serviceAreas)}</p>
+      <p><strong>Target ZIPs:</strong> ${formatHtmlList(input.targetZipCodes)}</p>
+      <p><strong>Service Types:</strong> ${formatHtmlList(input.serviceTypes)}</p>
+      <p><strong>Lead Routing Phones:</strong> ${formatHtmlList(input.leadRoutingPhones)}</p>
+      <p><strong>Lead Routing Emails:</strong> ${formatHtmlList(input.leadRoutingEmails)}</p>
       <p><strong>Lead Price:</strong> $${(input.leadUnitPriceCents / 100).toFixed(2)}</p>
       <p><strong>Threshold:</strong> ${input.leadChargeThreshold} leads</p>
       <p>Next step: launch ad campaign and route leads.</p>

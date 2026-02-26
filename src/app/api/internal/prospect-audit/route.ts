@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isIP } from 'node:net';
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import { Resend } from 'resend';
 import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
@@ -6,6 +7,13 @@ import { verifyInternalToolToken } from '@/lib/internal-tool-auth';
 
 // Configure for longer execution time (Vercel Pro supports up to 300s)
 export const maxDuration = 300;
+const BLOCKED_HOSTNAMES = new Set([
+  'localhost',
+  'metadata.google.internal',
+  'metadata.google.internal.',
+  'metadata',
+]);
+const BLOCKED_HOST_SUFFIXES = ['.internal', '.local', '.localhost', '.lan'];
 
 // Security: Sanitize user inputs to prevent prompt injection
 function sanitizeForPrompt(input: string): string {
@@ -33,9 +41,28 @@ function isValidWebsiteUrl(url: string): { valid: boolean; normalized: string } 
       return { valid: false, normalized: '' };
     }
 
-    // Basic hostname validation (no localhost, no IP addresses for prod)
-    const hostname = parsed.hostname.toLowerCase();
-    if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+    // Allow only public DNS names; block IPs, loopback, and internal/metadata hostnames.
+    const normalizedHostname = parsed.hostname.toLowerCase().replace(/\.$/, '');
+    const hostname = normalizedHostname.replace(/^\[|\]$/g, '');
+    const hasAlpha = /[a-z]/i.test(hostname);
+
+    if (!hostname || !hasAlpha || BLOCKED_HOSTNAMES.has(normalizedHostname)) {
+      return { valid: false, normalized: '' };
+    }
+
+    if (BLOCKED_HOST_SUFFIXES.some((suffix) => hostname.endsWith(suffix))) {
+      return { valid: false, normalized: '' };
+    }
+
+    // Block IPv4/IPv6 (including bracketed forms) and numeric host encodings.
+    if (isIP(hostname) > 0 || /^0x[0-9a-f]+$/i.test(hostname) || /^\d+$/.test(hostname)) {
+      return { valid: false, normalized: '' };
+    }
+
+    // Require a dotted hostname with non-numeric TLD.
+    const hostnameParts = hostname.split('.');
+    const tld = hostnameParts[hostnameParts.length - 1] || '';
+    if (!hostname.includes('.') || /^\d+$/.test(tld)) {
       return { valid: false, normalized: '' };
     }
 

@@ -218,6 +218,16 @@ export default function InternalManualOnboardingPage() {
       return
     }
 
+    const targetZipCodes = parseList(form.targetZipCodesText)
+    if (targetZipCodes.length < 5) {
+      setSubmitError('At least 5 target ZIP codes are required.')
+      return
+    }
+    if (targetZipCodes.length > 10) {
+      setSubmitError('Maximum 10 target ZIP codes allowed.')
+      return
+    }
+
     const leadRoutingPhones = parseList(form.leadRoutingPhonesText)
     const leadRoutingEmails = parseList(form.leadRoutingEmailsText).map((entry) => entry.toLowerCase())
     if (leadRoutingPhones.length === 0 && leadRoutingEmails.length === 0) {
@@ -246,7 +256,7 @@ export default function InternalManualOnboardingPage() {
           businessPhone: cleanString(form.businessPhone) || undefined,
           businessAddress: cleanString(form.businessAddress) || undefined,
           serviceAreas: parseList(form.serviceAreasText),
-          targetZipCodes: parseList(form.targetZipCodesText),
+          targetZipCodes,
           serviceTypes: parseList(form.serviceTypesText),
           leadRoutingPhones,
           leadRoutingEmails,

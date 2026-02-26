@@ -1,3 +1,5 @@
+import 'server-only'
+
 import { SignJWT, jwtVerify } from 'jose'
 
 const INTERNAL_TOOL_TOKEN_ISSUER =
