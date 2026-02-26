@@ -138,6 +138,8 @@ export function GeographicMap({
       <div className="relative flex-1 min-h-[280px] rounded-lg overflow-hidden">
         {/* Mapbox static image background */}
         {mapUrl ? (
+          // Mapbox static images are external and intentionally rendered via img.
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={mapUrl}
             alt="Map of Texas and Louisiana"
