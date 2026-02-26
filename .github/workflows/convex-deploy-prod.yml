@@ -1,0 +1,49 @@
+name: Deploy Convex (Production)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "convex/**"
+      - "src/lib/convex.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/convex-deploy-prod.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: convex-prod-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Validate Convex deploy key
+        run: |
+          if [ -z "${CONVEX_DEPLOY_KEY}" ]; then
+            echo "Missing CONVEX_DEPLOY_KEY repository secret."
+            echo "Add it in GitHub: Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy Convex functions
+        run: npm exec convex deploy --yes

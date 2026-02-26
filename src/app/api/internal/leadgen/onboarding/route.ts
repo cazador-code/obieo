@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { jwtVerify } from 'jose'
 import { Resend } from 'resend'
 import { submitClientOnboardingInConvex, upsertOrganizationInConvex } from '@/lib/convex'
 import { provisionLeadBillingForOnboarding } from '@/lib/stripe-onboarding'
 import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
+import { verifyInternalToolToken } from '@/lib/internal-tool-auth'
+import {
+  getInvalidTargetZipError,
+  getTargetZipCountError,
+  parseTargetZipCodes,
+} from '@/lib/leadgen-target-zips'
 import {
   BILLING_MODEL_LABELS,
   getBillingModelDefaults,
@@ -38,24 +43,6 @@ interface OnboardingPayload {
   leadChargeThreshold?: number
   leadUnitPriceCents?: number
   notes?: string
-}
-
-function getJwtSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET
-  if (!secret || secret.length < 32) {
-    throw new Error('JWT_SECRET must be set and at least 32 characters')
-  }
-  return new TextEncoder().encode(secret)
-}
-
-async function verifyAuthToken(token: string): Promise<boolean> {
-  try {
-    const secret = getJwtSecret()
-    await jwtVerify(token, secret)
-    return true
-  } catch {
-    return false
-  }
 }
 
 function cleanString(value: unknown): string | null {
@@ -115,6 +102,19 @@ function getOpsRecipients(): string[] {
     .filter(Boolean)
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function formatHtmlList(values: string[]): string {
+  return values.length > 0 ? values.map((value) => escapeHtml(value)).join(', ') : 'none'
+}
+
 function isLeadgenStripeActive(): boolean {
   return process.env.LEADGEN_STRIPE_ACTIVE?.trim() === 'true'
 }
@@ -143,14 +143,14 @@ async function sendOnboardingEmail(input: {
     subject: `Client Intake Completed: ${input.companyName}`,
     html: `
       <h2>Client Intake Completed</h2>
-      <p><strong>Company:</strong> ${input.companyName}</p>
-      <p><strong>Portal Key:</strong> ${input.portalKey}</p>
-      <p><strong>Billing Model:</strong> ${input.billingModelLabel}</p>
-      <p><strong>Service Areas:</strong> ${input.serviceAreas.join(', ')}</p>
-      <p><strong>Target ZIPs:</strong> ${input.targetZipCodes.join(', ')}</p>
-      <p><strong>Service Types:</strong> ${input.serviceTypes.join(', ')}</p>
-      <p><strong>Lead Routing Phones:</strong> ${input.leadRoutingPhones.join(', ')}</p>
-      <p><strong>Lead Routing Emails:</strong> ${input.leadRoutingEmails.join(', ')}</p>
+      <p><strong>Company:</strong> ${escapeHtml(input.companyName)}</p>
+      <p><strong>Portal Key:</strong> ${escapeHtml(input.portalKey)}</p>
+      <p><strong>Billing Model:</strong> ${escapeHtml(input.billingModelLabel)}</p>
+      <p><strong>Service Areas:</strong> ${formatHtmlList(input.serviceAreas)}</p>
+      <p><strong>Target ZIPs:</strong> ${formatHtmlList(input.targetZipCodes)}</p>
+      <p><strong>Service Types:</strong> ${formatHtmlList(input.serviceTypes)}</p>
+      <p><strong>Lead Routing Phones:</strong> ${formatHtmlList(input.leadRoutingPhones)}</p>
+      <p><strong>Lead Routing Emails:</strong> ${formatHtmlList(input.leadRoutingEmails)}</p>
       <p><strong>Lead Price:</strong> $${(input.leadUnitPriceCents / 100).toFixed(2)}</p>
       <p><strong>Threshold:</strong> ${input.leadChargeThreshold} leads</p>
       <p>Next step: launch ad campaign and route leads.</p>
@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
   }
 
   const token = authHeader.slice(7)
-  const authorized = await verifyAuthToken(token)
+  const authorized = await verifyInternalToolToken(token)
   if (!authorized) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
   }
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
   const portalKey = buildPortalKey(companyName, requestedPortalKey)
 
   const serviceAreas = normalizeStringArray(body.serviceAreas)
-  const targetZipCodes = normalizeStringArray(body.targetZipCodes)
+  const { zipCodes: targetZipCodes, invalidZipCodes } = parseTargetZipCodes(body.targetZipCodes)
   const serviceTypes = normalizeStringArray(body.serviceTypes)
   const leadRoutingPhones = normalizeStringArray(body.leadRoutingPhones)
   const leadRoutingEmails = normalizeStringArray(body.leadRoutingEmails)
@@ -236,11 +236,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'At least one service area is required' }, { status: 400 })
   }
 
-  if (targetZipCodes.length < 5) {
-    return NextResponse.json({ success: false, error: 'At least 5 target ZIP codes are required' }, { status: 400 })
+  const invalidTargetZipError = getInvalidTargetZipError(invalidZipCodes)
+  if (invalidTargetZipError) {
+    return NextResponse.json({ success: false, error: invalidTargetZipError }, { status: 400 })
   }
-  if (targetZipCodes.length > 10) {
-    return NextResponse.json({ success: false, error: 'Maximum 10 target ZIP codes allowed' }, { status: 400 })
+
+  const targetZipCountError = getTargetZipCountError(targetZipCodes.length)
+  if (targetZipCountError) {
+    return NextResponse.json({ success: false, error: targetZipCountError }, { status: 400 })
   }
 
   if (serviceTypes.length === 0) {

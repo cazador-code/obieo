@@ -72,3 +72,6 @@ remotion/
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# git worktrees
+.worktrees/

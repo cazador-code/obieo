@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { jwtVerify } from 'jose'
 import Stripe from 'stripe'
 import { getStripeClient } from '@/lib/stripe'
 import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { activateCustomer, getActivationCandidateFromCheckout } from '@/lib/stripe-activation'
+import { verifyInternalToolToken } from '@/lib/internal-tool-auth'
 
 export const runtime = 'nodejs'
 
@@ -11,24 +11,6 @@ type RequestBody = {
   sessionId?: unknown
   checkoutSessionId?: unknown
   forceResendInvitation?: unknown
-}
-
-function getJwtSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET
-  if (!secret || secret.length < 32) {
-    throw new Error('JWT_SECRET must be set and at least 32 characters')
-  }
-  return new TextEncoder().encode(secret)
-}
-
-async function verifyAuthToken(token: string): Promise<boolean> {
-  try {
-    const secret = getJwtSecret()
-    await jwtVerify(token, secret)
-    return true
-  } catch {
-    return false
-  }
 }
 
 function cleanString(value: unknown): string | null {
@@ -81,7 +63,7 @@ export async function POST(request: NextRequest) {
   }
 
   const token = authHeader.slice(7)
-  const authorized = await verifyAuthToken(token)
+  const authorized = await verifyInternalToolToken(token)
   if (!authorized) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
   }

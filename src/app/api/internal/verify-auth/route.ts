@@ -1,45 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SignJWT, jwtVerify } from 'jose';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import {
+  createInternalToolToken,
+  isInternalToolJwtConfigured,
+  verifyInternalToolToken,
+} from '@/lib/internal-tool-auth';
 
 // JWT configuration
 // This is an internal tool gate, not customer auth. Keep it stable and low-friction.
 const TOKEN_EXPIRATION = process.env.INTERNAL_TOOL_TOKEN_EXPIRATION?.trim() || '30d';
 
-// Get the secret as Uint8Array for jose
-function getJwtSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET;
-  if (!secret || secret.length < 32) {
-    throw new Error('JWT_SECRET must be set and at least 32 characters');
-  }
-  return new TextEncoder().encode(secret);
-}
-
-function isJwtSecretConfigured(): boolean {
-  const secret = process.env.JWT_SECRET;
-  return Boolean(secret && secret.length >= 32);
-}
-
 // Create a signed JWT with expiration
 async function createToken(): Promise<string> {
-  const secret = getJwtSecret();
-  return new SignJWT({ authorized: true })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime(TOKEN_EXPIRATION)
-    .sign(secret);
+  return createInternalToolToken(TOKEN_EXPIRATION);
 }
 
 // Verify a JWT token
 async function verifyToken(token: string): Promise<boolean> {
-  try {
-    const secret = getJwtSecret();
-    await jwtVerify(token, secret);
-    return true;
-  } catch {
-    // Token is invalid or expired
+  return verifyInternalToolToken(token);
+}
+
+function timingSafePasswordMatch(inputPassword: string, expectedPassword: string): boolean {
+  const inputDigest = createHash('sha256').update(inputPassword).digest();
+  const expectedDigest = createHash('sha256').update(expectedPassword).digest();
+  if (inputDigest.length !== expectedDigest.length) {
     return false;
   }
+  return timingSafeEqual(inputDigest, expectedDigest);
 }
 
 export async function POST(request: NextRequest) {
@@ -63,7 +51,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!isJwtSecretConfigured()) {
+    if (!isInternalToolJwtConfigured()) {
       console.error('JWT_SECRET not configured or too short');
       return NextResponse.json(
         { valid: false, error: 'Server misconfigured: JWT_SECRET is missing or too short.' },
@@ -79,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     // If password provided, check it and return new token
     if (password) {
-      if (password === correctPassword) {
+      if (typeof password === 'string' && timingSafePasswordMatch(password, correctPassword)) {
         const newToken = await createToken();
         return NextResponse.json({ valid: true, token: newToken });
       }
