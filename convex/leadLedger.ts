@@ -87,6 +87,49 @@ async function getOrganizationByPortalKey(
     .first()) as OrganizationRecord | null
 }
 
+type DynamicIndexQuery = {
+  eq: (field: string, value: unknown) => DynamicIndexQuery
+}
+
+type DynamicQueryResult = {
+  first: () => Promise<unknown>
+  collect: () => Promise<unknown[]>
+}
+
+type DynamicQueryBuilder = {
+  withIndex: (indexName: string, selector: (q: DynamicIndexQuery) => unknown) => DynamicQueryResult
+}
+
+type DynamicDb = {
+  query: (tableName: string) => DynamicQueryBuilder
+  get: (id: unknown) => Promise<unknown>
+  patch: (id: unknown, value: Record<string, unknown>) => Promise<void>
+  insert: (tableName: string, value: Record<string, unknown>) => Promise<unknown>
+  replace: (id: unknown, value: Record<string, unknown>) => Promise<void>
+}
+
+function asDynamicDb(ctx: { db: DatabaseReader | DatabaseWriter }): DynamicDb {
+  return ctx.db as unknown as DynamicDb
+}
+
+type ZipChangeRequestRecord = {
+  _id: string
+  organizationId: Id<'organizations'>
+  portalKey: string
+  status: 'pending' | 'approved' | 'rejected'
+  currentZipCodes: string[]
+  requestedZipCodes: string[]
+  addedZipCodes: string[]
+  removedZipCodes: string[]
+  note?: string
+  requestedBy?: string
+  requestedByEmail?: string
+  requestedAt: number
+  resolvedBy?: string
+  resolvedAt?: number
+  resolutionNotes?: string
+}
+
 type PortalProfileSnapshot = {
   serviceAreas: string[]
   targetZipCodes: string[]
@@ -148,6 +191,18 @@ function diffAdded(before: string[], after: string[]): string[] {
 function diffRemoved(before: string[], after: string[]): string[] {
   const afterSet = new Set(after)
   return before.filter((value) => !afterSet.has(value))
+}
+
+function applyZipChangeRequest(currentZipCodes: string[], addZipCodes: string[], removeZipCodes: string[]): string[] {
+  const removeSet = new Set(removeZipCodes)
+  const next = currentZipCodes.filter((zip) => !removeSet.has(zip))
+  const seen = new Set(next)
+  for (const zip of addZipCodes) {
+    if (seen.has(zip)) continue
+    seen.add(zip)
+    next.push(zip)
+  }
+  return next
 }
 
 export const upsertOrganization = mutation({
@@ -500,9 +555,10 @@ export const updatePortalProfile = mutation({
     delete nextOrganization._id
     delete nextOrganization._creationTime
 
-    await (ctx.db as any).replace(organization._id, nextOrganization)
+    const db = asDynamicDb(ctx)
+    await db.replace(organization._id, nextOrganization)
 
-    const editId = await (ctx.db as any).insert('portalProfileEdits', {
+    const editId = await db.insert('portalProfileEdits', {
       organizationId: organization._id,
       portalKey: args.portalKey,
       actorType: args.actorType,
@@ -1145,5 +1201,254 @@ export const listOnboardingSubmissionsForOps = query({
     return submissions
       .sort((a, b) => (b.createdAt || b._creationTime || 0) - (a.createdAt || a._creationTime || 0))
       .slice(0, limit)
+  },
+})
+
+export const submitZipChangeRequest = mutation({
+  args: {
+    authSecret: v.string(),
+    portalKey: v.string(),
+    requestedAddZipCodes: v.array(v.string()),
+    requestedRemoveZipCodes: v.array(v.string()),
+    note: v.optional(v.string()),
+    requestedBy: v.optional(v.string()),
+    requestedByEmail: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+
+    const organization = await getOrganizationByPortalKey(ctx, args.portalKey)
+    if (!organization) {
+      return {
+        submitted: false as const,
+        reason: 'portal_not_found' as const,
+        message: `Unknown portal key: ${args.portalKey}`,
+      }
+    }
+
+    const db = asDynamicDb(ctx)
+    const pendingRequest = (await db
+      .query('zipChangeRequests')
+      .withIndex('by_portal_and_status', (q) => q.eq('portalKey', args.portalKey).eq('status', 'pending'))
+      .first()) as ZipChangeRequestRecord | null
+    if (pendingRequest) {
+      return {
+        submitted: false as const,
+        reason: 'already_pending' as const,
+        message: 'A ZIP change request is already pending for this client.',
+        existingRequestId: pendingRequest._id as string,
+      }
+    }
+
+    const currentZipCodes = normalizeList(organization.targetZipCodes)
+    const requestedZipCodes = applyZipChangeRequest(
+      currentZipCodes,
+      normalizeList(args.requestedAddZipCodes),
+      normalizeList(args.requestedRemoveZipCodes)
+    )
+    const addedZipCodes = diffAdded(currentZipCodes, requestedZipCodes)
+    const removedZipCodes = diffRemoved(currentZipCodes, requestedZipCodes)
+
+    if (addedZipCodes.length === 0 && removedZipCodes.length === 0) {
+      return {
+        submitted: false as const,
+        reason: 'no_effective_change' as const,
+        message: 'No ZIP changes detected after applying add/remove inputs.',
+      }
+    }
+
+    const now = Date.now()
+    const requestId = await db.insert('zipChangeRequests', {
+      organizationId: organization._id,
+      portalKey: args.portalKey,
+      status: 'pending',
+      currentZipCodes,
+      requestedZipCodes,
+      addedZipCodes,
+      removedZipCodes,
+      note: normalizeOptionalValue(args.note),
+      requestedBy: normalizeOptionalValue(args.requestedBy),
+      requestedByEmail: normalizeOptionalValue(args.requestedByEmail),
+      requestedAt: now,
+    })
+
+    return {
+      submitted: true as const,
+      requestId: requestId as string,
+      portalKey: args.portalKey,
+      currentZipCodes,
+      requestedZipCodes,
+      addedZipCodes,
+      removedZipCodes,
+      requestedAt: now,
+    }
+  },
+})
+
+export const getZipChangeRequestForOps = query({
+  args: {
+    authSecret: v.string(),
+    requestId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+
+    const db = asDynamicDb(ctx)
+    const request = (await db.get(args.requestId)) as ZipChangeRequestRecord | null
+    if (!request || request.portalKey === undefined || request.requestedZipCodes === undefined) {
+      return null
+    }
+
+    return request
+  },
+})
+
+export const listPendingZipChangeRequestsForOps = query({
+  args: {
+    authSecret: v.string(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+
+    const limit =
+      typeof args.limit === 'number' && Number.isFinite(args.limit)
+        ? Math.max(1, Math.min(1000, Math.floor(args.limit)))
+        : 500
+
+    const db = asDynamicDb(ctx)
+    const rows = (await db
+      .query('zipChangeRequests')
+      .withIndex('by_status', (q) => q.eq('status', 'pending'))
+      .collect()) as ZipChangeRequestRecord[]
+
+    return rows
+      .sort((a, b) => {
+        const left = a as { requestedAt?: number }
+        const right = b as { requestedAt?: number }
+        return (right.requestedAt || 0) - (left.requestedAt || 0)
+      })
+      .slice(0, limit)
+  },
+})
+
+export const resolveZipChangeRequest = mutation({
+  args: {
+    authSecret: v.string(),
+    requestId: v.string(),
+    decision: v.union(v.literal('approve'), v.literal('reject')),
+    resolutionNotes: v.optional(v.string()),
+    resolvedBy: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+
+    const db = asDynamicDb(ctx)
+    const request = (await db.get(args.requestId)) as ZipChangeRequestRecord | null
+    if (!request || request.portalKey === undefined || request.requestedZipCodes === undefined) {
+      return {
+        updated: false as const,
+        reason: 'not_found' as const,
+        message: 'ZIP change request not found.',
+      }
+    }
+
+    if (request.status !== 'pending') {
+      return {
+        updated: false as const,
+        reason: 'not_pending' as const,
+        message: 'Request is not in pending status.',
+      }
+    }
+
+    const organization = await getOrganizationByPortalKey(ctx, request.portalKey)
+    if (!organization) {
+      return {
+        updated: false as const,
+        reason: 'portal_not_found' as const,
+        message: `Unknown portal key: ${request.portalKey}`,
+      }
+    }
+
+    const now = Date.now()
+    const nextStatus = args.decision === 'approve' ? 'approved' : 'rejected'
+    const cleanedResolvedBy = normalizeOptionalValue(args.resolvedBy)
+    const cleanedResolutionNotes = normalizeOptionalValue(args.resolutionNotes)
+
+    await db.patch(args.requestId, {
+      status: nextStatus,
+      resolvedBy: cleanedResolvedBy,
+      resolvedAt: now,
+      resolutionNotes: cleanedResolutionNotes,
+    })
+
+    let changedKeys: string[] = []
+    let addedTargetZipCodes: string[] = []
+    let removedTargetZipCodes: string[] = []
+    let profileEditId: string | undefined
+
+    if (args.decision === 'approve') {
+      const beforeProfile = getPortalProfileFromOrganization(organization)
+      const afterProfile: PortalProfileSnapshot = {
+        ...beforeProfile,
+        targetZipCodes: normalizeList(request.requestedZipCodes),
+      }
+
+      changedKeys = sameList(beforeProfile.targetZipCodes, afterProfile.targetZipCodes) ? [] : ['targetZipCodes']
+      addedTargetZipCodes = diffAdded(beforeProfile.targetZipCodes, afterProfile.targetZipCodes)
+      removedTargetZipCodes = diffRemoved(beforeProfile.targetZipCodes, afterProfile.targetZipCodes)
+
+      await db.patch(organization._id, {
+        targetZipCodes: afterProfile.targetZipCodes,
+        updatedAt: now,
+      })
+
+      profileEditId = (await db.insert('portalProfileEdits', {
+        organizationId: organization._id,
+        portalKey: request.portalKey,
+        actorType: 'admin_preview',
+        actorInternalUser: cleanedResolvedBy,
+        changedKeys,
+        beforeProfileJson: JSON.stringify(beforeProfile),
+        afterProfileJson: JSON.stringify(afterProfile),
+        beforeTargetZipCodes: beforeProfile.targetZipCodes,
+        afterTargetZipCodes: afterProfile.targetZipCodes,
+        addedTargetZipCodes,
+        removedTargetZipCodes,
+        createdAt: now,
+      })) as string
+    }
+
+    await queueEmailNotifications(ctx, {
+      organizationId: organization._id,
+      portalKey: request.portalKey,
+      kind: 'zip_change_request_resolved',
+      subject: `ZIP change request ${nextStatus}: ${request.portalKey}`,
+      body:
+        args.decision === 'approve'
+          ? `ZIP request approved for ${request.portalKey}.`
+          : `ZIP request rejected for ${request.portalKey}.`,
+      payload: {
+        requestId: args.requestId,
+        decision: args.decision,
+        portalKey: request.portalKey,
+        resolutionNotes: cleanedResolutionNotes,
+      },
+    })
+
+    return {
+      updated: true as const,
+      requestId: args.requestId,
+      status: nextStatus,
+      portalKey: request.portalKey as string,
+      requestedZipCodes: normalizeList(request.requestedZipCodes),
+      addedZipCodes: normalizeList(request.addedZipCodes),
+      removedZipCodes: normalizeList(request.removedZipCodes),
+      changedKeys,
+      addedTargetZipCodes,
+      removedTargetZipCodes,
+      profileEditId,
+      resolvedAt: now,
+    }
   },
 })

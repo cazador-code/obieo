@@ -6,7 +6,9 @@ import {
   type LeadgenIntentSnapshot,
   type OnboardingSubmissionForOps,
   type OrganizationRecordForOps,
+  type PendingZipChangeRequestForOps,
   listLeadgenIntentsForOpsInConvex,
+  listPendingZipChangeRequestsForOpsInConvex,
   listOnboardingSubmissionsForOpsInConvex,
   listOrganizationsForOpsInConvex,
 } from '@/lib/convex'
@@ -33,6 +35,17 @@ export interface InternalClientRow {
   invitationEmails: string[]
   lastUpdatedAt: number | null
   onboardingLink: string | null
+  pendingZipRequest: {
+    requestId: string
+    currentZipCodes: string[]
+    requestedZipCodes: string[]
+    addedZipCodes: string[]
+    removedZipCodes: string[]
+    note?: string
+    requestedBy?: string
+    requestedByEmail?: string
+    requestedAt: number
+  } | null
 }
 
 export interface InternalClientsSummary {
@@ -42,6 +55,7 @@ export interface InternalClientsSummary {
   paid: number
   checkout: number
   onboarding: number
+  pendingZipRequests: number
 }
 
 export interface InternalClientsDashboardData {
@@ -77,6 +91,7 @@ type ClientAccumulator = {
   pendingInvitationCount: number
   userLastUpdatedAt: number | null
   invitationLastUpdatedAt: number | null
+  pendingZipRequest: PendingZipChangeRequestForOps | null
 }
 
 function getPortalKeyFromMetadata(metadata: Record<string, unknown> | null | undefined): string | null {
@@ -185,12 +200,13 @@ async function listAllClerkInvitations(): Promise<ClerkInvitationLike[]> {
 }
 
 export async function getInternalClientsDashboardData(): Promise<InternalClientsDashboardData> {
-  const [organizations, intents, submissions, users, invitations] = await Promise.all([
+  const [organizations, intents, submissions, users, invitations, pendingZipRequests] = await Promise.all([
     listOrganizationsForOpsInConvex({ limit: 1000 }),
     listLeadgenIntentsForOpsInConvex({ limit: 1000 }),
     listOnboardingSubmissionsForOpsInConvex({ limit: 1000 }),
     listAllClerkUsers(),
     listAllClerkInvitations(),
+    listPendingZipChangeRequestsForOpsInConvex({ limit: 1000 }),
   ])
 
   const byPortalKey = new Map<string, ClientAccumulator>()
@@ -208,6 +224,7 @@ export async function getInternalClientsDashboardData(): Promise<InternalClients
       pendingInvitationCount: 0,
       userLastUpdatedAt: null,
       invitationLastUpdatedAt: null,
+      pendingZipRequest: null,
     }
     byPortalKey.set(portalKey, created)
     return created
@@ -276,6 +293,17 @@ export async function getInternalClientsDashboardData(): Promise<InternalClients
     )
   }
 
+  for (const pendingRequest of pendingZipRequests) {
+    if (!pendingRequest.portalKey) continue
+    const row = ensure(pendingRequest.portalKey)
+    if (
+      !row.pendingZipRequest ||
+      (pendingRequest.requestedAt || 0) > (row.pendingZipRequest.requestedAt || 0)
+    ) {
+      row.pendingZipRequest = pendingRequest
+    }
+  }
+
   const rows = Array.from(byPortalKey.values()).map<InternalClientRow>((row) => {
     const companyName =
       row.organization?.name ||
@@ -334,6 +362,19 @@ export async function getInternalClientsDashboardData(): Promise<InternalClients
       invitationEmails: Array.from(row.invitationEmails.values()).sort(),
       lastUpdatedAt: Number.isFinite(lastUpdatedAt) && lastUpdatedAt > 0 ? lastUpdatedAt : null,
       onboardingLink: onboardingToken ? `/onboarding?token=${encodeURIComponent(onboardingToken)}` : null,
+      pendingZipRequest: row.pendingZipRequest
+        ? {
+            requestId: row.pendingZipRequest._id,
+            currentZipCodes: row.pendingZipRequest.currentZipCodes,
+            requestedZipCodes: row.pendingZipRequest.requestedZipCodes,
+            addedZipCodes: row.pendingZipRequest.addedZipCodes,
+            removedZipCodes: row.pendingZipRequest.removedZipCodes,
+            note: row.pendingZipRequest.note,
+            requestedBy: row.pendingZipRequest.requestedBy,
+            requestedByEmail: row.pendingZipRequest.requestedByEmail,
+            requestedAt: row.pendingZipRequest.requestedAt,
+          }
+        : null,
     }
   })
 
@@ -350,6 +391,7 @@ export async function getInternalClientsDashboardData(): Promise<InternalClients
     paid: rows.filter((row) => row.stage === 'paid').length,
     checkout: rows.filter((row) => row.stage === 'checkout').length,
     onboarding: rows.filter((row) => row.stage === 'onboarding').length,
+    pendingZipRequests: rows.filter((row) => row.pendingZipRequest !== null).length,
   }
 
   return { rows, summary }

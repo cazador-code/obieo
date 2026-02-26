@@ -214,6 +214,26 @@ export default defineSchema({
     .index('by_portal_and_status', ['portalKey', 'status'])
     .index('by_portal_and_leadEvent', ['portalKey', 'leadEventId']),
 
+  zipChangeRequests: defineTable({
+    organizationId: v.id('organizations'),
+    portalKey: v.string(),
+    status: v.union(v.literal('pending'), v.literal('approved'), v.literal('rejected')),
+    currentZipCodes: v.array(v.string()),
+    requestedZipCodes: v.array(v.string()),
+    addedZipCodes: v.array(v.string()),
+    removedZipCodes: v.array(v.string()),
+    note: v.optional(v.string()),
+    requestedBy: v.optional(v.string()),
+    requestedByEmail: v.optional(v.string()),
+    requestedAt: v.number(),
+    resolvedBy: v.optional(v.string()),
+    resolvedAt: v.optional(v.number()),
+    resolutionNotes: v.optional(v.string()),
+  })
+    .index('by_portalKey', ['portalKey'])
+    .index('by_portal_and_status', ['portalKey', 'status'])
+    .index('by_status', ['status']),
+
   workflowNotifications: defineTable({
     organizationId: v.optional(v.id('organizations')),
     portalKey: v.optional(v.string()),
