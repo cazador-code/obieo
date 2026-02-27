@@ -88,6 +88,7 @@ This means customers never need to touch the internal intake password page.
 ### Lead delivery webhooks
 - GHL: `POST /api/webhooks/ghl/lead-delivered`
 - Airtable: `POST /api/webhooks/airtable/lead-delivered`
+- Airtable failed charges: `POST /api/webhooks/airtable/failed-charge`
 
 ---
 
@@ -143,6 +144,7 @@ Set these in `.env.local` (do not commit secrets).
 - `RESEND_API_KEY=...`
 - `RESEND_FROM_EMAIL=noreply@obieo.com` (must be verified in Resend)
 - `AIRTABLE_LEAD_DELIVERED_WEBHOOK_SECRET=...` (Bearer secret used by Airtable automation webhook action)
+- `AIRTABLE_FAILED_CHARGE_WEBHOOK_SECRET=...` (Bearer secret for failed-charge link sync; optional fallback to lead secret)
 - Optional fallback map when Airtable payload does not include portal key:
   - `AIRTABLE_PORTAL_KEY_MAP_JSON={"business name":"portal-key"}`
 - `CONVEX_URL=https://<your-deployment>.convex.cloud`

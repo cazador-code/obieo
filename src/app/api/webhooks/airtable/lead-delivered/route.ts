@@ -2,6 +2,8 @@ import { createHash } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { kv } from '@vercel/kv'
 import { recordLeadDeliveryInConvex } from '@/lib/convex'
+import { linkLeadSheetRecordToClient } from '@/lib/airtable-client-links'
+import { getClientIp, rateLimitResponse, webhookLimiter } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -9,6 +11,8 @@ interface AirtableLeadDeliveredPayload {
   idempotencyKey?: string
   eventId?: string
   leadId?: string
+  leadSheetRecordId?: string
+  lead_sheet_record_id?: string
   sourceExternalId?: string
   source_external_id?: string
   recordId?: string
@@ -140,6 +144,17 @@ function resolveSourceExternalId(payload: AirtableLeadDeliveredPayload): string 
   return `airtable:${hashPayload(payload)}`
 }
 
+function resolveAirtableRecordId(payload: AirtableLeadDeliveredPayload): string | null {
+  const candidates = [payload.leadSheetRecordId, payload.lead_sheet_record_id, payload.recordId, payload.record_id]
+
+  for (const candidate of candidates) {
+    const normalized = normalizeString(candidate)
+    if (normalized) return normalized
+  }
+
+  return null
+}
+
 function resolvePortalKey(payload: AirtableLeadDeliveredPayload): string | null {
   const direct = [
     payload.portalKey,
@@ -172,6 +187,12 @@ function resolvePortalKey(payload: AirtableLeadDeliveredPayload): string | null 
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { success, remaining } = await webhookLimiter.limit(ip)
+  if (!success) {
+    return rateLimitResponse(remaining)
+  }
+
   const webhookSecret = process.env.AIRTABLE_LEAD_DELIVERED_WEBHOOK_SECRET
   if (!webhookSecret?.trim()) {
     return NextResponse.json({ success: false, error: 'Server misconfiguration' }, { status: 500 })
@@ -249,6 +270,27 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  const leadSheetRecordId = resolveAirtableRecordId(payload)
+  let leadSheetLink: Awaited<ReturnType<typeof linkLeadSheetRecordToClient>> | null = null
+
+  if (leadSheetRecordId) {
+    leadSheetLink = await linkLeadSheetRecordToClient({
+      recordId: leadSheetRecordId,
+      portalKey,
+      businessName:
+        normalizeString(payload.businessName) ||
+        normalizeString(payload.business_name) ||
+        normalizeString(payload.clientCompany) ||
+        normalizeString(payload.client_company) ||
+        undefined,
+      email: normalizeString(payload.email) || undefined,
+    })
+
+    if (!leadSheetLink.linked && leadSheetLink.reason !== 'client_not_found') {
+      console.error('Airtable lead-sheet link sync failed:', leadSheetLink)
+    }
+  }
+
   try {
     await kv.set(
       dedupeKey,
@@ -274,5 +316,6 @@ export async function POST(request: NextRequest) {
     leadEventId: convexResult.leadEventId,
     billableQuantity: convexResult.billableQuantity,
     billingSkippedReason: convexResult.billingSkippedReason || null,
+    leadSheetLink,
   })
 }
