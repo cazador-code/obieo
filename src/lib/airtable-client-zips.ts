@@ -7,6 +7,16 @@ const DEFAULT_CLIENT_TABLE_ID = 'tblK1w4DWwbtEBZGf'
 const DEFAULT_CLIENT_NAME_FIELD_ID = 'fldcUUlwTa7ilHUUt'
 const DEFAULT_CLIENT_STATUS_FIELD_ID = 'fldih1MfZsOmH4SQ3'
 const DEFAULT_CLIENT_TARGET_ZIPS_FIELD_ID = 'fldkhT7xvvsypQIy9'
+const DEFAULT_CLIENT_CONTRACTOR_NAME_FIELD_ID = 'fldJcjuEu4m3xhZ91'
+const DEFAULT_CLIENT_PRICING_TIER_FIELD_ID = 'fldHORHFSYyCJWMeW'
+const DEFAULT_CLIENT_LEADS_PER_DAY_FIELD_ID = 'fldtU0kOpkKcYtoBD'
+const DEFAULT_CLIENT_NOTES_FIELD_ID = 'fldFADuk8QTrFTEvF'
+const DEFAULT_CLIENT_SERVICES_OFFERED_FIELD_ID = 'flddzKcnRCoPDpAZy'
+const DEFAULT_CLIENT_CITY_FIELD_ID = 'fldBdDEVng8IvEnww'
+const DEFAULT_CLIENT_BUSINESS_PHONE_FIELD_ID = 'fldVR1hy8BTi9OrKz'
+const DEFAULT_CLIENT_NOTIFICATION_PHONE_FIELD_ID = 'fld2najORzjs3zdKE'
+const DEFAULT_CLIENT_NOTIFICATION_EMAIL_FIELD_ID = 'fldy7AUYFxf3vB1tL'
+const DEFAULT_CLIENT_PROSPECT_EMAIL_FIELD_ID = 'fldN6PVrSXozaE2JM'
 const DEFAULT_ACTIVE_STATUS_NAMES = ['3. Ready to Launch', '4. Launched']
 const AIRTABLE_LIST_MAX_PAGES = 200
 
@@ -44,6 +54,7 @@ export interface AirtableZipSyncResult {
   message?: string
   airtableRecordId?: string
   targetZipCodes?: string[]
+  updatedFields?: string[]
 }
 
 type AirtableConfig = {
@@ -53,6 +64,16 @@ type AirtableConfig = {
   nameFieldId: string
   statusFieldId: string
   targetZipFieldId: string
+  contractorNameFieldId: string
+  pricingTierFieldId: string
+  leadsPerDayFieldId: string
+  clientNotesFieldId: string
+  servicesOfferedFieldId: string
+  clientCityFieldId: string
+  businessPhoneFieldId: string
+  notificationPhoneFieldId: string
+  notificationEmailFieldId: string
+  prospectEmailFieldId: string
   activeStatusNames: Set<string>
 }
 
@@ -145,8 +166,46 @@ function getAirtableConfig(): AirtableConfig | null {
   const statusFieldId = process.env.AIRTABLE_CLIENT_STATUS_FIELD_ID?.trim() || DEFAULT_CLIENT_STATUS_FIELD_ID
   const targetZipFieldId =
     process.env.AIRTABLE_CLIENT_TARGET_ZIPS_FIELD_ID?.trim() || DEFAULT_CLIENT_TARGET_ZIPS_FIELD_ID
+  const contractorNameFieldId =
+    process.env.AIRTABLE_CLIENT_CONTRACTOR_NAME_FIELD_ID?.trim() || DEFAULT_CLIENT_CONTRACTOR_NAME_FIELD_ID
+  const pricingTierFieldId =
+    process.env.AIRTABLE_CLIENT_PRICING_TIER_FIELD_ID?.trim() || DEFAULT_CLIENT_PRICING_TIER_FIELD_ID
+  const leadsPerDayFieldId =
+    process.env.AIRTABLE_CLIENT_LEADS_PER_DAY_FIELD_ID?.trim() || DEFAULT_CLIENT_LEADS_PER_DAY_FIELD_ID
+  const clientNotesFieldId =
+    process.env.AIRTABLE_CLIENT_NOTES_FIELD_ID?.trim() || DEFAULT_CLIENT_NOTES_FIELD_ID
+  const servicesOfferedFieldId =
+    process.env.AIRTABLE_CLIENT_SERVICES_OFFERED_FIELD_ID?.trim() || DEFAULT_CLIENT_SERVICES_OFFERED_FIELD_ID
+  const clientCityFieldId =
+    process.env.AIRTABLE_CLIENT_CITY_FIELD_ID?.trim() || DEFAULT_CLIENT_CITY_FIELD_ID
+  const businessPhoneFieldId =
+    process.env.AIRTABLE_CLIENT_BUSINESS_PHONE_FIELD_ID?.trim() || DEFAULT_CLIENT_BUSINESS_PHONE_FIELD_ID
+  const notificationPhoneFieldId =
+    process.env.AIRTABLE_CLIENT_NOTIFICATION_PHONE_FIELD_ID?.trim() || DEFAULT_CLIENT_NOTIFICATION_PHONE_FIELD_ID
+  const notificationEmailFieldId =
+    process.env.AIRTABLE_CLIENT_NOTIFICATION_EMAIL_FIELD_ID?.trim() || DEFAULT_CLIENT_NOTIFICATION_EMAIL_FIELD_ID
+  const prospectEmailFieldId =
+    process.env.AIRTABLE_CLIENT_PROSPECT_EMAIL_FIELD_ID?.trim() || DEFAULT_CLIENT_PROSPECT_EMAIL_FIELD_ID
 
-  if (!baseId || !tableId || !nameFieldId || !statusFieldId || !targetZipFieldId) return null
+  if (
+    !baseId ||
+    !tableId ||
+    !nameFieldId ||
+    !statusFieldId ||
+    !targetZipFieldId ||
+    !contractorNameFieldId ||
+    !pricingTierFieldId ||
+    !leadsPerDayFieldId ||
+    !clientNotesFieldId ||
+    !servicesOfferedFieldId ||
+    !clientCityFieldId ||
+    !businessPhoneFieldId ||
+    !notificationPhoneFieldId ||
+    !notificationEmailFieldId ||
+    !prospectEmailFieldId
+  ) {
+    return null
+  }
 
   return {
     token,
@@ -155,6 +214,16 @@ function getAirtableConfig(): AirtableConfig | null {
     nameFieldId,
     statusFieldId,
     targetZipFieldId,
+    contractorNameFieldId,
+    pricingTierFieldId,
+    leadsPerDayFieldId,
+    clientNotesFieldId,
+    servicesOfferedFieldId,
+    clientCityFieldId,
+    businessPhoneFieldId,
+    notificationPhoneFieldId,
+    notificationEmailFieldId,
+    prospectEmailFieldId,
     activeStatusNames: getActiveStatusNames(),
   }
 }
@@ -257,6 +326,20 @@ function findMatchingClientRecords(
   return rows.filter((row) => row.businessNameNormalized && candidates.has(row.businessNameNormalized))
 }
 
+function normalizePhoneList(values: string[] | null | undefined): string[] {
+  if (!Array.isArray(values)) return []
+  return values.map((value) => cleanString(value)).filter(Boolean)
+}
+
+function normalizeEmailValue(value: string | null | undefined): string | null {
+  const cleaned = cleanString(value)
+  return cleaned ? cleaned.toLowerCase() : null
+}
+
+function hasOwn(input: object, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(input, key)
+}
+
 export async function checkAirtableZipConflictsForApproval(input: {
   portalKey: string
   requestedAddZipCodes: string[]
@@ -328,6 +411,30 @@ export async function syncApprovedZipCodesToAirtable(input: {
   organizationName?: string
   targetZipCodes: string[]
 }): Promise<AirtableZipSyncResult> {
+  return syncPortalProfileToAirtable({
+    portalKey: input.portalKey,
+    organizationName: input.organizationName,
+    targetZipCodes: input.targetZipCodes,
+  })
+}
+
+export async function syncPortalProfileToAirtable(input: {
+  portalKey: string
+  organizationName?: string
+  businessName?: string | null
+  contractorName?: string | null
+  targetZipCodes?: string[]
+  businessPhone?: string | null
+  leadDeliveryPhones?: string[] | null
+  leadNotificationPhone?: string | null
+  leadNotificationEmail?: string | null
+  leadProspectEmail?: string | null
+  pricingTier?: string | null
+  desiredLeadVolumeDaily?: number | null
+  clientNotes?: string | null
+  servicesOffered?: string[] | string | null
+  clientCity?: string | null
+}): Promise<AirtableZipSyncResult> {
   const config = getAirtableConfig()
   if (!config) {
     return {
@@ -366,9 +473,97 @@ export async function syncApprovedZipCodesToAirtable(input: {
   }
 
   const target = matches[0]
-  const normalizedTargetZipCodes = Array.from(
-    new Set(input.targetZipCodes.map((zip) => cleanString(zip)).filter((zip) => ZIP_RE.test(zip)))
-  )
+  const fieldUpdates: Record<string, string | null> = {}
+  const updatedFields: string[] = []
+  let normalizedTargetZipCodes: string[] | undefined
+
+  if (hasOwn(input, 'businessName')) {
+    fieldUpdates[config.nameFieldId] = cleanString(input.businessName) || null
+    updatedFields.push(config.nameFieldId)
+  }
+
+  if (hasOwn(input, 'contractorName')) {
+    fieldUpdates[config.contractorNameFieldId] = cleanString(input.contractorName) || null
+    updatedFields.push(config.contractorNameFieldId)
+  }
+
+  if (hasOwn(input, 'targetZipCodes')) {
+    normalizedTargetZipCodes = Array.from(
+      new Set((input.targetZipCodes || []).map((zip) => cleanString(zip)).filter((zip) => ZIP_RE.test(zip)))
+    )
+    fieldUpdates[config.targetZipFieldId] =
+      normalizedTargetZipCodes.length > 0 ? normalizedTargetZipCodes.join(', ') : null
+    updatedFields.push(config.targetZipFieldId)
+  }
+
+  if (hasOwn(input, 'businessPhone')) {
+    fieldUpdates[config.businessPhoneFieldId] = cleanString(input.businessPhone) || null
+    updatedFields.push(config.businessPhoneFieldId)
+  } else if (hasOwn(input, 'leadDeliveryPhones')) {
+    const leadDeliveryPhones = normalizePhoneList(input.leadDeliveryPhones)
+    fieldUpdates[config.businessPhoneFieldId] = leadDeliveryPhones[0] || null
+    updatedFields.push(config.businessPhoneFieldId)
+  }
+
+  if (hasOwn(input, 'leadNotificationPhone')) {
+    fieldUpdates[config.notificationPhoneFieldId] = cleanString(input.leadNotificationPhone) || null
+    updatedFields.push(config.notificationPhoneFieldId)
+  }
+
+  if (hasOwn(input, 'leadNotificationEmail')) {
+    fieldUpdates[config.notificationEmailFieldId] = normalizeEmailValue(input.leadNotificationEmail)
+    updatedFields.push(config.notificationEmailFieldId)
+  }
+
+  if (hasOwn(input, 'leadProspectEmail')) {
+    fieldUpdates[config.prospectEmailFieldId] = normalizeEmailValue(input.leadProspectEmail)
+    updatedFields.push(config.prospectEmailFieldId)
+  }
+
+  if (hasOwn(input, 'pricingTier')) {
+    fieldUpdates[config.pricingTierFieldId] = cleanString(input.pricingTier) || null
+    updatedFields.push(config.pricingTierFieldId)
+  }
+
+  if (hasOwn(input, 'desiredLeadVolumeDaily')) {
+    const leadsPerDayRaw = input.desiredLeadVolumeDaily
+    const leadsPerDay =
+      typeof leadsPerDayRaw === 'number' && Number.isFinite(leadsPerDayRaw) && leadsPerDayRaw > 0
+        ? String(Math.floor(leadsPerDayRaw))
+        : null
+    fieldUpdates[config.leadsPerDayFieldId] = leadsPerDay
+    updatedFields.push(config.leadsPerDayFieldId)
+  }
+
+  if (hasOwn(input, 'clientNotes')) {
+    fieldUpdates[config.clientNotesFieldId] = cleanString(input.clientNotes) || null
+    updatedFields.push(config.clientNotesFieldId)
+  }
+
+  if (hasOwn(input, 'servicesOffered')) {
+    const services =
+      typeof input.servicesOffered === 'string'
+        ? cleanString(input.servicesOffered)
+        : Array.isArray(input.servicesOffered)
+          ? input.servicesOffered.map((value) => cleanString(value)).filter(Boolean).join(', ')
+          : null
+    fieldUpdates[config.servicesOfferedFieldId] = services || null
+    updatedFields.push(config.servicesOfferedFieldId)
+  }
+
+  if (hasOwn(input, 'clientCity')) {
+    fieldUpdates[config.clientCityFieldId] = cleanString(input.clientCity) || null
+    updatedFields.push(config.clientCityFieldId)
+  }
+
+  if (Object.keys(fieldUpdates).length === 0) {
+    return {
+      synced: true,
+      airtableRecordId: target.id,
+      targetZipCodes: normalizedTargetZipCodes,
+      updatedFields: [],
+    }
+  }
 
   const updateUrl = new URL(`https://api.airtable.com/v0/${config.baseId}/${config.tableId}/${target.id}`)
   updateUrl.searchParams.set('returnFieldsByFieldId', 'true')
@@ -380,9 +575,7 @@ export async function syncApprovedZipCodesToAirtable(input: {
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      fields: {
-        [config.targetZipFieldId]: normalizedTargetZipCodes.join(', '),
-      },
+      fields: fieldUpdates,
       typecast: true,
     }),
     cache: 'no-store',
@@ -401,5 +594,6 @@ export async function syncApprovedZipCodesToAirtable(input: {
     synced: true,
     airtableRecordId: target.id,
     targetZipCodes: normalizedTargetZipCodes,
+    updatedFields,
   }
 }

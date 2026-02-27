@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getInternalClientsDashboardData, type InternalClientRow } from '@/lib/internal-clients'
 import { createInternalPortalPreviewToken } from '@/lib/internal-portal-preview'
+import AirtableResyncButton from './AirtableResyncButton'
 import ZipRequestActions from './ZipRequestActions'
 
 export const dynamic = 'force-dynamic'
@@ -277,6 +278,7 @@ export default async function InternalClientsPage({
                           >
                             Payment Confirmation
                           </Link>
+                          <AirtableResyncButton portalKey={row.portalKey} />
                           {row.pendingZipRequest ? (
                             <ZipRequestActions
                               requestId={row.pendingZipRequest.requestId}

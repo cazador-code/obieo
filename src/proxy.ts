@@ -23,6 +23,7 @@ function isAppHostname(host: string): boolean {
 const INTERNAL_AUTH_BASE_PATHS = [
   '/internal/leadgen/payment-link',
   '/internal/clients',
+  '/api/internal/clients',
   '/api/internal/leadgen/payment-link',
   '/api/internal/leadgen/payment-confirmation',
   '/api/internal/portal/profile',

@@ -5,7 +5,7 @@ import {
   resolveZipChangeRequestInConvex,
   submitZipChangeRequestInConvex,
 } from '@/lib/convex'
-import { checkAirtableZipConflictsForApproval, syncApprovedZipCodesToAirtable } from '@/lib/airtable-client-zips'
+import { checkAirtableZipConflictsForApproval, syncPortalProfileToAirtable } from '@/lib/airtable-client-zips'
 import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
@@ -55,6 +55,11 @@ function normalizeStringArray(value: unknown): string[] {
   }
 
   return []
+}
+
+function getOrganizationRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  return value as Record<string, unknown>
 }
 
 export async function POST(request: NextRequest) {
@@ -144,10 +149,8 @@ export async function POST(request: NextRequest) {
   }
 
   const snapshot = await getOrganizationSnapshotInConvex({ portalKey: zipRequest.portalKey })
-  const orgName =
-    snapshot?.organization && typeof snapshot.organization.name === 'string'
-      ? snapshot.organization.name
-      : undefined
+  const organizationRecord = getOrganizationRecord(snapshot?.organization)
+  const orgName = cleanString(organizationRecord?.name) || undefined
 
   if (decision === 'approve') {
     const conflictCheck = await checkAirtableZipConflictsForApproval({
@@ -222,10 +225,18 @@ export async function POST(request: NextRequest) {
   }
 
   if (decision === 'approve') {
-    const syncResult = await syncApprovedZipCodesToAirtable({
+    const syncResult = await syncPortalProfileToAirtable({
       portalKey: zipRequest.portalKey,
       organizationName: orgName,
       targetZipCodes: resolveResult.requestedZipCodes || zipRequest.requestedZipCodes,
+      ...(organizationRecord
+        ? {
+            leadDeliveryPhones: normalizeStringArray(organizationRecord.leadDeliveryPhones),
+            leadNotificationPhone: cleanString(organizationRecord.leadNotificationPhone),
+            leadNotificationEmail: cleanString(organizationRecord.leadNotificationEmail),
+            leadProspectEmail: cleanString(organizationRecord.leadProspectEmail),
+          }
+        : {}),
     })
 
     if (!syncResult.synced) {

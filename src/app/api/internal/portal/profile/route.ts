@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { updatePortalProfileInConvex } from '@/lib/convex'
+import { syncPortalProfileToAirtable } from '@/lib/airtable-client-zips'
 import { resolveInternalPortalPreviewToken } from '@/lib/internal-portal-preview'
 import { sendPortalProfileChangeNotification } from '@/lib/portal-profile-notifications'
 import { normalizePortalEditableProfile } from '@/lib/portal-profile'
@@ -74,6 +75,22 @@ export async function PATCH(request: NextRequest) {
       { success: false, error: 'Could not update profile right now. Please try again.' },
       { status: 500 }
     )
+  }
+
+  try {
+    const airtableSync = await syncPortalProfileToAirtable({
+      portalKey,
+      targetZipCodes: result.profile.targetZipCodes,
+      leadDeliveryPhones: result.profile.leadDeliveryPhones,
+      leadNotificationPhone: result.profile.leadNotificationPhone ?? null,
+      leadNotificationEmail: result.profile.leadNotificationEmail ?? null,
+      leadProspectEmail: result.profile.leadProspectEmail ?? null,
+    })
+    if (!airtableSync.synced && airtableSync.reason !== 'not_configured') {
+      console.error('Airtable profile sync failed after internal portal update:', airtableSync)
+    }
+  } catch (error) {
+    console.error('Unexpected Airtable profile sync error after internal portal update:', error)
   }
 
   try {
