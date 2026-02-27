@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { linkFailedChargeRecordToClient } from '@/lib/airtable-client-links'
+import { getClientIp, rateLimitResponse, webhookLimiter } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -58,6 +59,12 @@ function mapResultToStatus(reason?: string): number {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { success, remaining } = await webhookLimiter.limit(ip)
+  if (!success) {
+    return rateLimitResponse(remaining)
+  }
+
   const webhookSecret =
     process.env.AIRTABLE_FAILED_CHARGE_WEBHOOK_SECRET?.trim() ||
     process.env.AIRTABLE_LEAD_DELIVERED_WEBHOOK_SECRET?.trim()

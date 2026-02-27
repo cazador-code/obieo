@@ -186,14 +186,23 @@ async function patchRecordLink({ token, baseId, tableId, recordId, linkFieldId, 
   }
 }
 
-function pickClientIdByNames({ nameMap, candidates }) {
+function addIndexEntry(index, key, rowId) {
+  if (!key) return
+  const existing = index.get(key) || new Set()
+  existing.add(rowId)
+  index.set(key, existing)
+}
+
+function collectClientIdsByNames({ nameMap, candidates }) {
   const matches = new Set()
   for (const name of candidates) {
-    const id = nameMap.get(name)
-    if (id) matches.add(id)
+    const ids = nameMap.get(name)
+    if (!ids) continue
+    for (const id of ids) {
+      matches.add(id)
+    }
   }
-  if (matches.size !== 1) return null
-  return [...matches][0]
+  return matches
 }
 
 async function main() {
@@ -227,19 +236,14 @@ async function main() {
     const notificationEmail = normalizeEmail(fields[CLIENT_NOTIFICATION_EMAIL_FIELD_ID])
     const prospectEmail = normalizeEmail(fields[CLIENT_PROSPECT_EMAIL_FIELD_ID])
 
-    if (normalizedName && !clientByName.has(normalizedName)) {
-      clientByName.set(normalizedName, row.id)
-    }
-    if (notificationEmail && !clientByEmail.has(notificationEmail)) {
-      clientByEmail.set(notificationEmail, row.id)
-    }
-    if (prospectEmail && !clientByEmail.has(prospectEmail)) {
-      clientByEmail.set(prospectEmail, row.id)
-    }
+    addIndexEntry(clientByName, normalizedName, row.id)
+    addIndexEntry(clientByEmail, notificationEmail, row.id)
+    addIndexEntry(clientByEmail, prospectEmail, row.id)
   }
 
   let leadUpdated = 0
   let leadSkipped = 0
+  let leadAmbiguous = 0
   const leadFailures = []
 
   const leadRows = await listTableRows({
@@ -272,15 +276,23 @@ async function main() {
       }
     }
 
-    const clientId = pickClientIdByNames({
+    const matchedClientIds = collectClientIdsByNames({
       nameMap: clientByName,
       candidates,
     })
 
-    if (!clientId) {
+    if (matchedClientIds.size === 0) {
       leadSkipped += 1
       continue
     }
+
+    if (matchedClientIds.size > 1) {
+      leadAmbiguous += 1
+      leadSkipped += 1
+      continue
+    }
+
+    const [clientId] = [...matchedClientIds]
 
     try {
       await patchRecordLink({
@@ -300,6 +312,7 @@ async function main() {
 
   let failedChargesUpdated = 0
   let failedChargesSkipped = 0
+  let failedChargesAmbiguous = 0
   const failedChargeFailures = []
 
   const failedChargeRows = await listTableRows({
@@ -326,14 +339,32 @@ async function main() {
 
     const normalizedName = normalizeName(fields[FAILED_CHARGES_NAME_FIELD_ID])
     const normalizedEmail = normalizeEmail(fields[FAILED_CHARGES_EMAIL_FIELD_ID])
-    const clientFromName = normalizedName ? clientByName.get(normalizedName) : null
-    const clientFromEmail = normalizedEmail ? clientByEmail.get(normalizedEmail) : null
-    const clientId = clientFromName || clientFromEmail
+    const matchedClientIds = new Set()
 
-    if (!clientId) {
+    if (normalizedName && clientByName.has(normalizedName)) {
+      for (const id of clientByName.get(normalizedName)) {
+        matchedClientIds.add(id)
+      }
+    }
+
+    if (normalizedEmail && clientByEmail.has(normalizedEmail)) {
+      for (const id of clientByEmail.get(normalizedEmail)) {
+        matchedClientIds.add(id)
+      }
+    }
+
+    if (matchedClientIds.size === 0) {
       failedChargesSkipped += 1
       continue
     }
+
+    if (matchedClientIds.size > 1) {
+      failedChargesAmbiguous += 1
+      failedChargesSkipped += 1
+      continue
+    }
+
+    const [clientId] = [...matchedClientIds]
 
     try {
       await patchRecordLink({
@@ -361,12 +392,14 @@ async function main() {
             total: leadRows.length,
             updated: leadUpdated,
             skipped: leadSkipped,
+            ambiguous: leadAmbiguous,
             failed: leadFailures.length,
           },
           failedCharges: {
             total: failedChargeRows.length,
             updated: failedChargesUpdated,
             skipped: failedChargesSkipped,
+            ambiguous: failedChargesAmbiguous,
             failed: failedChargeFailures.length,
           },
         },

@@ -33,6 +33,12 @@ export const smsVerifyLimiter = new Ratelimit({
   prefix: 'ratelimit:sms-verify',
 });
 
+export const webhookLimiter = new Ratelimit({
+  redis: kv,
+  limiter: Ratelimit.slidingWindow(120, '1 m'), // 120 requests per minute
+  prefix: 'ratelimit:webhook',
+});
+
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');
   return forwarded?.split(',')[0].trim() ?? 'anonymous';

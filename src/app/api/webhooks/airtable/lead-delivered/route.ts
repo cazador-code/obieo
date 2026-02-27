@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { kv } from '@vercel/kv'
 import { recordLeadDeliveryInConvex } from '@/lib/convex'
 import { linkLeadSheetRecordToClient } from '@/lib/airtable-client-links'
+import { getClientIp, rateLimitResponse, webhookLimiter } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -186,6 +187,12 @@ function resolvePortalKey(payload: AirtableLeadDeliveredPayload): string | null 
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { success, remaining } = await webhookLimiter.limit(ip)
+  if (!success) {
+    return rateLimitResponse(remaining)
+  }
+
   const webhookSecret = process.env.AIRTABLE_LEAD_DELIVERED_WEBHOOK_SECRET
   if (!webhookSecret?.trim()) {
     return NextResponse.json({ success: false, error: 'Server misconfiguration' }, { status: 500 })
