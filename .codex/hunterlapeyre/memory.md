@@ -12,7 +12,7 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
 - Dev server: `npm run dev`
 
 ## Common Commands
-- Typecheck: `npx tsc -p tsconfig.json --noEmit` (note: there is no `npm run typecheck` script)
+- Typecheck: `npm run typecheck`
 - Lint: `npm run lint`
 - Build: `npm run build`
 - Deploy Convex functions/schema: `npm run convex:deploy`
@@ -50,7 +50,7 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
 
 ## Reusable Verification (fill in over time)
 - Lint: `npm run lint`
-- Typecheck: `npx tsc -p tsconfig.json --noEmit`
+- Typecheck: `npm run typecheck`
 - Build: `npm run build`
 - Unit tests:
 - E2E:

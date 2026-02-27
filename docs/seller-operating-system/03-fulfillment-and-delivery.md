@@ -1,5 +1,21 @@
 # Stage 3: Fulfillment and Delivery
 
+**Version:** 1.1  
+**Last Updated:** 2026-02-27  
+**Owner:** Obieo Ops Lead (currently Hunter Lapeyre)  
+**Related:** [Stage 2: Onboarding and Activation](./02-onboarding-and-activation.md) | [Stage 4: Retention and Expansion](./04-retention-and-expansion.md)
+
+## Operating Parameters (Source of Truth)
+
+- Default DealMachine property filters:
+  - `Year Built` -> `is less than 2005`
+  - `Living Area` -> `greater than 1200`
+- Override path:
+  - If a client has a documented exception, use the value in ClickUp client notes (`List Build Overrides`) first.
+  - If no override is documented, use the defaults above.
+- Change control:
+  - If these defaults change, update this section first, then update all SOP references in this file.
+
 ## Versioning Note
 
 - `Octoparse` appears in seller transcripts as the prior scraping stack.
@@ -10,7 +26,7 @@
 
 - Transcript `T002` (client scripting process):
   - Start every shift in `Error Table` and work the `needs` column one client at a time.
-  - Pull next ZIP from `Zip Codes to target`, build list in DealMachine, and keep list sizes controlled.
+  - Pull next ZIP from `ZIP Codes to target`, build list in DealMachine, and keep list sizes controlled.
   - Run local scraper via terminal command (`node shrek.js`) in the DealMachine folder.
   - Export scrape CSV, clean/normalize in Google Sheets, and standardize columns.
   - Run Landline Remover enrichment, then filter out risky/unwanted records.
@@ -26,7 +42,7 @@
   - Scrape queue is driven by CS status `waiting for contacts`.
   - Monitoring is two-channel:
     - Morning ClickUp sweep for overnight runouts.
-    - Mid-day Slack `Zip Data Channel` tags for new runouts.
+    - Mid-day Slack `ZIP Data Channel` tags for new runouts.
   - CSV handoff has a hard timing requirement: before 10:00 AM Eastern.
 - Transcript `T005` (part 2 scraping workflow and operator signaling):
   - Mid-day runout work starts with Slack acknowledgment (`eyes` emoji) to claim ownership.
@@ -36,7 +52,7 @@
     - reply in thread with CSV uploaded and manager tag (`CSV is scraped and verified`).
   - ZIP source fields are explicit in ClickUp:
     - `What area do you want us to scrape?` (remaining targets),
-    - `Zip codes already scrape` (already completed areas).
+    - `ZIP codes already scrape` (already completed areas).
 - Transcript `T006` (data scraping guide part 3):
   - Contact volume target is derived from weekly appointment goal (about 1,000 contacts per appointment target).
   - Practical scrape batching is split runs (typically 10k-15k; avoid oversized one-shot pulls).
@@ -66,15 +82,15 @@
 1. Daily/weekly operating rhythm:
    - Daily start: open bookmarked ClickUp view and sweep clients marked `waiting for contacts`.
    - Then open `Error Table` and clear `needs` queue client-by-client.
-   - Through the day, monitor Slack `Zip Data Channel` for runout tags and handle immediately.
+   - Through the day, monitor Slack `ZIP Data Channel` for runout tags and handle immediately.
    - On any Slack runout alert, claim it with `eyes` reaction before scraping.
    - On completion, post threaded completion with CSV + manager tag.
    - Morning handoff target: submit scrape CSV by 10:00 AM Eastern.
 2. Lead sourcing and cleaning:
    - In ClickUp client details, use fields intentionally:
      - `What area do you want us to scrape?` = next ZIP/area source.
-     - `Zip codes already scrape` = do-not-repeat reference.
-   - In client row, copy next ZIP from `Zip Codes to target`.
+     - `ZIP codes already scrape` = do-not-repeat reference.
+   - In client row, copy next ZIP from `ZIP Codes to target`.
    - In DealMachine, delete prior scrape list before starting next one.
    - Keep one-client-only active list in DealMachine at all times.
    - Build list for ZIP target.
@@ -90,7 +106,7 @@
    - DealMachine list build setup:
      - Paste ZIPs with no spaces and select `zip` search type.
      - Apply property filters:
-       - `Year Built` with `is less than` condition (threshold not specified in transcript).
+       - `Year Built` with `is less than 2005`.
        - `Living Area` greater than `1200`.
      - Build list and capture resulting page count.
    - Tracking hygiene:
@@ -201,7 +217,7 @@
   - Percent of uploads meeting >=2,000 contact threshold.
   - Status transition latency (`needs help` to `add KPI`).
   - Morning coverage rate: percent of `waiting for contacts` clients processed at shift start.
-  - Mid-day response latency from `Zip Data Channel` tag to scrape start.
+  - Mid-day response latency from `ZIP Data Channel` tag to scrape start.
   - On-time CSV submission rate before 10:00 AM Eastern.
   - Claim latency: time from Slack tag to `eyes` ownership reaction.
   - Completion proof rate: percent of jobs with threaded CSV + manager tag confirmation.
@@ -238,7 +254,7 @@
 ### SOP: Daily Client Scripting and Submission
 
 1. Open `Error Table` and process each client in `needs`.
-2. Select next ZIP from `Zip Codes to target`.
+2. Select next ZIP from `ZIP Codes to target`.
 3. In DealMachine, clear prior list and build new ZIP list.
 4. Keep list size in guardrail range unless intentionally running larger package capacity.
 5. Move processed ZIP from target list to scraped list.
@@ -260,7 +276,7 @@
 
 1. Open client details and read:
    - remaining targets (`What area do you want us to scrape?`)
-   - already scraped log (`Zip codes already scrape`)
+   - already scraped log (`ZIP codes already scrape`)
    - weekly appointment target.
 2. Plan contact requirement:
    - target about 1,000 contacts per weekly appointment goal.
@@ -268,7 +284,7 @@
 3. In DealMachine, confirm previous client list is deleted.
 4. Paste target ZIP(s) with no spaces and choose `zip` mode.
 5. Apply standard filters:
-   - `Year Built` -> `is less than` (use team-approved threshold),
+   - `Year Built` -> `is less than 2005` (unless ClickUp `List Build Overrides` specifies another value),
    - `Living Area` -> `> 1200`.
 6. If one ZIP is too small, add additional ZIPs until planned volume is met.
 7. Click `Build List`.
@@ -320,7 +336,7 @@
 3. Build scrape priority list from those clients first.
 4. Start scrape workflow for top-priority runouts.
 5. Confirm CSV handoff is scheduled to complete before 10:00 AM Eastern.
-6. Keep Slack `Zip Data Channel` open for mid-day runout tags.
+6. Keep Slack `ZIP Data Channel` open for mid-day runout tags.
 7. On any new tag:
    - Confirm client moved to `waiting for contacts`.
    - Add to active scrape queue immediately.
@@ -331,14 +347,14 @@
 - [ ] ClickUp morning sweep completed
 - [ ] All `waiting for contacts` clients acknowledged
 - [ ] CSV handoff completed before 10:00 AM Eastern
-- [ ] Slack `Zip Data Channel` monitored during shift
+- [ ] Slack `ZIP Data Channel` monitored during shift
 - [ ] Mid-day runout tags converted into active scrape tasks
 
 ### SOP: Slack Claim and Completion Protocol
 
-1. When tagged in `Zip Data Channel`, react with `eyes` to claim the task.
+1. When tagged in `ZIP Data Channel`, react with `eyes` to claim the task.
 2. Open client in ClickUp and pull next target from `What area do you want us to scrape?`.
-3. Cross-check `Zip codes already scrape` to avoid duplicate area pulls.
+3. Cross-check `ZIP codes already scrape` to avoid duplicate area pulls.
 4. Complete scraping and generate CSV per scrape SOP.
 5. Remove in-progress signal and mark task completed in channel workflow.
 6. Reply in thread with CSV upload and tag manager/supervisor.
@@ -350,7 +366,7 @@
 
 - [ ] `eyes` reaction posted when work starts
 - [ ] ZIP selected from `What area do you want us to scrape?`
-- [ ] `Zip codes already scrape` checked before scrape
+- [ ] `ZIP codes already scrape` checked before scrape
 - [ ] Threaded CSV uploaded at completion
 - [ ] Manager/supervisor tagged in completion reply
 - [ ] Final contact count included in completion message
@@ -380,7 +396,7 @@
 9. After import, filter by ZIP tag and verify imported count.
 10. If imported count is below target (around 2,000), set client back to `waiting for contacts`.
 11. Select imported records and add to `Outreach` automation in drip mode.
-12. Apply cadence defaults unless owner says otherwise:
+12. Apply cadence defaults unless the client's account manager or designated client owner has documented an override in ClickUp notes or GHL account notes:
     - 15 every 60 seconds.
     - Monday-Friday.
     - 3pm-5pm Eastern.

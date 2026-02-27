@@ -42,15 +42,18 @@ function asCsv(values: string[]): string {
   return values.length > 0 ? values.join(', ') : 'none'
 }
 
+function getDisplayedConflictZipCodes(conflictingZipCodes: string[], conflicts: ZipConflictRow[]): string[] {
+  return conflictingZipCodes.length > 0
+    ? conflictingZipCodes
+    : Array.from(new Set(conflicts.map((item) => item.zipCode)))
+}
+
 function conflictSummary(
   conflictingZipCodes: string[],
   conflicts: ZipConflictRow[],
   conflictCount?: number
 ): string {
-  const zipText =
-    conflictingZipCodes.length > 0
-      ? conflictingZipCodes.join(', ')
-      : Array.from(new Set(conflicts.map((item) => item.zipCode))).join(', ')
+  const zipText = getDisplayedConflictZipCodes(conflictingZipCodes, conflicts).join(', ')
   const sample = conflicts.slice(0, 3).map((item) => `${item.zipCode} (${item.businessName})`)
   const extras =
     typeof conflictCount === 'number' && conflictCount > sample.length
@@ -92,6 +95,11 @@ export default function ZipRequestActions({
       requested: asCsv(requestedZipCodes),
     }),
     [addedZipCodes, currentZipCodes, removedZipCodes, requestedZipCodes]
+  )
+
+  const displayedConflictZipCodes = useMemo(
+    () => getDisplayedConflictZipCodes(conflictingZipCodes, conflicts),
+    [conflictingZipCodes, conflicts]
   )
 
   const hasConflicts = conflictingZipCodes.length > 0 || conflicts.length > 0 || conflictCount > 0
@@ -223,7 +231,7 @@ export default function ZipRequestActions({
       {!checkingConflicts && hasConflicts ? (
         <div className="mt-1 rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] text-red-700">
           <p className="font-semibold">
-            Conflict found for ZIPs: {(conflictingZipCodes.length > 0 ? conflictingZipCodes : Array.from(new Set(conflicts.map((item) => item.zipCode)))).join(', ')}
+            Conflict found for ZIPs: {displayedConflictZipCodes.join(', ')}
           </p>
           {conflicts.slice(0, 6).map((item, idx) => (
             <p key={`${item.zipCode}:${item.businessName}:${idx}`}>
