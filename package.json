@@ -11,7 +11,9 @@
     "convex:deploy": "convex deploy",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint src convex --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run lint && npm run typecheck && npm test --if-present",
     "leadgen:initiate-paid": "node scripts/leadgen-initiate-paid-client.mjs",
     "clerk:create-workspace": "node scripts/clerk-create-workspace.mjs",
     "stripe:invoice": "node scripts/stripe-send-invoice.mjs",
@@ -51,6 +53,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "puppeteer": "^24.37.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
