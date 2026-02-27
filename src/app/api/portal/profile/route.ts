@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { updatePortalProfileInConvex } from '@/lib/convex'
+import { syncPortalProfileToAirtable } from '@/lib/airtable-client-zips'
 import { sendPortalProfileChangeNotification } from '@/lib/portal-profile-notifications'
 import { normalizePortalEditableProfile } from '@/lib/portal-profile'
+import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -26,6 +28,12 @@ function getPrimaryEmail(user: {
 }
 
 export async function PATCH(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { success, remaining } = await auditLimiter.limit(ip)
+  if (!success) {
+    return rateLimitResponse(remaining)
+  }
+
   const { userId } = await auth()
   if (!userId) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
@@ -78,6 +86,22 @@ export async function PATCH(request: NextRequest) {
       { success: false, error: 'Could not update profile right now. Please try again.' },
       { status: 500 }
     )
+  }
+
+  try {
+    const airtableSync = await syncPortalProfileToAirtable({
+      portalKey,
+      targetZipCodes: result.profile.targetZipCodes,
+      leadDeliveryPhones: result.profile.leadDeliveryPhones,
+      leadNotificationPhone: result.profile.leadNotificationPhone ?? null,
+      leadNotificationEmail: result.profile.leadNotificationEmail ?? null,
+      leadProspectEmail: result.profile.leadProspectEmail ?? null,
+    })
+    if (!airtableSync.synced && airtableSync.reason !== 'not_configured') {
+      console.error('Airtable profile sync failed after portal update:', airtableSync)
+    }
+  } catch (error) {
+    console.error('Unexpected Airtable profile sync error after portal update:', error)
   }
 
   try {

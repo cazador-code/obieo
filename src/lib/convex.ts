@@ -1,5 +1,11 @@
 import { ConvexHttpClient } from 'convex/browser'
 import type { BillingModel } from '@/lib/billing-models'
+import {
+  buildContractorName,
+  resolveAirtableClientCity,
+  resolveAirtablePricingTier,
+} from '@/lib/airtable-client-mappers'
+import { syncPortalProfileToAirtable } from '@/lib/airtable-client-zips'
 import type { PortalEditableProfile } from '@/lib/portal-profile'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
@@ -584,7 +590,49 @@ export async function submitClientOnboardingInConvex(input: {
       authSecret,
       ...input,
     })
-    return result as { submissionId: string; organizationId: string; portalKey: string }
+    const submissionResult = result as { submissionId: string; organizationId: string; portalKey: string }
+
+    try {
+      const contractorName = buildContractorName({
+        accountFirstName: input.accountFirstName,
+        accountLastName: input.accountLastName,
+        billingContactName: input.billingContactName,
+      })
+      const pricingTier = resolveAirtablePricingTier({
+        billingModel: input.billingModel,
+        leadUnitPriceCents: input.leadUnitPriceCents,
+      })
+      const clientCity = resolveAirtableClientCity({
+        businessAddress: input.businessAddress,
+        serviceAreas: input.serviceAreas,
+      })
+
+      const airtableSync = await syncPortalProfileToAirtable({
+        portalKey: input.portalKey,
+        organizationName: input.companyName,
+        businessName: input.companyName,
+        ...(input.targetZipCodes ? { targetZipCodes: input.targetZipCodes } : {}),
+        ...(input.businessPhone ? { businessPhone: input.businessPhone } : {}),
+        ...(input.leadRoutingPhones.length > 0 ? { leadDeliveryPhones: input.leadRoutingPhones } : {}),
+        ...(input.leadNotificationPhone ? { leadNotificationPhone: input.leadNotificationPhone } : {}),
+        ...(input.leadNotificationEmail ? { leadNotificationEmail: input.leadNotificationEmail } : {}),
+        ...(input.leadProspectEmail ? { leadProspectEmail: input.leadProspectEmail } : {}),
+        ...(contractorName ? { contractorName } : {}),
+        ...(pricingTier ? { pricingTier } : {}),
+        ...(input.desiredLeadVolumeDaily ? { desiredLeadVolumeDaily: input.desiredLeadVolumeDaily } : {}),
+        ...(input.notes ? { clientNotes: input.notes } : {}),
+        ...(input.serviceTypes && input.serviceTypes.length > 0 ? { servicesOffered: input.serviceTypes } : {}),
+        ...(clientCity ? { clientCity } : {}),
+      })
+
+      if (!airtableSync.synced && airtableSync.reason !== 'not_configured') {
+        console.error('Airtable onboarding sync failed after Convex submit:', airtableSync)
+      }
+    } catch (error) {
+      console.error('Unexpected Airtable onboarding sync error after Convex submit:', error)
+    }
+
+    return submissionResult
   } catch (error) {
     console.error('Convex submitClientOnboarding failed:', error)
     if (opts?.throwOnError) throw error
