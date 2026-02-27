@@ -4,6 +4,7 @@ import { updatePortalProfileInConvex } from '@/lib/convex'
 import { syncPortalProfileToAirtable } from '@/lib/airtable-client-zips'
 import { sendPortalProfileChangeNotification } from '@/lib/portal-profile-notifications'
 import { normalizePortalEditableProfile } from '@/lib/portal-profile'
+import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -27,6 +28,12 @@ function getPrimaryEmail(user: {
 }
 
 export async function PATCH(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { success, remaining } = await auditLimiter.limit(ip)
+  if (!success) {
+    return rateLimitResponse(remaining)
+  }
+
   const { userId } = await auth()
   if (!userId) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })

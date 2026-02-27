@@ -274,7 +274,13 @@ async function main() {
   }
 
   const airtableRows = await listAirtableRows({ token, baseId, tableId })
-  const rowByName = new Map(airtableRows.map((row) => [row.businessNameNormalized, row]))
+  const rowsByName = new Map()
+  for (const row of airtableRows) {
+    if (!row.businessNameNormalized) continue
+    const existing = rowsByName.get(row.businessNameNormalized) || []
+    existing.push(row)
+    rowsByName.set(row.businessNameNormalized, existing)
+  }
 
   const businessByPortal = {}
   for (const [businessName, portalKey] of Object.entries(portalMap)) {
@@ -289,9 +295,23 @@ async function main() {
     const portalKey = cleanString(org.portalKey)
     const orgNameNormalized = normalizeName(org.name)
     const mappedNameNormalized = businessByPortal[portalKey] || ''
-    const row =
-      rowByName.get(orgNameNormalized) ||
-      (mappedNameNormalized ? rowByName.get(mappedNameNormalized) : undefined)
+    const orgNameMatches = orgNameNormalized ? rowsByName.get(orgNameNormalized) || [] : []
+    const mappedNameMatches = mappedNameNormalized ? rowsByName.get(mappedNameNormalized) || [] : []
+
+    let row = null
+    if (orgNameMatches.length === 1) {
+      row = orgNameMatches[0]
+    } else if (mappedNameMatches.length === 1) {
+      row = mappedNameMatches[0]
+    } else if (orgNameMatches.length > 1 || mappedNameMatches.length > 1) {
+      skipped += 1
+      failures.push({
+        portalKey,
+        businessName: cleanString(org.name) || '(unknown)',
+        error: `Ambiguous Airtable match (orgNameMatches=${orgNameMatches.length}, mappedNameMatches=${mappedNameMatches.length})`,
+      })
+      continue
+    }
 
     if (!row) {
       skipped += 1

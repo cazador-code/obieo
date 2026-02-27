@@ -4,6 +4,7 @@ import { syncPortalProfileToAirtable } from '@/lib/airtable-client-zips'
 import { resolveInternalPortalPreviewToken } from '@/lib/internal-portal-preview'
 import { sendPortalProfileChangeNotification } from '@/lib/portal-profile-notifications'
 import { normalizePortalEditableProfile } from '@/lib/portal-profile'
+import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -32,6 +33,12 @@ function getBasicAuthUser(request: NextRequest): string | undefined {
 }
 
 export async function PATCH(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { success, remaining } = await auditLimiter.limit(ip)
+  if (!success) {
+    return rateLimitResponse(remaining)
+  }
+
   let body: { previewToken?: unknown; profile?: unknown }
   try {
     body = (await request.json()) as { previewToken?: unknown; profile?: unknown }

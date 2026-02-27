@@ -7,6 +7,7 @@ import {
 } from '@/lib/airtable-client-mappers'
 import { syncPortalProfileToAirtable } from '@/lib/airtable-client-zips'
 import { getOrganizationSnapshotInConvex } from '@/lib/convex'
+import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -39,6 +40,12 @@ function getOrganizationRecord(value: unknown): Record<string, unknown> | null {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { success, remaining } = await auditLimiter.limit(ip)
+  if (!success) {
+    return rateLimitResponse(remaining)
+  }
+
   let body: ResyncPayload
   try {
     body = (await request.json()) as ResyncPayload
@@ -86,12 +93,26 @@ export async function POST(request: NextRequest) {
       : undefined
   const billingModel = toBillingModel(organizationRecord.billingModel)
   const pricingTier = resolveAirtablePricingTier({ billingModel, leadUnitPriceCents })
+  const businessAddress = cleanOptionalString(
+    typeof organizationRecord.businessAddress === 'string' ? organizationRecord.businessAddress : undefined
+  )
   const clientCity = resolveAirtableClientCity({
-    businessAddress: cleanOptionalString(
-      typeof organizationRecord.businessAddress === 'string' ? organizationRecord.businessAddress : undefined
-    ),
+    businessAddress,
     serviceAreas,
   })
+  const leadNotificationPhone = cleanOptionalString(
+    typeof organizationRecord.leadNotificationPhone === 'string'
+      ? organizationRecord.leadNotificationPhone
+      : undefined
+  )
+  const leadNotificationEmail = cleanOptionalString(
+    typeof organizationRecord.leadNotificationEmail === 'string'
+      ? organizationRecord.leadNotificationEmail
+      : undefined
+  )
+  const leadProspectEmail = cleanOptionalString(
+    typeof organizationRecord.leadProspectEmail === 'string' ? organizationRecord.leadProspectEmail : undefined
+  )
 
   const syncResult = await syncPortalProfileToAirtable({
     portalKey,
@@ -99,43 +120,9 @@ export async function POST(request: NextRequest) {
     ...(organizationName ? { businessName: organizationName } : {}),
     ...(targetZipCodes.length > 0 ? { targetZipCodes } : {}),
     ...(leadDeliveryPhones.length > 0 ? { leadDeliveryPhones } : {}),
-    ...(cleanOptionalString(
-      typeof organizationRecord.leadNotificationPhone === 'string'
-        ? organizationRecord.leadNotificationPhone
-        : undefined
-    )
-      ? {
-          leadNotificationPhone: cleanOptionalString(
-            typeof organizationRecord.leadNotificationPhone === 'string'
-              ? organizationRecord.leadNotificationPhone
-              : undefined
-          ),
-        }
-      : {}),
-    ...(cleanOptionalString(
-      typeof organizationRecord.leadNotificationEmail === 'string'
-        ? organizationRecord.leadNotificationEmail
-        : undefined
-    )
-      ? {
-          leadNotificationEmail: cleanOptionalString(
-            typeof organizationRecord.leadNotificationEmail === 'string'
-              ? organizationRecord.leadNotificationEmail
-              : undefined
-          ),
-        }
-      : {}),
-    ...(cleanOptionalString(
-      typeof organizationRecord.leadProspectEmail === 'string' ? organizationRecord.leadProspectEmail : undefined
-    )
-      ? {
-          leadProspectEmail: cleanOptionalString(
-            typeof organizationRecord.leadProspectEmail === 'string'
-              ? organizationRecord.leadProspectEmail
-              : undefined
-          ),
-        }
-      : {}),
+    ...(leadNotificationPhone ? { leadNotificationPhone } : {}),
+    ...(leadNotificationEmail ? { leadNotificationEmail } : {}),
+    ...(leadProspectEmail ? { leadProspectEmail } : {}),
     ...(pricingTier ? { pricingTier } : {}),
     ...(typeof desiredLeadVolumeDaily === 'number' && desiredLeadVolumeDaily > 0
       ? { desiredLeadVolumeDaily }

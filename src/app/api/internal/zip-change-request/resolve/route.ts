@@ -225,18 +225,19 @@ export async function POST(request: NextRequest) {
   }
 
   if (decision === 'approve') {
+    const leadDeliveryPhones = normalizeStringArray(organizationRecord?.leadDeliveryPhones)
+    const leadNotificationPhone = cleanString(organizationRecord?.leadNotificationPhone)
+    const leadNotificationEmail = cleanString(organizationRecord?.leadNotificationEmail)
+    const leadProspectEmail = cleanString(organizationRecord?.leadProspectEmail)
+
     const syncResult = await syncPortalProfileToAirtable({
       portalKey: zipRequest.portalKey,
       organizationName: orgName,
       targetZipCodes: resolveResult.requestedZipCodes || zipRequest.requestedZipCodes,
-      ...(organizationRecord
-        ? {
-            leadDeliveryPhones: normalizeStringArray(organizationRecord.leadDeliveryPhones),
-            leadNotificationPhone: cleanString(organizationRecord.leadNotificationPhone),
-            leadNotificationEmail: cleanString(organizationRecord.leadNotificationEmail),
-            leadProspectEmail: cleanString(organizationRecord.leadProspectEmail),
-          }
-        : {}),
+      ...(leadDeliveryPhones.length > 0 ? { leadDeliveryPhones } : {}),
+      ...(leadNotificationPhone ? { leadNotificationPhone } : {}),
+      ...(leadNotificationEmail ? { leadNotificationEmail } : {}),
+      ...(leadProspectEmail ? { leadProspectEmail } : {}),
     })
 
     if (!syncResult.synced) {
