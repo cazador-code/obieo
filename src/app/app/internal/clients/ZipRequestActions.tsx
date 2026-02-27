@@ -53,11 +53,13 @@ function conflictSummary(
   conflicts: ZipConflictRow[],
   conflictCount?: number
 ): string {
-  const zipText = getDisplayedConflictZipCodes(conflictingZipCodes, conflicts).join(', ')
+  const displayedZipCodes = getDisplayedConflictZipCodes(conflictingZipCodes, conflicts)
+  const zipText = displayedZipCodes.length > 0 ? displayedZipCodes.join(', ') : 'unknown ZIP(s)'
+  const totalConflicts = typeof conflictCount === 'number' ? conflictCount : conflicts.length
   const sample = conflicts.slice(0, 3).map((item) => `${item.zipCode} (${item.businessName})`)
   const extras =
-    typeof conflictCount === 'number' && conflictCount > sample.length
-      ? ` +${conflictCount - sample.length} more`
+    totalConflicts > sample.length
+      ? ` +${totalConflicts - sample.length} more`
       : ''
 
   if (sample.length === 0) {
@@ -85,6 +87,7 @@ export default function ZipRequestActions({
   const [conflictingZipCodes, setConflictingZipCodes] = useState<string[]>([])
   const [conflicts, setConflicts] = useState<ZipConflictRow[]>([])
   const [conflictCount, setConflictCount] = useState<number>(0)
+  const [conflictDetected, setConflictDetected] = useState(false)
   const resolutionNotesFieldId = useId()
 
   const deltaSummary = useMemo(
@@ -102,7 +105,8 @@ export default function ZipRequestActions({
     [conflictingZipCodes, conflicts]
   )
 
-  const hasConflicts = conflictingZipCodes.length > 0 || conflicts.length > 0 || conflictCount > 0
+  const hasConflicts =
+    conflictDetected || conflictingZipCodes.length > 0 || conflicts.length > 0 || conflictCount > 0
 
   useEffect(() => {
     let isActive = true
@@ -123,11 +127,13 @@ export default function ZipRequestActions({
         }
 
         if (!isActive) return
+        setConflictDetected(data.conflict === true)
         setConflictingZipCodes(data.conflictingZipCodes || [])
         setConflicts(data.conflicts || [])
         setConflictCount(typeof data.conflictCount === 'number' ? data.conflictCount : 0)
       } catch (err) {
         if (!isActive) return
+        setConflictDetected(false)
         setConflictingZipCodes([])
         setConflicts([])
         setConflictCount(0)
@@ -175,6 +181,7 @@ export default function ZipRequestActions({
           const nextConflictingZipCodes = data.conflictingZipCodes || []
           const nextConflicts = data.conflicts || []
           const nextConflictCount = typeof data.conflictCount === 'number' ? data.conflictCount : nextConflicts.length
+          setConflictDetected(true)
           setConflictingZipCodes(nextConflictingZipCodes)
           setConflicts(nextConflicts)
           setConflictCount(nextConflictCount)

@@ -167,7 +167,7 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
   - To sync root `main` ahead commit to GitHub, run: `git -C /Users/hunterlapeyre/Developer/obieo push origin main`.
   - To clear root uncommitted files, then run: `git -C /Users/hunterlapeyre/Developer/obieo add <paths> && git -C /Users/hunterlapeyre/Developer/obieo commit -m "<message>" && git -C /Users/hunterlapeyre/Developer/obieo push origin main`.
 
-### 2026-02-24
+### 2026-02-24 (portal profile editing v1)
 - What we did:
   - Implemented Client Portal Profile Editing v1 end-to-end: added `/portal` edit UI, client save API (`PATCH /api/portal/profile`), admin save API (`PATCH /api/internal/portal/profile`), shared profile normalization/validation, Convex `updatePortalProfile` mutation, and `portalProfileEdits` audit table.
   - Added internal notification helper for every successful profile save and wired internal Basic Auth protection for `/api/internal/portal/profile` in `src/proxy.ts`.
@@ -196,7 +196,7 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
   - Smoke test both paths: client self-edit at `/portal` and admin edit via `/internal/clients` -> `View Client Portal`.
   - If you want this closure note committed too, run: `git add .codex/hunterlapeyre/memory.md && git commit -m "docs: add session closure notes" && git push origin main`.
 
-### 2026-02-24
+### 2026-02-24 (manual-assisted onboarding flow)
 - What we did:
   - Added a new internal manual-assisted onboarding flow so ops can record customer onboarding answers when clients are not tech-enabled.
   - Implemented secure API endpoint `POST /api/internal/leadgen/manual-onboarding` with internal JWT auth, rate limiting, normalization, and Convex persistence via `submitClientOnboardingInConvex`.
@@ -215,7 +215,7 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
 - Next-time start:
   - Use `/internal/leadgen/manual-onboarding` for phone-call or chat-assisted intake, then confirm record presence from `/internal/clients`.
 
-### 2026-02-23
+### 2026-02-23 (post-hotfix closure rerun)
 - What we did:
   - Ran session-closure checks again after the app-subdomain hotfix rollout to capture final closure evidence.
   - Re-ran mandatory analyzers on latest commit scope (`src/proxy.ts`): security-reviewer `pass`; code-simplifier `warn` (1 medium, 2 minor; readability/style only).
@@ -237,7 +237,7 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
   - Run the two analyzers first, then git checks (`status`, upstream, ahead/behind) before writing closure text.
   - If user wants closure committed, run `git add .codex/hunterlapeyre/memory.md && git commit -m "docs: update session closure notes" && git push origin main`.
 
-### 2026-02-23
+### 2026-02-23 (app subdomain proxy fix)
 - What we did:
   - Reproduced `app.obieo.com` application error (`Digest: 994294254`) and confirmed app routes were returning `500` while marketing routes stayed healthy.
   - Identified proxy behavior issue where app-subdomain page rewrites bypassed Clerk middleware and where internal basic-auth guard returned early before rewrite.
@@ -270,7 +270,7 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
   - Validate fix with these exact checks: `/sign-in` => `200`, `/portal` => `307` to sign-in when signed out, `/` => `307` to `/portal`.
   - Keep git closure truth strict: only mark done when `git status --short` is empty and `git rev-list --left-right --count HEAD...@{u}` is `0 0`.
 
-### 2026-02-23
+### 2026-02-23 (app-subdomain migration and hotfix)
 - What we did:
   - Migrated approved app-subdomain architecture from nested repo copy (`/obieo/obieo` branch `feat/app-subdomain`) into the main working repo, including route moves to `src/app/app/*`, proxy hostname rewrite, marketing/app layout split, and cross-domain login links.
   - Preserved newer portal lead-feed UI improvements during move and patched high-risk routing gaps (`/app` root redirect to `/portal`, stale `/leadgen/onboarding` links switched to `/onboarding` in API/lib callsites).
@@ -303,7 +303,7 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
   - Before announcing done, run git truth checks and include exact state: `git status --short`, `git rev-parse --abbrev-ref --symbolic-full-name @{u}`, `git rev-list --left-right --count HEAD...@{u}`.
   - To cleanly publish remaining local work in this repo, use: `git add -A && git commit -m "<message>" && git push origin main`.
 
-### 2026-02-23
+### 2026-02-23 (billing and activation hardening)
 - What we did:
   - Shipped four production onboarding UX/auth hotfixes on `main`: (1) added public onboarding `Save & Complete Later` draft save/restore, (2) changed save action to redirect to `/portal?resume_onboarding=1` and show `Finish Setup` CTA in portal, (3) forced Clerk sign-in/sign-up post-auth redirects to `/portal` by default (while honoring safe internal `redirect_url`), and (4) added `Portal` item to Clerk user menu plus custom-cursor fallback when Clerk modal/popover is open.
   - Ran closure analyzers on latest commit scope (`src/components/AppChrome.tsx`, `src/components/CustomCursor.tsx`): security-reviewer `pass`; code-simplifier `warn` (16 minor arrow-function style warnings, 0 medium/major).
@@ -332,7 +332,7 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
   - If a customer reports onboarding friction, first validate this sequence on prod: sign in -> `/portal` -> Clerk avatar menu has `Portal` -> `Save & Complete Later` lands on `/portal?resume_onboarding=1` -> `Finish Setup` returns to tokenized onboarding form with restored draft.
   - Re-run analyzers and git truth checks before closure to confirm pass/warn status and upstream sync.
 
-### 2026-02-22
+### 2026-02-22 (initial internal tools rollout)
 - What we did:
   - Diagnosed customer confusion where payment email emphasized login while onboarding required ZIP-code form completion.
   - Confirmed initiation pipeline health by triggering live payment-first activation for Chris via `ignition`, then force-resending Clerk invite to verify re-initiation.
@@ -360,7 +360,7 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
   - For "client paid but no ZIP prompt" reports, run `npm run leadgen:initiate-paid ... --payment-provider ignition --force-resend`, then send the returned onboarding URL directly.
   - If email confusion persists, verify latest deployment includes `src/lib/stripe-activation.ts` onboarding-first customer copy.
 
-### 2026-02-22
+### 2026-02-22 (follow-up stabilization)
 - What we did:
   - Diagnosed Mark Roesel onboarding failures with live Clerk API checks and confirmed two separate causes: wrong domain typo (`bestchouce...`) and missing Clerk `public_metadata.portalKey` on the created user.
   - Applied immediate production unblock by patching Clerk metadata for `user_3A2El5h1NBMdWVcZvxRoA9nb2ww` to `portalKey=roofs-by-mark-48913e`.

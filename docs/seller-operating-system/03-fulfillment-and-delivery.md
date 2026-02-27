@@ -84,7 +84,7 @@
    - Then open `Error Table` and clear `needs` queue client-by-client.
    - Through the day, monitor Slack `ZIP Data Channel` for runout tags and handle immediately.
    - On any Slack runout alert, claim it with `eyes` reaction before scraping.
-   - On completion, post threaded completion with CSV + manager tag.
+   - On completion, post completion in thread with CSV + manager tag.
    - Morning handoff target: submit scrape CSV by 10:00 AM Eastern.
 2. Lead sourcing and cleaning:
    - In ClickUp client details, use fields intentionally:
@@ -117,12 +117,14 @@
    - Let scraper run through all pages (about 10 seconds between pages).
    - Apply page-limit guardrail from transcript:
      - If list has `N` pages, scrape up to `N - 2` pages.
-   - Octoparse run order and settings:
+   - Legacy Octoparse run order and settings (only if explicitly reactivated):
      - Run `DealMachine Property` first.
      - Set loop pages and wait timing.
      - Export CSV and confirm output count.
      - Run `DealMachine Phone Scrape Page by Page` second.
      - Reuse matching page count/timing profile to preserve row alignment.
+   - Default path:
+     - Use `node shrek.js` workflow unless explicit Octoparse reactivation is documented in ops notes.
    - Operational guardrails:
      - Do not run both tasks at the same time.
      - Keep the active run window stable during execution (avoid actions that degrade run reliability).
@@ -179,8 +181,8 @@
       - Remove in-progress claim signal and mark scrape task completed.
       - Move client to `needs help` and tag upload owner in `submission team`.
     - Upload operator:
-    - Update ClickUp status `needs help` -> `add KPI`.
-    - Mark Slack submission thread item as `ready`.
+      - Update ClickUp status `needs help` -> `add KPI`.
+      - Mark Slack submission thread item as `ready`.
 6. Exception handling:
    - If scraper must be stopped, use `Ctrl + C`.
    - If output formatting breaks, re-run split and header standardization before upload.
