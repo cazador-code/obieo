@@ -54,8 +54,12 @@ export function resolveAirtableClientCity(input: {
       .split(',')
       .map((part) => part.trim())
       .filter(Boolean)
-    if (parts.length >= 2) {
+    if (parts.length >= 3) {
       return parts[parts.length - 2]
+    }
+    if (parts.length === 2) {
+      const [first, second] = parts
+      return /\d/.test(first) ? second : first
     }
   }
 

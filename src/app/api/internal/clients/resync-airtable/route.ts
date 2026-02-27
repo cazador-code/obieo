@@ -58,94 +58,106 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'portalKey is required' }, { status: 400 })
   }
 
-  const snapshot = await getOrganizationSnapshotInConvex({ portalKey })
-  if (!snapshot) {
-    return NextResponse.json(
-      { success: false, error: 'Could not load organization snapshot from Convex.' },
-      { status: 502 }
+  try {
+    const snapshot = await getOrganizationSnapshotInConvex({ portalKey })
+    if (!snapshot) {
+      return NextResponse.json(
+        { success: false, error: 'Could not load organization snapshot from Convex.' },
+        { status: 502 }
+      )
+    }
+
+    const organizationRecord = getOrganizationRecord(snapshot.organization)
+    if (!organizationRecord) {
+      return NextResponse.json(
+        { success: false, error: `Organization not found for portalKey: ${portalKey}` },
+        { status: 404 }
+      )
+    }
+
+    const organizationName = cleanOptionalString(
+      typeof organizationRecord.name === 'string' ? organizationRecord.name : undefined
     )
-  }
-
-  const organizationRecord = getOrganizationRecord(snapshot.organization)
-  if (!organizationRecord) {
-    return NextResponse.json(
-      { success: false, error: `Organization not found for portalKey: ${portalKey}` },
-      { status: 404 }
+    const targetZipCodes = normalizeStringArray(organizationRecord.targetZipCodes)
+    const leadDeliveryPhones = normalizeStringArray(organizationRecord.leadDeliveryPhones)
+    const serviceTypes = normalizeStringArray(organizationRecord.serviceTypes)
+    const serviceAreas = normalizeStringArray(organizationRecord.serviceAreas)
+    const leadUnitPriceCentsRaw = organizationRecord.leadUnitPriceCents
+    const leadUnitPriceCents =
+      typeof leadUnitPriceCentsRaw === 'number' && Number.isFinite(leadUnitPriceCentsRaw)
+        ? Math.floor(leadUnitPriceCentsRaw)
+        : 4000
+    const desiredLeadVolumeDailyRaw = organizationRecord.desiredLeadVolumeDaily
+    const desiredLeadVolumeDaily =
+      typeof desiredLeadVolumeDailyRaw === 'number' && Number.isFinite(desiredLeadVolumeDailyRaw)
+        ? Math.floor(desiredLeadVolumeDailyRaw)
+        : undefined
+    const billingModel = toBillingModel(organizationRecord.billingModel)
+    const pricingTier = resolveAirtablePricingTier({ billingModel, leadUnitPriceCents })
+    const businessAddress = cleanOptionalString(
+      typeof organizationRecord.businessAddress === 'string' ? organizationRecord.businessAddress : undefined
     )
-  }
+    const clientCity = resolveAirtableClientCity({
+      businessAddress,
+      serviceAreas,
+    })
+    const leadNotificationPhone = cleanOptionalString(
+      typeof organizationRecord.leadNotificationPhone === 'string'
+        ? organizationRecord.leadNotificationPhone
+        : undefined
+    )
+    const leadNotificationEmail = cleanOptionalString(
+      typeof organizationRecord.leadNotificationEmail === 'string'
+        ? organizationRecord.leadNotificationEmail
+        : undefined
+    )
+    const leadProspectEmail = cleanOptionalString(
+      typeof organizationRecord.leadProspectEmail === 'string' ? organizationRecord.leadProspectEmail : undefined
+    )
 
-  const organizationName = cleanOptionalString(
-    typeof organizationRecord.name === 'string' ? organizationRecord.name : undefined
-  )
-  const targetZipCodes = normalizeStringArray(organizationRecord.targetZipCodes)
-  const leadDeliveryPhones = normalizeStringArray(organizationRecord.leadDeliveryPhones)
-  const serviceTypes = normalizeStringArray(organizationRecord.serviceTypes)
-  const serviceAreas = normalizeStringArray(organizationRecord.serviceAreas)
-  const leadUnitPriceCentsRaw = organizationRecord.leadUnitPriceCents
-  const leadUnitPriceCents =
-    typeof leadUnitPriceCentsRaw === 'number' && Number.isFinite(leadUnitPriceCentsRaw)
-      ? Math.floor(leadUnitPriceCentsRaw)
-      : 4000
-  const desiredLeadVolumeDailyRaw = organizationRecord.desiredLeadVolumeDaily
-  const desiredLeadVolumeDaily =
-    typeof desiredLeadVolumeDailyRaw === 'number' && Number.isFinite(desiredLeadVolumeDailyRaw)
-      ? Math.floor(desiredLeadVolumeDailyRaw)
-      : undefined
-  const billingModel = toBillingModel(organizationRecord.billingModel)
-  const pricingTier = resolveAirtablePricingTier({ billingModel, leadUnitPriceCents })
-  const businessAddress = cleanOptionalString(
-    typeof organizationRecord.businessAddress === 'string' ? organizationRecord.businessAddress : undefined
-  )
-  const clientCity = resolveAirtableClientCity({
-    businessAddress,
-    serviceAreas,
-  })
-  const leadNotificationPhone = cleanOptionalString(
-    typeof organizationRecord.leadNotificationPhone === 'string'
-      ? organizationRecord.leadNotificationPhone
-      : undefined
-  )
-  const leadNotificationEmail = cleanOptionalString(
-    typeof organizationRecord.leadNotificationEmail === 'string'
-      ? organizationRecord.leadNotificationEmail
-      : undefined
-  )
-  const leadProspectEmail = cleanOptionalString(
-    typeof organizationRecord.leadProspectEmail === 'string' ? organizationRecord.leadProspectEmail : undefined
-  )
+    const syncResult = await syncPortalProfileToAirtable({
+      portalKey,
+      organizationName,
+      ...(organizationName ? { businessName: organizationName } : {}),
+      ...(targetZipCodes.length > 0 ? { targetZipCodes } : {}),
+      ...(leadDeliveryPhones.length > 0 ? { leadDeliveryPhones } : {}),
+      ...(leadNotificationPhone ? { leadNotificationPhone } : {}),
+      ...(leadNotificationEmail ? { leadNotificationEmail } : {}),
+      ...(leadProspectEmail ? { leadProspectEmail } : {}),
+      ...(pricingTier ? { pricingTier } : {}),
+      ...(typeof desiredLeadVolumeDaily === 'number' && desiredLeadVolumeDaily > 0
+        ? { desiredLeadVolumeDaily }
+        : {}),
+      ...(serviceTypes.length > 0 ? { servicesOffered: serviceTypes } : {}),
+      ...(clientCity ? { clientCity } : {}),
+    })
 
-  const syncResult = await syncPortalProfileToAirtable({
-    portalKey,
-    organizationName,
-    ...(organizationName ? { businessName: organizationName } : {}),
-    ...(targetZipCodes.length > 0 ? { targetZipCodes } : {}),
-    ...(leadDeliveryPhones.length > 0 ? { leadDeliveryPhones } : {}),
-    ...(leadNotificationPhone ? { leadNotificationPhone } : {}),
-    ...(leadNotificationEmail ? { leadNotificationEmail } : {}),
-    ...(leadProspectEmail ? { leadProspectEmail } : {}),
-    ...(pricingTier ? { pricingTier } : {}),
-    ...(typeof desiredLeadVolumeDaily === 'number' && desiredLeadVolumeDaily > 0
-      ? { desiredLeadVolumeDaily }
-      : {}),
-    ...(serviceTypes.length > 0 ? { servicesOffered: serviceTypes } : {}),
-    ...(clientCity ? { clientCity } : {}),
-  })
+    if (!syncResult.synced) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: syncResult.message || 'Failed to sync Airtable row.',
+          reason: syncResult.reason,
+        },
+        { status: syncResult.reason === 'client_not_found' ? 404 : 502 }
+      )
+    }
 
-  if (!syncResult.synced) {
+    return NextResponse.json({
+      success: true,
+      portalKey,
+      airtableRecordId: syncResult.airtableRecordId,
+      updatedFields: syncResult.updatedFields || [],
+    })
+  } catch (error) {
+    console.error('Failed to resync Airtable client', { portalKey, error })
     return NextResponse.json(
       {
         success: false,
-        error: syncResult.message || 'Failed to sync Airtable row.',
-        reason: syncResult.reason,
+        error: 'Unexpected error while resyncing Airtable client.',
+        reason: 'internal_error',
       },
-      { status: syncResult.reason === 'client_not_found' ? 404 : 502 }
+      { status: 500 }
     )
   }
-
-  return NextResponse.json({
-    success: true,
-    portalKey,
-    airtableRecordId: syncResult.airtableRecordId,
-    updatedFields: syncResult.updatedFields || [],
-  })
 }

@@ -118,6 +118,21 @@ function resolvePricingTier(org) {
 }
 
 function resolveClientCity(org) {
+  const address = cleanString(org.businessAddress)
+  if (address) {
+    const parts = address
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean)
+    if (parts.length >= 3) {
+      return cleanString(parts[parts.length - 2])
+    }
+    if (parts.length === 2) {
+      const [first, second] = parts
+      return /\d/.test(first) ? cleanString(second) : cleanString(first)
+    }
+  }
+
   const serviceAreas = normalizeStringArray(org.serviceAreas)
   if (serviceAreas.length === 0) return ''
   const first = serviceAreas[0]
