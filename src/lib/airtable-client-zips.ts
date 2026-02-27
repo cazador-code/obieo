@@ -186,6 +186,7 @@ async function listAirtableClientRecords(config: AirtableConfig): Promise<Airtab
 
     const url = new URL(`https://api.airtable.com/v0/${config.baseId}/${config.tableId}`)
     url.searchParams.set('pageSize', '100')
+    url.searchParams.set('returnFieldsByFieldId', 'true')
     for (const field of fields) {
       url.searchParams.append('fields[]', field)
     }
@@ -369,23 +370,23 @@ export async function syncApprovedZipCodesToAirtable(input: {
     new Set(input.targetZipCodes.map((zip) => cleanString(zip)).filter((zip) => ZIP_RE.test(zip)))
   )
 
-  const response = await fetch(
-    `https://api.airtable.com/v0/${config.baseId}/${config.tableId}/${target.id}`,
-    {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${config.token}`,
-        'content-type': 'application/json',
+  const updateUrl = new URL(`https://api.airtable.com/v0/${config.baseId}/${config.tableId}/${target.id}`)
+  updateUrl.searchParams.set('returnFieldsByFieldId', 'true')
+
+  const response = await fetch(updateUrl.toString(), {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${config.token}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      fields: {
+        [config.targetZipFieldId]: normalizedTargetZipCodes.join(', '),
       },
-      body: JSON.stringify({
-        fields: {
-          [config.targetZipFieldId]: normalizedTargetZipCodes.join(', '),
-        },
-        typecast: true,
-      }),
-      cache: 'no-store',
-    }
-  )
+      typecast: true,
+    }),
+    cache: 'no-store',
+  })
 
   if (!response.ok) {
     const text = await response.text()
