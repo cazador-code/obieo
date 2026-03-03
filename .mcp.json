@@ -26,6 +26,18 @@
         "Authorization:Bearer ${AIRTABLE_PAT}",
         "--debug"
       ]
+    },
+    "ghl-official": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://services.leadconnectorhq.com/mcp/",
+        "--header",
+        "Authorization:Bearer ${GHL_MCP_PIT}",
+        "--header",
+        "locationId:${GHL_LOCATION_ID}"
+      ]
     }
   }
 }
