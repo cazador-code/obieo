@@ -1,6 +1,12 @@
 'use client'
 
 import { FormEvent, useEffect, useMemo, useState } from 'react'
+import {
+  MAX_TARGET_ZIP_COUNT,
+  MIN_TARGET_ZIP_COUNT,
+  getInvalidTargetZipError,
+  parseTargetZipCodes,
+} from '@/lib/leadgen-target-zips'
 
 type SessionResponse =
   | {
@@ -61,7 +67,7 @@ async function parseJson<T>(res: Response): Promise<T | null> {
 
 type OnboardingDraftForm = {
   serviceAreasRaw: string
-  targetZipCodesRaw: string
+  targetZipCodes: string[]
   serviceTypes: string[]
   operatingHoursStart: string
   operatingHoursEnd: string
@@ -123,12 +129,17 @@ function parseOnboardingDraft(value: unknown): OnboardingDraftSnapshot | null {
         (entry): entry is string => typeof entry === 'string' && SERVICE_TYPES.includes(entry as (typeof SERVICE_TYPES)[number])
       )
     : []
+  const parsedTargetZipCodes = Array.isArray(form.targetZipCodes)
+    ? form.targetZipCodes.filter((entry): entry is string => typeof entry === 'string' && /^\d{5}$/.test(entry))
+    : []
+  const fallbackTargetZipCodes =
+    typeof form.targetZipCodesRaw === 'string' ? parseTargetZipCodes(form.targetZipCodesRaw).zipCodes : []
 
   return {
     savedAt: typeof data.savedAt === 'number' && Number.isFinite(data.savedAt) ? data.savedAt : Date.now(),
     form: {
       serviceAreasRaw: typeof form.serviceAreasRaw === 'string' ? form.serviceAreasRaw : '',
-      targetZipCodesRaw: typeof form.targetZipCodesRaw === 'string' ? form.targetZipCodesRaw : '',
+      targetZipCodes: parsedTargetZipCodes.length > 0 ? parsedTargetZipCodes : fallbackTargetZipCodes,
       serviceTypes: parsedServiceTypes.length > 0 ? parsedServiceTypes : ['Roofing'],
       operatingHoursStart: typeof form.operatingHoursStart === 'string' ? form.operatingHoursStart : '09:00',
       operatingHoursEnd: typeof form.operatingHoursEnd === 'string' ? form.operatingHoursEnd : '17:00',
@@ -155,7 +166,9 @@ export default function LeadgenOnboardingClient({ token }: { token: string }) {
   const [session, setSession] = useState<Extract<SessionResponse, { success: true }> | null>(null)
 
   const [serviceAreasRaw, setServiceAreasRaw] = useState('')
-  const [targetZipCodesRaw, setTargetZipCodesRaw] = useState('')
+  const [targetZipCodes, setTargetZipCodes] = useState<string[]>([])
+  const [targetZipCodeInput, setTargetZipCodeInput] = useState('')
+  const [targetZipInputError, setTargetZipInputError] = useState<string | null>(null)
   const [serviceTypes, setServiceTypes] = useState<string[]>(['Roofing'])
   const [operatingHoursStart, setOperatingHoursStart] = useState('09:00')
   const [operatingHoursEnd, setOperatingHoursEnd] = useState('17:00')
@@ -178,7 +191,7 @@ export default function LeadgenOnboardingClient({ token }: { token: string }) {
     const draft = parseOnboardingDraft(safeReadDraft(draftStorageKey))
     if (!draft) return
     setServiceAreasRaw(draft.form.serviceAreasRaw)
-    setTargetZipCodesRaw(draft.form.targetZipCodesRaw)
+    setTargetZipCodes(draft.form.targetZipCodes)
     setServiceTypes(draft.form.serviceTypes)
     setOperatingHoursStart(draft.form.operatingHoursStart)
     setOperatingHoursEnd(draft.form.operatingHoursEnd)
@@ -222,14 +235,17 @@ export default function LeadgenOnboardingClient({ token }: { token: string }) {
 
   const validation = useMemo(() => {
     const serviceAreas = splitLines(serviceAreasRaw)
-    const targetZipCodes = splitComma(targetZipCodesRaw)
     const leadRoutingPhones = splitComma(leadRoutingPhonesRaw)
     const leadRoutingEmails = splitComma(leadRoutingEmailsRaw)
 
     const errors: string[] = []
     if (serviceAreas.length === 0) errors.push('Add at least 1 service area.')
-    if (targetZipCodes.length < 5) errors.push('Add at least 5 target ZIP codes.')
-    if (targetZipCodes.length > 10) errors.push('Maximum 10 target ZIP codes.')
+    if (targetZipCodes.length < MIN_TARGET_ZIP_COUNT) {
+      errors.push(`Add at least ${MIN_TARGET_ZIP_COUNT} target ZIP codes.`)
+    }
+    if (targetZipCodes.length > MAX_TARGET_ZIP_COUNT) {
+      errors.push(`Maximum ${MAX_TARGET_ZIP_COUNT} target ZIP codes.`)
+    }
     if (serviceTypes.length === 0) errors.push('Select at least 1 service type.')
     if (leadRoutingPhones.length === 0 && leadRoutingEmails.length === 0) {
       errors.push('Add at least 1 lead routing phone or email.')
@@ -258,7 +274,7 @@ export default function LeadgenOnboardingClient({ token }: { token: string }) {
     businessPhone,
     businessAddress,
     serviceAreasRaw,
-    targetZipCodesRaw,
+    targetZipCodes,
     serviceTypes,
     desiredLeadVolumeDaily,
     operatingHoursStart,
@@ -303,6 +319,35 @@ export default function LeadgenOnboardingClient({ token }: { token: string }) {
     }
   }
 
+  function handleAddTargetZipCodes() {
+    setSubmitError(null)
+    setTargetZipInputError(null)
+    const { zipCodes, invalidZipCodes } = parseTargetZipCodes(targetZipCodeInput)
+    const invalidZipError = getInvalidTargetZipError(invalidZipCodes)
+    if (invalidZipError) {
+      setTargetZipInputError(invalidZipError)
+      return
+    }
+    if (zipCodes.length === 0) {
+      setTargetZipInputError('Enter at least one 5-digit ZIP code.')
+      return
+    }
+
+    const merged = Array.from(new Set([...targetZipCodes, ...zipCodes]))
+    if (merged.length > MAX_TARGET_ZIP_COUNT) {
+      setTargetZipInputError(`Maximum ${MAX_TARGET_ZIP_COUNT} unique target ZIP codes allowed.`)
+      return
+    }
+
+    setTargetZipCodes(merged)
+    setTargetZipCodeInput('')
+  }
+
+  function handleRemoveTargetZipCode(zipCode: string) {
+    setTargetZipCodes((prev) => prev.filter((zip) => zip !== zipCode))
+    setTargetZipInputError(null)
+  }
+
   function handleSaveForLater() {
     setSubmitError(null)
     setSaveError(null)
@@ -311,7 +356,7 @@ export default function LeadgenOnboardingClient({ token }: { token: string }) {
       savedAt: Date.now(),
       form: {
         serviceAreasRaw,
-        targetZipCodesRaw,
+        targetZipCodes,
         serviceTypes,
         operatingHoursStart,
         operatingHoursEnd,
@@ -417,13 +462,51 @@ export default function LeadgenOnboardingClient({ token }: { token: string }) {
 
         <label>
           <span className="block text-sm font-semibold text-[var(--text-primary)]">Target ZIP codes</span>
-          <input
-            value={targetZipCodesRaw}
-            onChange={(e) => setTargetZipCodesRaw(e.target.value)}
-            placeholder="70112, 70113, 70114, 70115, 70116"
-            className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
-          />
-          <p className="mt-1 text-xs text-[var(--text-muted)]">Comma-separated. Minimum 5, maximum 10.</p>
+          <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+            <input
+              value={targetZipCodeInput}
+              onChange={(e) => setTargetZipCodeInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleAddTargetZipCodes()
+                }
+              }}
+              placeholder="70112 or 70112, 70113"
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
+            />
+            <button
+              type="button"
+              onClick={handleAddTargetZipCodes}
+              className="rounded-xl border border-[var(--border)] px-4 py-3 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--bg-secondary)]"
+            >
+              Add ZIP
+            </button>
+          </div>
+          <p className="mt-1 text-xs text-[var(--text-muted)]">
+            {targetZipCodes.length}/{MAX_TARGET_ZIP_COUNT} ZIP codes added. Minimum {MIN_TARGET_ZIP_COUNT}.
+          </p>
+          {targetZipInputError && <p className="mt-1 text-sm text-red-500">{targetZipInputError}</p>}
+          {targetZipCodes.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {targetZipCodes.map((zip) => (
+                <span
+                  key={zip}
+                  className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-1 text-sm text-[var(--text-primary)]"
+                >
+                  {zip}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTargetZipCode(zip)}
+                    aria-label={`Remove ZIP ${zip}`}
+                    className="text-[var(--text-muted)] transition hover:text-[var(--text-primary)]"
+                  >
+                    x
+                  </button>
+                </span>
+              ))}
+            </div>
+          ) : null}
         </label>
 
         <fieldset className="rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-4">

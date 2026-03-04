@@ -6,6 +6,7 @@ import {
   getBillingModelDefaults,
   normalizeBillingModel,
 } from '@/lib/billing-models'
+import { getInvalidTargetZipError, getTargetZipCountError, parseTargetZipCodes } from '@/lib/leadgen-target-zips'
 
 export const runtime = 'nodejs'
 
@@ -174,7 +175,7 @@ export async function POST(request: NextRequest) {
   }
 
   const serviceAreas = normalizeStringList(body.serviceAreas)
-  const targetZipCodes = normalizeStringList(body.targetZipCodes)
+  const { zipCodes: targetZipCodes, invalidZipCodes } = parseTargetZipCodes(body.targetZipCodes)
   const serviceTypes = normalizeStringList(body.serviceTypes)
   const leadRoutingPhones = normalizeStringList(body.leadRoutingPhones)
   const leadRoutingEmails = normalizeStringList(body.leadRoutingEmails)
@@ -185,6 +186,14 @@ export async function POST(request: NextRequest) {
       { success: false, error: 'At least one service area is required' },
       { status: 400 }
     )
+  }
+  const invalidTargetZipError = getInvalidTargetZipError(invalidZipCodes)
+  if (invalidTargetZipError) {
+    return NextResponse.json({ success: false, error: invalidTargetZipError }, { status: 400 })
+  }
+  const targetZipCountError = getTargetZipCountError(targetZipCodes.length)
+  if (targetZipCountError) {
+    return NextResponse.json({ success: false, error: targetZipCountError }, { status: 400 })
   }
 
   if (leadRoutingPhones.length === 0 && leadRoutingEmails.length === 0) {
@@ -212,7 +221,7 @@ export async function POST(request: NextRequest) {
     businessAddress: cleanString(body.businessAddress) || undefined,
     companyName,
     serviceAreas,
-    targetZipCodes: targetZipCodes.length > 0 ? targetZipCodes : undefined,
+    targetZipCodes,
     serviceTypes: serviceTypes.length > 0 ? serviceTypes : undefined,
     desiredLeadVolumeDaily,
     operatingHoursStart: cleanString(body.operatingHoursStart) || undefined,
