@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { submitClientOnboardingInConvex } from '@/lib/convex'
 import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { checkAirtableZipConflictsForApproval } from '@/lib/airtable-client-zips'
+import { escapeHtml } from '@/lib/escape-html'
 import {
   BILLING_MODEL_LABELS,
   getBillingModelDefaults,
@@ -87,15 +88,6 @@ function normalizeOptionalPositiveInt(value: unknown): number | undefined {
   if (typeof value !== 'number' || !Number.isFinite(value)) return undefined
   const intVal = Math.floor(value)
   return intVal > 0 ? intVal : undefined
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
 }
 
 function formatHtmlList(values: string[]): string {
@@ -224,6 +216,13 @@ export async function POST(request: NextRequest) {
   if (targetZipCountError) {
     return NextResponse.json({ success: false, error: targetZipCountError }, { status: 400 })
   }
+  if (leadRoutingPhones.length === 0 && leadRoutingEmails.length === 0) {
+    return NextResponse.json(
+      { success: false, error: 'At least one lead routing phone or email is required' },
+      { status: 400 }
+    )
+  }
+
   const conflictCheck = await checkAirtableZipConflictsForApproval({
     portalKey,
     organizationName: companyName,
@@ -251,13 +250,6 @@ export async function POST(request: NextRequest) {
         conflicts: conflictCheck.conflicts.slice(0, 10),
       },
       { status: 409 }
-    )
-  }
-
-  if (leadRoutingPhones.length === 0 && leadRoutingEmails.length === 0) {
-    return NextResponse.json(
-      { success: false, error: 'At least one lead routing phone or email is required' },
-      { status: 400 }
     )
   }
 

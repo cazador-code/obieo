@@ -5,6 +5,7 @@ import {
   MAX_TARGET_ZIP_COUNT,
   MIN_TARGET_ZIP_COUNT,
   getInvalidTargetZipError,
+  getTargetZipCountError,
   parseTargetZipCodes,
 } from '@/lib/leadgen-target-zips'
 
@@ -238,12 +239,8 @@ export default function LeadgenOnboardingClient({ token }: { token: string }) {
 
     const errors: string[] = []
     if (serviceAreas.length === 0) errors.push('Add at least 1 service area.')
-    if (targetZipCodes.length < MIN_TARGET_ZIP_COUNT) {
-      errors.push(`Add at least ${MIN_TARGET_ZIP_COUNT} target ZIP codes.`)
-    }
-    if (targetZipCodes.length > MAX_TARGET_ZIP_COUNT) {
-      errors.push(`Maximum ${MAX_TARGET_ZIP_COUNT} target ZIP codes.`)
-    }
+    const targetZipCountError = getTargetZipCountError(targetZipCodes.length)
+    if (targetZipCountError) errors.push(targetZipCountError)
     if (serviceTypes.length === 0) errors.push('Select at least 1 service type.')
     if (leadRoutingPhones.length === 0 && leadRoutingEmails.length === 0) {
       errors.push('Add at least 1 lead routing phone or email.')
