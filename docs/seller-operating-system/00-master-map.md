@@ -44,6 +44,9 @@
 - Compliance filter gate:
   - Landline Remover output must include line type + DNC type fields.
   - Litigators must be removed before Slack/GHL upload.
+- Name-format integrity gate:
+  - First/last names must be Proper Case before GHL import (`JOHN` -> `John`).
+  - Any ALL CAPS name rows must be normalized before launch.
 - Contact upload status discipline:
   - Use explicit status chain: `waiting for contacts` -> `needs help` -> `add KPI`.
   - Status changes are part of delivery completion, not optional admin work.
@@ -106,6 +109,7 @@
 - Old tags left in automation route leads to off-boarded clients.
 - Litigator records slipping through into outreach creates legal risk.
 - CSV schema drift causes bad imports and silent delivery issues.
+- ALL CAPS contact names reduce trust and can hurt response quality.
 - Missing legal-business-name tag causes leads to route to no one/wrong client.
 - Missed status transition (`needs help` not moved to `add KPI`) hides launch readiness.
 - Morning triage skipped, leaving overnight runouts unresolved.
@@ -147,6 +151,10 @@ Use this section for major decisions so future-you can see why choices were made
 - 2026-02-26:
   - Decision: Standardize runout task signaling in Slack (`eyes` to claim, threaded CSV + manager tag to close).
   - Why: Transcript shows this is the control mechanism for ownership clarity and completion verification.
+  - Owner: Obieo ops
+- 2026-03-04:
+  - Decision: Add mandatory name-case QA before GHL import (no ALL CAPS first/last names).
+  - Why: ALL CAPS personalization tokens reached live outreach and created avoidable quality risk.
   - Owner: Obieo ops
 - 2026-02-26:
   - Decision: Use appointment-target-based contact planning plus chunked list builds, with one-client-only DealMachine lists and `pages minus 2` scrape budgeting.

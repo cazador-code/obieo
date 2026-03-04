@@ -135,6 +135,7 @@
    - Import CSV into Google Sheets and clean structure:
      - Keep core fields only.
      - Split full name to first/last.
+     - Normalize first/last names to Proper Case (`JOHN` -> `John`) before export.
      - Split city/state/ZIP into separate fields.
      - Rename headers to standardized schema.
    - Two-sheet merge procedure:
@@ -148,6 +149,7 @@
      - If mismatch appears, rerun both passes with consistent settings.
 4. QA checkpoints:
    - Filter out blank/invalid first-name rows.
+   - Confirm first/last names are Proper Case (no all-uppercase rows).
    - Run Landline Remover bulk upload on phone column.
    - Ensure output includes line type and DNC type (`all`) for filtering visibility.
    - Remove flagged records per process, with special attention to litigators.
@@ -265,6 +267,7 @@
 8. Import to Google Sheets and clean:
    - Keep required columns.
    - Split names.
+   - Normalize first/last names to Proper Case (no ALL CAPS names).
    - Split city/state/ZIP.
    - Normalize headers.
 9. Filter out bad/incomplete rows.
@@ -378,6 +381,7 @@
 
 - [ ] Final file has standardized headers
 - [ ] No blank/placeholder first names
+- [ ] First/last names are Proper Case (no ALL CAPS)
 - [ ] Litigators removed
 - [ ] Invalid/toll-free/VoIP removed per policy
 - [ ] File name clearly maps to client + ZIP
@@ -410,6 +414,7 @@
 - [ ] CSV import mapped correctly
 - [ ] ZIP tag added and verified
 - [ ] Legal business name tag added and verified
+- [ ] Name-casing spot check passed in GHL preview (no ALL CAPS)
 - [ ] Import completed (not stuck at 0%)
 - [ ] Imported count reviewed
 - [ ] ClickUp status updated to `add KPI`

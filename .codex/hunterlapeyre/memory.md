@@ -56,6 +56,73 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
 - E2E:
 
 ## Session Notes (append, newest first)
+### 2026-03-04 (GHL import failure loop + name-case hardening)
+- What we did:
+  - Added durable SOP guardrails to prevent ALL CAPS names reaching live outreach and made this a mandatory pre-import + launch gate.
+  - Updated fulfillment SOP and master map to require Proper Case name normalization and GHL preview spot-check before automation launch.
+  - Created reusable runbook `.codex/hunterlapeyre/runbooks/ghl-import-preflight-and-safe-launch.md` for safe import/launch sequencing.
+  - Ran mandatory analyzers:
+    - security-reviewer: `status=pass`, `summary=No scoped code changes found for security review.`, `findings=0`, `counts(high/medium/low)=0/0/0`, `scope(mode)=none`.
+    - code-simplifier: `status=pass`, `summary=No scoped code changes found.`, `findings=0`, `counts(major/medium/minor)=0/0/0`, `scope(mode)=none`.
+  - Ran deterministic gate: `npm run verify` passed (`lint` + `typecheck` successful; `npm test --if-present` no-op).
+- Commands used:
+  - `python3 "$HOME/.codex/skills/security-reviewer/scripts/run_security_review.py" --repo "$PWD" --pretty`
+  - `python3 "$HOME/.codex/skills/code-simplifier/scripts/run_code_simplifier.py" --repo "$PWD" --pretty`
+  - `npm run verify`
+  - `git remote -v`
+  - `git status --short`
+  - `git rev-parse --abbrev-ref --symbolic-full-name @{u}`
+  - `git rev-list --left-right --count HEAD...@{u}`
+- Patterns discovered:
+  - GHL import mistakes are high-impact and recurring: wrong import settings can enroll large batches instantly.
+  - Lead routing remains dependent on dual tags (ZIP + legal business name); missing either tag degrades downstream handling.
+  - Name casing is an operational QA item, not a cosmetic tweak; enforce before import, not after send.
+- Gotchas:
+  - Workspace is not commit-clean (`git status --short` shows modified/untracked files), even though branch is upstream-synced (`HEAD...@{u} = 0 0`).
+  - Deterministic analyzers reported `scope=none`, so they validated closure gates but did not deep-scan a narrowed diff scope.
+- Next-time start:
+  - Open `.codex/hunterlapeyre/runbooks/ghl-import-preflight-and-safe-launch.md` before any GHL upload.
+  - Run preflight in this order: CSV casing/mapping -> tags -> workflow trigger/cadence -> filtered launch.
+  - If you want these current doc/runbook edits committed now:
+    - `git add docs/seller-operating-system/00-master-map.md docs/seller-operating-system/03-fulfillment-and-delivery.md .codex/hunterlapeyre/runbooks/ghl-import-preflight-and-safe-launch.md .codex/hunterlapeyre/memory.md`
+    - `git commit -m "docs: add GHL import preflight and no-all-caps name gates"`
+    - `git push origin main`
+
+### 2026-03-04 (portal host routing + Wes access triage)
+- What we did:
+  - Diagnosed Wes Bledsoe portal access failure end-to-end using live HTTP checks, repo routing logic, Airtable state, and read-only Convex queries.
+  - Confirmed root cause for 404: client links were pointing to `www.obieo.com` while `/portal` is only served on `app.obieo.com` via hostname rewrite logic.
+  - Confirmed data model state: only one Pierce org exists in Convex (`portalKey: pierce-roofing-and-siding-25604d`), so the 404 was not caused by duplicate Convex accounts.
+  - Verified mandatory analyzers: security-reviewer `pass` (`high/medium/low=0/0/0`, scope `mode=none`) and code-simplifier `pass` (`major/medium/minor=0/0/0`, scope `mode=none`).
+  - Verified deterministic gate: `npm run verify` passed (`lint` + `typecheck` successful; `npm test --if-present` no-op).
+- Commands used:
+  - `python3 "$HOME/.codex/skills/security-reviewer/scripts/run_security_review.py" --repo "$PWD" --pretty`
+  - `python3 "$HOME/.codex/skills/code-simplifier/scripts/run_code_simplifier.py" --repo "$PWD" --pretty`
+  - `npm run verify`
+  - `curl -sI https://obieo.com/portal`
+  - `curl -sI https://www.obieo.com/portal`
+  - `curl -sI https://app.obieo.com/portal`
+  - `curl -sI https://app.obieo.com/sign-in`
+  - `curl -sI 'https://app.obieo.com/sign-up?redirect_url=%2Fportal'`
+  - `node --input-type=module ... ConvexHttpClient query(api.leadLedger.listOrganizationsForOps/getOrganizationSnapshot/listLeadgenIntentsForOps)`
+  - `git status --short`
+  - `git remote -v`
+  - `git rev-parse --abbrev-ref --symbolic-full-name @{u}`
+  - `git rev-list --left-right --count HEAD...@{u}`
+- Patterns discovered:
+  - Portal access incidents split cleanly by host first: `www.obieo.com/portal` can 404 while `app.obieo.com/portal` is healthy.
+  - Login and invite links are controlled by exactly three env vars in this flow: `NEXT_PUBLIC_APP_URL`, `CLIENT_PORTAL_LOGIN_URL`, and `CLERK_INVITATION_REDIRECT_URL`.
+  - "Couldn't find your account" with `pending invites > 0` and `users = 0` indicates account-creation not completed, not portal-key collision.
+  - Google OAuth `missing required parameter: client_id` is an independent Clerk Google provider config issue.
+- Gotchas:
+  - Old invite/payment notice emails keep old URLs; env updates only affect newly generated links.
+  - For this customer, Convex credits remain `40/40` (`prepaidLeadCredits`/`leadCommitmentTotal`) even if Airtable pricing label is changed to `80 Lead Package`.
+  - Repo working tree is intentionally dirty (many pre-existing modified/untracked files), so closure notes must not assume commit-clean state.
+- Next-time start:
+  - Open runbook `.codex/hunterlapeyre/runbooks/portal-access-404-and-signin-recovery.md` and run the quick host checks first.
+  - If the customer can sign in but account is missing, send `https://app.obieo.com/sign-up?redirect_url=%2Fportal` before resending invites.
+  - If you need invite regeneration, use `/internal/leadgen/payment-link` with `Force resend invitation email` after env/deploy verification.
+
 ### 2026-02-26 (session 3)
 - What we did:
   - Tightened deterministic quality gates to enforce measure-twice behavior: `lint` now runs with `--max-warnings=0`, `verify` is present and used as the closure gate, and ESLint ignores were hardened for `.next`, `.worktrees`, and `convex/_generated`.
