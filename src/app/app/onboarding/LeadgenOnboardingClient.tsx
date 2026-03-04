@@ -129,9 +129,7 @@ function parseOnboardingDraft(value: unknown): OnboardingDraftSnapshot | null {
         (entry): entry is string => typeof entry === 'string' && SERVICE_TYPES.includes(entry as (typeof SERVICE_TYPES)[number])
       )
     : []
-  const parsedTargetZipCodes = Array.isArray(form.targetZipCodes)
-    ? form.targetZipCodes.filter((entry): entry is string => typeof entry === 'string' && /^\d{5}$/.test(entry))
-    : []
+  const parsedTargetZipCodes = parseTargetZipCodes(form.targetZipCodes).zipCodes
   const fallbackTargetZipCodes =
     typeof form.targetZipCodesRaw === 'string' ? parseTargetZipCodes(form.targetZipCodesRaw).zipCodes : []
 

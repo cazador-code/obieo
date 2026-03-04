@@ -6,6 +6,7 @@ import {
   submitClientOnboardingInConvex,
   upsertOrganizationInConvex,
 } from '@/lib/convex'
+import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { getBillingModelDefaults } from '@/lib/billing-models'
 import { getInvalidTargetZipError, getTargetZipCountError, parseTargetZipCodes } from '@/lib/leadgen-target-zips'
 
@@ -51,6 +52,12 @@ function getPrimaryEmailFromUser(user: {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { success, remaining } = await authLimiter.limit(ip)
+  if (!success) {
+    return rateLimitResponse(remaining)
+  }
+
   const { userId } = await auth()
   if (!userId) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })

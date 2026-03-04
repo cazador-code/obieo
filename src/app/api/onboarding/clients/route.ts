@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { submitClientOnboardingInConvex } from '@/lib/convex'
+import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import {
   BILLING_MODEL_LABELS,
   getBillingModelDefaults,
@@ -87,6 +88,19 @@ function normalizeOptionalPositiveInt(value: unknown): number | undefined {
   return intVal > 0 ? intVal : undefined
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function formatHtmlList(values: string[]): string {
+  return values.length > 0 ? values.map((value) => escapeHtml(value)).join(', ') : 'N/A'
+}
+
 function getNotificationRecipients(): string[] {
   const raw =
     process.env.ONBOARDING_NOTIFICATION_EMAILS ||
@@ -121,6 +135,14 @@ async function sendInternalNotification(input: {
 
   const resend = new Resend(apiKey)
   const priceDollars = (input.leadUnitPriceCents / 100).toFixed(2)
+  const safeCompanyName = escapeHtml(input.companyName)
+  const safePortalKey = escapeHtml(input.portalKey)
+  const safeCompanyId = escapeHtml(input.companyId || 'N/A')
+  const safeBillingModelLabel = escapeHtml(input.billingModelLabel)
+  const safeLeadChargeThreshold = escapeHtml(String(input.leadChargeThreshold))
+  const safeServiceAreas = formatHtmlList(input.serviceAreas)
+  const safeLeadRoutingPhones = formatHtmlList(input.leadRoutingPhones)
+  const safeLeadRoutingEmails = formatHtmlList(input.leadRoutingEmails)
 
   await resend.emails.send({
     from: fromEmail,
@@ -128,21 +150,27 @@ async function sendInternalNotification(input: {
     subject: `Onboarding completed: ${input.companyName}`,
     html: `
       <h2>Client Onboarding Completed</h2>
-      <p><strong>Company:</strong> ${input.companyName}</p>
-      <p><strong>Portal Key:</strong> ${input.portalKey}</p>
-      <p><strong>Company ID:</strong> ${input.companyId || 'N/A'}</p>
-      <p><strong>Billing Model:</strong> ${input.billingModelLabel}</p>
+      <p><strong>Company:</strong> ${safeCompanyName}</p>
+      <p><strong>Portal Key:</strong> ${safePortalKey}</p>
+      <p><strong>Company ID:</strong> ${safeCompanyId}</p>
+      <p><strong>Billing Model:</strong> ${safeBillingModelLabel}</p>
       <p><strong>Lead Price:</strong> $${priceDollars}</p>
-      <p><strong>Threshold:</strong> ${input.leadChargeThreshold} leads</p>
-      <p><strong>Service Areas:</strong> ${input.serviceAreas.join(', ') || 'N/A'}</p>
-      <p><strong>Lead Routing Phones:</strong> ${input.leadRoutingPhones.join(', ') || 'N/A'}</p>
-      <p><strong>Lead Routing Emails:</strong> ${input.leadRoutingEmails.join(', ') || 'N/A'}</p>
+      <p><strong>Threshold:</strong> ${safeLeadChargeThreshold} leads</p>
+      <p><strong>Service Areas:</strong> ${safeServiceAreas}</p>
+      <p><strong>Lead Routing Phones:</strong> ${safeLeadRoutingPhones}</p>
+      <p><strong>Lead Routing Emails:</strong> ${safeLeadRoutingEmails}</p>
       <p>Next step: Kick off ad campaign and lead routing automation.</p>
     `,
   })
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { success, remaining } = await authLimiter.limit(ip)
+  if (!success) {
+    return rateLimitResponse(remaining)
+  }
+
   const expectedSecret = getApiSecret()
   if (!expectedSecret) {
     return NextResponse.json(
