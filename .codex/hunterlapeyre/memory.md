@@ -56,6 +56,38 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
 - E2E:
 
 ## Session Notes (append, newest first)
+### 2026-03-04 (closure pass after cleanup + push)
+- What we did:
+  - Committed and pushed SOP hardening updates for GHL preflight and name-casing safeguards to `main` (`7e840f8`).
+  - Cleaned workspace noise safely: created untracked backup tarball, added local excludes for scraper artifacts, removed untracked junk, and restored `.env.example`.
+  - Re-ran closure gates: security-reviewer `pass`, code-simplifier `pass`, deterministic `npm run verify` `pass`.
+- Commands used:
+  - `git add docs/seller-operating-system/00-master-map.md docs/seller-operating-system/03-fulfillment-and-delivery.md .codex/hunterlapeyre/runbooks/ghl-import-preflight-and-safe-launch.md .codex/hunterlapeyre/memory.md`
+  - `git commit -m "docs: add GHL import preflight and no-all-caps name gates"`
+  - `git push origin main`
+  - `git ls-files --others --exclude-standard > /tmp/obieo_untracked_backup_20260304_174423/untracked_files.txt`
+  - `tar -czf /tmp/obieo_untracked_backup_20260304_174423/untracked_files.tgz -T /tmp/obieo_untracked_backup_20260304_174423/untracked_files.txt`
+  - `git clean -fd`
+  - `git restore .env.example`
+  - `python3 "$HOME/.codex/skills/security-reviewer/scripts/run_security_review.py" --repo "$PWD" --pretty`
+  - `python3 "$HOME/.codex/skills/code-simplifier/scripts/run_code_simplifier.py" --repo "$PWD" --pretty`
+  - `npm run verify`
+  - `git status --short`
+  - `git rev-parse --abbrev-ref --symbolic-full-name @{u}`
+  - `git rev-list --left-right --count HEAD...@{u}`
+- Patterns discovered:
+  - Backup-first cleanup (`tar` snapshot before `git clean`) keeps aggressive cleanup reversible without polluting git history.
+  - Local-only ignore rules in `.git/info/exclude` are best for recurring generated scrape artifacts.
+  - Session closure is fastest when done in this fixed sequence: analyzers -> verify -> git sync checks -> memory append.
+- Gotchas:
+  - Some operations touching `.git` metadata required escalated permissions in this environment.
+  - `git clean -fd` will remove untracked runbooks/docs/scripts unless backed up first.
+  - Analyzer scope returned `mode=none`; still valid closure pass, but scoped-review depth is minimal on clean tree.
+- Next-time start:
+  - Start with `git status --short`; if noisy, backup untracked files then `git clean -fd`.
+  - Run closure gates immediately: security reviewer, code simplifier, then `npm run verify`.
+  - Keep backup location handy for quick restore: `/tmp/obieo_untracked_backup_20260304_174423/untracked_files.tgz`.
+
 ### 2026-03-04 (GHL import failure loop + name-case hardening)
 - What we did:
   - Added durable SOP guardrails to prevent ALL CAPS names reaching live outreach and made this a mandatory pre-import + launch gate.
