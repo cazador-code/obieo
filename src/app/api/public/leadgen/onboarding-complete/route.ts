@@ -6,7 +6,9 @@ import {
   submitClientOnboardingInConvex,
   upsertOrganizationInConvex,
 } from '@/lib/convex'
+import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { getBillingModelDefaults } from '@/lib/billing-models'
+import { getInvalidTargetZipError, getTargetZipCountError, parseTargetZipCodes } from '@/lib/leadgen-target-zips'
 
 export const runtime = 'nodejs'
 
@@ -50,6 +52,12 @@ function getPrimaryEmailFromUser(user: {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { success, remaining } = await authLimiter.limit(ip)
+  if (!success) {
+    return rateLimitResponse(remaining)
+  }
+
   const { userId } = await auth()
   if (!userId) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
@@ -115,7 +123,7 @@ export async function POST(request: NextRequest) {
 
   const payload = (body.onboardingPayload || {}) as Record<string, unknown>
   const serviceAreas = normalizeStringArray(payload.serviceAreas)
-  const targetZipCodes = normalizeStringArray(payload.targetZipCodes)
+  const { zipCodes: targetZipCodes, invalidZipCodes } = parseTargetZipCodes(payload.targetZipCodes)
   const serviceTypes = normalizeStringArray(payload.serviceTypes)
   const leadRoutingPhones = normalizeStringArray(payload.leadRoutingPhones)
   const leadRoutingEmails = normalizeStringArray(payload.leadRoutingEmails)
@@ -123,11 +131,13 @@ export async function POST(request: NextRequest) {
   if (serviceAreas.length === 0) {
     return NextResponse.json({ success: false, error: 'At least one service area is required' }, { status: 400 })
   }
-  if (targetZipCodes.length < 5) {
-    return NextResponse.json({ success: false, error: 'At least 5 target ZIP codes are required' }, { status: 400 })
+  const invalidTargetZipError = getInvalidTargetZipError(invalidZipCodes)
+  if (invalidTargetZipError) {
+    return NextResponse.json({ success: false, error: invalidTargetZipError }, { status: 400 })
   }
-  if (targetZipCodes.length > 10) {
-    return NextResponse.json({ success: false, error: 'Maximum 10 target ZIP codes allowed' }, { status: 400 })
+  const targetZipCountError = getTargetZipCountError(targetZipCodes.length)
+  if (targetZipCountError) {
+    return NextResponse.json({ success: false, error: targetZipCountError }, { status: 400 })
   }
   if (serviceTypes.length === 0) {
     return NextResponse.json({ success: false, error: 'At least one service type is required' }, { status: 400 })

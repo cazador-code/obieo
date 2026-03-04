@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { submitClientOnboardingInConvex } from '@/lib/convex'
+import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
+import { checkAirtableZipConflictsForApproval } from '@/lib/airtable-client-zips'
+import { escapeHtml } from '@/lib/escape-html'
 import {
   BILLING_MODEL_LABELS,
   getBillingModelDefaults,
   normalizeBillingModel,
 } from '@/lib/billing-models'
+import { getInvalidTargetZipError, getTargetZipCountError, parseTargetZipCodes } from '@/lib/leadgen-target-zips'
 
 export const runtime = 'nodejs'
 
@@ -86,6 +90,10 @@ function normalizeOptionalPositiveInt(value: unknown): number | undefined {
   return intVal > 0 ? intVal : undefined
 }
 
+function formatHtmlList(values: string[]): string {
+  return values.length > 0 ? values.map((value) => escapeHtml(value)).join(', ') : 'N/A'
+}
+
 function getNotificationRecipients(): string[] {
   const raw =
     process.env.ONBOARDING_NOTIFICATION_EMAILS ||
@@ -120,6 +128,14 @@ async function sendInternalNotification(input: {
 
   const resend = new Resend(apiKey)
   const priceDollars = (input.leadUnitPriceCents / 100).toFixed(2)
+  const safeCompanyName = escapeHtml(input.companyName)
+  const safePortalKey = escapeHtml(input.portalKey)
+  const safeCompanyId = escapeHtml(input.companyId || 'N/A')
+  const safeBillingModelLabel = escapeHtml(input.billingModelLabel)
+  const safeLeadChargeThreshold = escapeHtml(String(input.leadChargeThreshold))
+  const safeServiceAreas = formatHtmlList(input.serviceAreas)
+  const safeLeadRoutingPhones = formatHtmlList(input.leadRoutingPhones)
+  const safeLeadRoutingEmails = formatHtmlList(input.leadRoutingEmails)
 
   await resend.emails.send({
     from: fromEmail,
@@ -127,21 +143,27 @@ async function sendInternalNotification(input: {
     subject: `Onboarding completed: ${input.companyName}`,
     html: `
       <h2>Client Onboarding Completed</h2>
-      <p><strong>Company:</strong> ${input.companyName}</p>
-      <p><strong>Portal Key:</strong> ${input.portalKey}</p>
-      <p><strong>Company ID:</strong> ${input.companyId || 'N/A'}</p>
-      <p><strong>Billing Model:</strong> ${input.billingModelLabel}</p>
+      <p><strong>Company:</strong> ${safeCompanyName}</p>
+      <p><strong>Portal Key:</strong> ${safePortalKey}</p>
+      <p><strong>Company ID:</strong> ${safeCompanyId}</p>
+      <p><strong>Billing Model:</strong> ${safeBillingModelLabel}</p>
       <p><strong>Lead Price:</strong> $${priceDollars}</p>
-      <p><strong>Threshold:</strong> ${input.leadChargeThreshold} leads</p>
-      <p><strong>Service Areas:</strong> ${input.serviceAreas.join(', ') || 'N/A'}</p>
-      <p><strong>Lead Routing Phones:</strong> ${input.leadRoutingPhones.join(', ') || 'N/A'}</p>
-      <p><strong>Lead Routing Emails:</strong> ${input.leadRoutingEmails.join(', ') || 'N/A'}</p>
+      <p><strong>Threshold:</strong> ${safeLeadChargeThreshold} leads</p>
+      <p><strong>Service Areas:</strong> ${safeServiceAreas}</p>
+      <p><strong>Lead Routing Phones:</strong> ${safeLeadRoutingPhones}</p>
+      <p><strong>Lead Routing Emails:</strong> ${safeLeadRoutingEmails}</p>
       <p>Next step: Kick off ad campaign and lead routing automation.</p>
     `,
   })
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { success, remaining } = await authLimiter.limit(ip)
+  if (!success) {
+    return rateLimitResponse(remaining)
+  }
+
   const expectedSecret = getApiSecret()
   if (!expectedSecret) {
     return NextResponse.json(
@@ -174,7 +196,7 @@ export async function POST(request: NextRequest) {
   }
 
   const serviceAreas = normalizeStringList(body.serviceAreas)
-  const targetZipCodes = normalizeStringList(body.targetZipCodes)
+  const { zipCodes: targetZipCodes, invalidZipCodes } = parseTargetZipCodes(body.targetZipCodes)
   const serviceTypes = normalizeStringList(body.serviceTypes)
   const leadRoutingPhones = normalizeStringList(body.leadRoutingPhones)
   const leadRoutingEmails = normalizeStringList(body.leadRoutingEmails)
@@ -186,11 +208,48 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     )
   }
-
+  const invalidTargetZipError = getInvalidTargetZipError(invalidZipCodes)
+  if (invalidTargetZipError) {
+    return NextResponse.json({ success: false, error: invalidTargetZipError }, { status: 400 })
+  }
+  const targetZipCountError = getTargetZipCountError(targetZipCodes.length)
+  if (targetZipCountError) {
+    return NextResponse.json({ success: false, error: targetZipCountError }, { status: 400 })
+  }
   if (leadRoutingPhones.length === 0 && leadRoutingEmails.length === 0) {
     return NextResponse.json(
       { success: false, error: 'At least one lead routing phone or email is required' },
       { status: 400 }
+    )
+  }
+
+  const conflictCheck = await checkAirtableZipConflictsForApproval({
+    portalKey,
+    organizationName: companyName,
+    requestedAddZipCodes: targetZipCodes,
+  })
+  if (!conflictCheck.checked) {
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          conflictCheck.message ||
+          'ZIP overlap check could not run. Configure Airtable settings before onboarding.',
+        reason: conflictCheck.reason,
+      },
+      { status: 503 }
+    )
+  }
+  if (conflictCheck.conflicts.length > 0) {
+    const conflictingZipCodes = Array.from(new Set(conflictCheck.conflicts.map((item) => item.zipCode))).sort()
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Target ZIP codes already assigned: ${conflictingZipCodes.join(', ')}.`,
+        conflictCount: conflictCheck.conflicts.length,
+        conflicts: conflictCheck.conflicts.slice(0, 10),
+      },
+      { status: 409 }
     )
   }
 
@@ -212,7 +271,7 @@ export async function POST(request: NextRequest) {
     businessAddress: cleanString(body.businessAddress) || undefined,
     companyName,
     serviceAreas,
-    targetZipCodes: targetZipCodes.length > 0 ? targetZipCodes : undefined,
+    targetZipCodes,
     serviceTypes: serviceTypes.length > 0 ? serviceTypes : undefined,
     desiredLeadVolumeDaily,
     operatingHoursStart: cleanString(body.operatingHoursStart) || undefined,
