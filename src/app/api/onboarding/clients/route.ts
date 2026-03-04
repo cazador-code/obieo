@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { submitClientOnboardingInConvex } from '@/lib/convex'
 import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
+import { checkAirtableZipConflictsForApproval } from '@/lib/airtable-client-zips'
 import {
   BILLING_MODEL_LABELS,
   getBillingModelDefaults,
@@ -222,6 +223,35 @@ export async function POST(request: NextRequest) {
   const targetZipCountError = getTargetZipCountError(targetZipCodes.length)
   if (targetZipCountError) {
     return NextResponse.json({ success: false, error: targetZipCountError }, { status: 400 })
+  }
+  const conflictCheck = await checkAirtableZipConflictsForApproval({
+    portalKey,
+    organizationName: companyName,
+    requestedAddZipCodes: targetZipCodes,
+  })
+  if (!conflictCheck.checked) {
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          conflictCheck.message ||
+          'ZIP overlap check could not run. Configure Airtable settings before onboarding.',
+        reason: conflictCheck.reason,
+      },
+      { status: 503 }
+    )
+  }
+  if (conflictCheck.conflicts.length > 0) {
+    const conflictingZipCodes = Array.from(new Set(conflictCheck.conflicts.map((item) => item.zipCode))).sort()
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Target ZIP codes already assigned: ${conflictingZipCodes.join(', ')}.`,
+        conflictCount: conflictCheck.conflicts.length,
+        conflicts: conflictCheck.conflicts.slice(0, 10),
+      },
+      { status: 409 }
+    )
   }
 
   if (leadRoutingPhones.length === 0 && leadRoutingEmails.length === 0) {

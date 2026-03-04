@@ -463,8 +463,12 @@ export default function LeadgenOnboardingClient({ token }: { token: string }) {
           <div className="mt-1 flex flex-col gap-2 sm:flex-row">
             <input
               value={targetZipCodeInput}
-              onChange={(e) => setTargetZipCodeInput(e.target.value)}
+              onChange={(e) => {
+                setTargetZipInputError(null)
+                setTargetZipCodeInput(e.target.value)
+              }}
               onKeyDown={(e) => {
+                setTargetZipInputError(null)
                 if (e.key === 'Enter') {
                   e.preventDefault()
                   handleAddTargetZipCodes()
