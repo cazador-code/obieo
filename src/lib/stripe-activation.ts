@@ -1,6 +1,7 @@
 import Stripe from 'stripe'
 import { clerkClient } from '@clerk/nextjs/server'
 import { Resend } from 'resend'
+import { BILLING_MODEL_LABELS, normalizeBillingModel } from '@/lib/billing-models'
 import { getLeadgenIntentByPortalKeyInConvex, markLeadgenInvitedInConvex } from '@/lib/convex'
 
 const ACTIVATION_CHARGE_KINDS = new Set([
@@ -42,6 +43,20 @@ export function getPortalLoginUrl(): string {
 
 export function getInvitationRedirectUrl(): string {
   return process.env.CLERK_INVITATION_REDIRECT_URL?.trim() || `${getAppBaseUrl()}/portal`
+}
+
+function getPaymentSourceLabel(source: ActivationCandidate['source']): string {
+  if (source === 'ignition') return 'Ignition'
+  if (source === 'whop') return 'Whop'
+  if (source === 'invoice') return 'invoice'
+  if (source === 'checkout') return 'checkout'
+  return 'payment'
+}
+
+function getBillingModelLabel(billingModel?: string): string | null {
+  if (!billingModel) return null
+  const normalized = normalizeBillingModel(billingModel)
+  return BILLING_MODEL_LABELS[normalized] || null
 }
 
 function getOpsRecipients(): string[] {
@@ -159,6 +174,9 @@ async function sendOpsActivationNotice(input: {
 async function sendCustomerPaymentNotice(input: {
   email: string
   companyName?: string
+  source: ActivationCandidate['source']
+  sourceId: string
+  billingModel?: string
   loginUrl: string
   onboardingUrl?: string
 }) {
@@ -166,29 +184,52 @@ async function sendCustomerPaymentNotice(input: {
   if (!apiKey) return
 
   const resend = new Resend(apiKey)
+  const sourceLabel = getPaymentSourceLabel(input.source)
+  const billingModelLabel = getBillingModelLabel(input.billingModel)
+  const companyName = input.companyName || 'there'
   const subject = input.onboardingUrl
-    ? 'Payment received - complete your onboarding form'
-    : 'Payment received - your Obieo portal access is ready'
-  const onboardingBlock = input.onboardingUrl
+    ? `You're in - complete your Obieo onboarding`
+    : `You're in - your Obieo access is ready`
+  const onboardingCta = input.onboardingUrl
     ? `
-      <p><strong>Step 1: Complete your onboarding form (ZIP codes + service areas)</strong></p>
-      <p><a href="${input.onboardingUrl}">${input.onboardingUrl}</a></p>
-      <p><strong>Step 2:</strong> If prompted, create your password and continue. You should land on the onboarding form.</p>
+      <p style="margin:16px 0 8px;"><strong>Next step: complete your onboarding form</strong></p>
+      <p style="margin:0 0 18px;">This is where you tell us your ZIP codes, service area, and routing details so we can start sending the right leads.</p>
+      <p style="margin:0 0 20px;">
+        <a href="${input.onboardingUrl}" style="display:inline-block;background:#d9784b;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:600;">
+          Complete onboarding
+        </a>
+      </p>
+      <p style="margin:0 0 14px;font-size:14px;color:#5f5a55;">If prompted, create your password first and you should land right on the onboarding form.</p>
     `
     : `
-      <p>Please look for a separate account invitation email from Clerk to finish setup and create your password.</p>
+      <p style="margin:16px 0 14px;">Your Obieo portal access is being prepared now. Please look for a separate account invitation email from Clerk to finish setup and create your password.</p>
     `
+  const billingModelBlock = billingModelLabel
+    ? `<p style="margin:0 0 14px;"><strong>Plan:</strong> ${billingModelLabel}</p>`
+    : ''
+  const paymentReferenceBlock = input.sourceId
+    ? `<p style="margin:0 0 14px;font-size:13px;color:#7a746d;"><strong>Reference:</strong> ${input.sourceId}</p>`
+    : ''
   await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL || 'noreply@obieo.com',
     to: [input.email],
     subject,
     html: `
-      <p>Hi ${input.companyName || 'there'},</p>
-      <p>We received your payment and have prepared your account.</p>
-      ${onboardingBlock}
-      <p>After setup, you can log in here:</p>
-      <p><a href="${input.loginUrl}">${input.loginUrl}</a></p>
-      <p>If anything is unclear, reply to this email and we will help right away.</p>
+      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#1f1a17;">
+        <p style="margin:0 0 12px;">Hi ${companyName},</p>
+        <h2 style="margin:0 0 16px;font-size:28px;line-height:1.2;">You're officially in.</h2>
+        <p style="margin:0 0 14px;">We received your payment through ${sourceLabel} and your Obieo account is now active.</p>
+        ${billingModelBlock}
+        ${paymentReferenceBlock}
+        ${onboardingCta}
+        <div style="margin:22px 0;padding:16px 18px;border:1px solid #eadfd6;border-radius:14px;background:#fbf7f4;">
+          <p style="margin:0 0 10px;font-weight:600;">What happens next</p>
+          <p style="margin:0 0 8px;">1. Finish onboarding so we know where and how to send your leads.</p>
+          <p style="margin:0 0 8px;">2. Our team reviews your setup and gets your account launch-ready.</p>
+          <p style="margin:0;">3. You can log in anytime here: <a href="${input.loginUrl}">${input.loginUrl}</a></p>
+        </div>
+        <p style="margin:0;">If anything looks off, just reply to this email and we will help right away.</p>
+      </div>
     `,
   })
 }
@@ -330,6 +371,9 @@ export async function activateCustomer(input: {
     await sendCustomerPaymentNotice({
       email,
       companyName,
+      source: input.candidate.source,
+      sourceId: input.candidate.sourceId,
+      billingModel: input.candidate.billingModel,
       loginUrl,
       onboardingUrl,
     })
