@@ -148,6 +148,7 @@ export async function POST(request: NextRequest) {
       portalKey,
       airtableRecordId: syncResult.airtableRecordId,
       updatedFields: syncResult.updatedFields || [],
+      created: Boolean(syncResult.created),
     })
   } catch (error) {
     console.error('Failed to resync Airtable client', { portalKey, error })

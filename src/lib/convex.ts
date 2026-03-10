@@ -611,6 +611,7 @@ export async function submitClientOnboardingInConvex(input: {
         portalKey: input.portalKey,
         organizationName: input.companyName,
         businessName: input.companyName,
+        createIfMissing: true,
         ...(input.targetZipCodes ? { targetZipCodes: input.targetZipCodes } : {}),
         ...(input.businessPhone ? { businessPhone: input.businessPhone } : {}),
         ...(input.leadRoutingPhones.length > 0 ? { leadDeliveryPhones: input.leadRoutingPhones } : {}),
