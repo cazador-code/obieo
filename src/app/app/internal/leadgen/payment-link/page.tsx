@@ -83,20 +83,39 @@ const PAYMENT_PROVIDER_LABELS: Record<PaymentProvider, string> = {
   manual: 'Manual confirmation',
 }
 
-const BILLING_MODEL_OPTIONS: BillingModel[] = [
-  'package_40_paid_in_full',
-  'commitment_40_with_10_upfront',
-  'pay_per_lead_40_first_lead',
-  'pay_per_lead_perpetual',
+const CUSTOM_PACKAGE_SELECTION = 'custom_package_paid_in_full' as const
+
+type BillingSelection = BillingModel | typeof CUSTOM_PACKAGE_SELECTION
+
+const BILLING_SELECTION_OPTIONS: Array<{ value: BillingSelection; label: string }> = [
+  {
+    value: 'package_40_paid_in_full',
+    label: BILLING_MODEL_LABELS.package_40_paid_in_full,
+  },
+  {
+    value: CUSTOM_PACKAGE_SELECTION,
+    label: 'Custom paid-in-full package',
+  },
+  {
+    value: 'commitment_40_with_10_upfront',
+    label: BILLING_MODEL_LABELS.commitment_40_with_10_upfront,
+  },
+  {
+    value: 'pay_per_lead_40_first_lead',
+    label: BILLING_MODEL_LABELS.pay_per_lead_40_first_lead,
+  },
+  {
+    value: 'pay_per_lead_perpetual',
+    label: BILLING_MODEL_LABELS.pay_per_lead_perpetual,
+  },
 ]
 
 export default function PaymentLinkPage() {
-  const [billingModel, setBillingModel] = useState<BillingModel>(DEFAULT_BILLING_MODEL)
+  const [billingSelection, setBillingSelection] = useState<BillingSelection>(DEFAULT_BILLING_MODEL)
 
   const [companyName, setCompanyName] = useState('')
   const [billingEmail, setBillingEmail] = useState('')
   const [billingName, setBillingName] = useState('')
-  const [useCustomPackageTerms, setUseCustomPackageTerms] = useState(false)
   const [customIncludedLeads, setCustomIncludedLeads] = useState('')
   const [customTotalCommitmentLeads, setCustomTotalCommitmentLeads] = useState('')
   const [customAmountCollected, setCustomAmountCollected] = useState('')
@@ -109,8 +128,8 @@ export default function PaymentLinkPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [result, setResult] = useState<Extract<ApiResponse, { success: true }> | null>(null)
 
-  const isPaidInFullPackage = billingModel === 'package_40_paid_in_full'
-  const customPackageRequested = isPaidInFullPackage && useCustomPackageTerms
+  const customPackageRequested = billingSelection === CUSTOM_PACKAGE_SELECTION
+  const billingModel: BillingModel = customPackageRequested ? 'package_40_paid_in_full' : billingSelection
   const parsedIncludedLeads = parsePositiveInt(customIncludedLeads)
   const parsedAmountCollectedCents = parsePositiveCurrencyToCents(customAmountCollected)
   const parsedCommitmentLeads = parsePositiveInt(customTotalCommitmentLeads)
@@ -128,12 +147,12 @@ export default function PaymentLinkPage() {
   )
 
   const canSubmit = useMemo(() => {
-    const hasCoreFields = Boolean(cleanString(companyName) && isValidEmail(cleanString(billingEmail)) && billingModel)
+    const hasCoreFields = Boolean(cleanString(companyName) && isValidEmail(cleanString(billingEmail)) && billingSelection)
     if (!hasCoreFields) return false
     if (!customPackageRequested) return true
     return customPackageHasRequiredValues && customPackageHasValidCommitment
   }, [
-    billingModel,
+    billingSelection,
     companyName,
     billingEmail,
     customPackageHasRequiredValues,
@@ -215,13 +234,18 @@ export default function PaymentLinkPage() {
             <label>
               <span className="block text-sm font-semibold text-[var(--text-primary)]">Billing model</span>
               <select
-                value={billingModel}
-                onChange={(e) => setBillingModel(normalizeBillingModel(e.target.value))}
+                value={billingSelection}
+                onChange={(e) => {
+                  const nextValue = e.target.value
+                  setBillingSelection(
+                    nextValue === CUSTOM_PACKAGE_SELECTION ? CUSTOM_PACKAGE_SELECTION : normalizeBillingModel(nextValue)
+                  )
+                }}
                 className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
               >
-                {BILLING_MODEL_OPTIONS.map((model) => (
-                  <option key={model} value={model}>
-                    {BILLING_MODEL_LABELS[model]}
+                {BILLING_SELECTION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
                   </option>
                 ))}
               </select>
@@ -276,71 +300,59 @@ export default function PaymentLinkPage() {
               </label>
             </div>
 
-            {isPaidInFullPackage && (
+            {customPackageRequested && (
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-4">
-                <label className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={useCustomPackageTerms}
-                    onChange={(e) => setUseCustomPackageTerms(e.target.checked)}
-                  />
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">
-                    Use custom paid-in-full package terms
-                  </span>
-                </label>
+                <p className="text-sm font-semibold text-[var(--text-primary)]">Custom paid-in-full package terms</p>
                 <p className="mt-2 text-xs text-[var(--text-muted)]">
-                  Use this when the sold package is not the standard 40 leads for $1,600. Example: 25 leads for
-                  $1,000.
+                  Enter the exact package sold to the client. Example: 25 leads for $1,000.
                 </p>
 
-                {useCustomPackageTerms && (
-                  <div className="mt-4 grid gap-4 md:grid-cols-3">
-                    <label>
-                      <span className="block text-sm font-semibold text-[var(--text-primary)]">Included leads</span>
-                      <input
-                        type="number"
-                        min={1}
-                        step={1}
-                        value={customIncludedLeads}
-                        onChange={(e) => setCustomIncludedLeads(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3"
-                        placeholder="25"
-                      />
-                    </label>
+                <div className="mt-4 grid gap-4 md:grid-cols-3">
+                  <label>
+                    <span className="block text-sm font-semibold text-[var(--text-primary)]">Included leads</span>
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={customIncludedLeads}
+                      onChange={(e) => setCustomIncludedLeads(e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3"
+                      placeholder="25"
+                    />
+                  </label>
 
-                    <label>
-                      <span className="block text-sm font-semibold text-[var(--text-primary)]">
-                        Total commitment leads
-                      </span>
-                      <input
-                        type="number"
-                        min={1}
-                        step={1}
-                        value={customTotalCommitmentLeads}
-                        onChange={(e) => setCustomTotalCommitmentLeads(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3"
-                        placeholder="Defaults to included leads"
-                      />
-                    </label>
+                  <label>
+                    <span className="block text-sm font-semibold text-[var(--text-primary)]">
+                      Total commitment leads
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={customTotalCommitmentLeads}
+                      onChange={(e) => setCustomTotalCommitmentLeads(e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3"
+                      placeholder="Defaults to included leads"
+                    />
+                  </label>
 
-                    <label>
-                      <span className="block text-sm font-semibold text-[var(--text-primary)]">
-                        Amount collected (USD)
-                      </span>
-                      <input
-                        type="number"
-                        min={1}
-                        step="0.01"
-                        value={customAmountCollected}
-                        onChange={(e) => setCustomAmountCollected(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3"
-                        placeholder="1000"
-                      />
-                    </label>
-                  </div>
-                )}
+                  <label>
+                    <span className="block text-sm font-semibold text-[var(--text-primary)]">
+                      Amount collected (USD)
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      step="0.01"
+                      value={customAmountCollected}
+                      onChange={(e) => setCustomAmountCollected(e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3"
+                      placeholder="1000"
+                    />
+                  </label>
+                </div>
 
-                {useCustomPackageTerms && derivedLeadUnitPriceCents && parsedIncludedLeads && effectiveCommitmentLeads && (
+                {derivedLeadUnitPriceCents && parsedIncludedLeads && effectiveCommitmentLeads && (
                   <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3 text-sm text-[var(--text-secondary)]">
                     Saving this client as {parsedIncludedLeads} prepaid leads for $
                     {((parsedAmountCollectedCents || 0) / 100).toFixed(2)} total, with a $
