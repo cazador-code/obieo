@@ -50,11 +50,12 @@ export interface ZipConflictCheckResult {
 
 export interface AirtableZipSyncResult {
   synced: boolean
-  reason?: 'not_configured' | 'fetch_failed' | 'client_not_found' | 'client_ambiguous' | 'update_failed'
+  reason?: 'not_configured' | 'fetch_failed' | 'client_not_found' | 'client_ambiguous' | 'update_failed' | 'create_failed'
   message?: string
   airtableRecordId?: string
   targetZipCodes?: string[]
   updatedFields?: string[]
+  created?: boolean
 }
 
 type AirtableConfig = {
@@ -134,6 +135,27 @@ function parsePortalKeyMap(): Record<string, string> {
     console.error('Invalid AIRTABLE_PORTAL_KEY_MAP_JSON:', error)
     return {}
   }
+}
+
+function getMappedBusinessNameForPortalKey(portalKey: string): string | undefined {
+  const raw = process.env.AIRTABLE_PORTAL_KEY_MAP_JSON
+  if (!raw || !raw.trim()) return undefined
+
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return undefined
+
+    const normalizedPortalKey = cleanString(portalKey)
+    for (const [rawBusinessName, rawPortalKey] of Object.entries(parsed as Record<string, unknown>)) {
+      if (cleanString(rawPortalKey) !== normalizedPortalKey) continue
+      const businessName = cleanString(rawBusinessName)
+      if (businessName) return businessName
+    }
+  } catch (error) {
+    console.error('Invalid AIRTABLE_PORTAL_KEY_MAP_JSON:', error)
+  }
+
+  return undefined
 }
 
 function getAirtableToken(): string {
@@ -340,6 +362,138 @@ function hasOwn(input: object, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(input, key)
 }
 
+function buildFieldUpdates(
+  config: AirtableConfig,
+  input: Parameters<typeof syncPortalProfileToAirtable>[0]
+): {
+  fieldUpdates: Record<string, string | null>
+  updatedFields: string[]
+  normalizedTargetZipCodes: string[] | undefined
+} {
+  const fieldUpdates: Record<string, string | null> = {}
+  const updatedFields: string[] = []
+  let normalizedTargetZipCodes: string[] | undefined
+
+  if (hasOwn(input, 'businessName')) {
+    fieldUpdates[config.nameFieldId] = cleanString(input.businessName) || null
+    updatedFields.push(config.nameFieldId)
+  }
+
+  if (hasOwn(input, 'contractorName')) {
+    fieldUpdates[config.contractorNameFieldId] = cleanString(input.contractorName) || null
+    updatedFields.push(config.contractorNameFieldId)
+  }
+
+  if (hasOwn(input, 'targetZipCodes')) {
+    normalizedTargetZipCodes = Array.from(
+      new Set((input.targetZipCodes || []).map((zip) => cleanString(zip)).filter((zip) => ZIP_RE.test(zip)))
+    )
+    fieldUpdates[config.targetZipFieldId] =
+      normalizedTargetZipCodes.length > 0 ? normalizedTargetZipCodes.join(', ') : null
+    updatedFields.push(config.targetZipFieldId)
+  }
+
+  if (hasOwn(input, 'businessPhone')) {
+    fieldUpdates[config.businessPhoneFieldId] = cleanString(input.businessPhone) || null
+    updatedFields.push(config.businessPhoneFieldId)
+  } else if (hasOwn(input, 'leadDeliveryPhones')) {
+    const leadDeliveryPhones = normalizePhoneList(input.leadDeliveryPhones)
+    fieldUpdates[config.businessPhoneFieldId] = leadDeliveryPhones[0] || null
+    updatedFields.push(config.businessPhoneFieldId)
+  }
+
+  if (hasOwn(input, 'leadNotificationPhone')) {
+    fieldUpdates[config.notificationPhoneFieldId] = cleanString(input.leadNotificationPhone) || null
+    updatedFields.push(config.notificationPhoneFieldId)
+  }
+
+  if (hasOwn(input, 'leadNotificationEmail')) {
+    fieldUpdates[config.notificationEmailFieldId] = normalizeEmailValue(input.leadNotificationEmail)
+    updatedFields.push(config.notificationEmailFieldId)
+  }
+
+  if (hasOwn(input, 'leadProspectEmail')) {
+    fieldUpdates[config.prospectEmailFieldId] = normalizeEmailValue(input.leadProspectEmail)
+    updatedFields.push(config.prospectEmailFieldId)
+  }
+
+  if (hasOwn(input, 'pricingTier')) {
+    fieldUpdates[config.pricingTierFieldId] = cleanString(input.pricingTier) || null
+    updatedFields.push(config.pricingTierFieldId)
+  }
+
+  if (hasOwn(input, 'desiredLeadVolumeDaily')) {
+    const leadsPerDayRaw = input.desiredLeadVolumeDaily
+    const leadsPerDay =
+      typeof leadsPerDayRaw === 'number' && Number.isFinite(leadsPerDayRaw) && leadsPerDayRaw > 0
+        ? String(Math.floor(leadsPerDayRaw))
+        : null
+    fieldUpdates[config.leadsPerDayFieldId] = leadsPerDay
+    updatedFields.push(config.leadsPerDayFieldId)
+  }
+
+  if (hasOwn(input, 'clientNotes')) {
+    fieldUpdates[config.clientNotesFieldId] = cleanString(input.clientNotes) || null
+    updatedFields.push(config.clientNotesFieldId)
+  }
+
+  if (hasOwn(input, 'servicesOffered')) {
+    const services =
+      typeof input.servicesOffered === 'string'
+        ? cleanString(input.servicesOffered)
+        : Array.isArray(input.servicesOffered)
+          ? input.servicesOffered.map((value) => cleanString(value)).filter(Boolean).join(', ')
+          : null
+    fieldUpdates[config.servicesOfferedFieldId] = services || null
+    updatedFields.push(config.servicesOfferedFieldId)
+  }
+
+  if (hasOwn(input, 'clientCity')) {
+    fieldUpdates[config.clientCityFieldId] = cleanString(input.clientCity) || null
+    updatedFields.push(config.clientCityFieldId)
+  }
+
+  return {
+    fieldUpdates,
+    updatedFields,
+    normalizedTargetZipCodes,
+  }
+}
+
+async function createAirtableClientRecord(
+  config: AirtableConfig,
+  fieldUpdates: Record<string, string | null>
+): Promise<{ id: string } | { error: string }> {
+  const createUrl = new URL(`https://api.airtable.com/v0/${config.baseId}/${config.tableId}`)
+  createUrl.searchParams.set('returnFieldsByFieldId', 'true')
+
+  const response = await fetch(createUrl.toString(), {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${config.token}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      fields: fieldUpdates,
+      typecast: true,
+    }),
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    const text = await response.text()
+    return { error: `Airtable create failed (${response.status}): ${text.slice(0, 500)}` }
+  }
+
+  const payload = (await response.json()) as { id?: unknown }
+  const id = cleanString(payload.id)
+  if (!id) {
+    return { error: 'Airtable create succeeded but did not return a record id.' }
+  }
+
+  return { id }
+}
+
 export async function checkAirtableZipConflictsForApproval(input: {
   portalKey: string
   requestedAddZipCodes: string[]
@@ -434,6 +588,7 @@ export async function syncPortalProfileToAirtable(input: {
   clientNotes?: string | null
   servicesOffered?: string[] | string | null
   clientCity?: string | null
+  createIfMissing?: boolean
 }): Promise<AirtableZipSyncResult> {
   const config = getAirtableConfig()
   if (!config) {
@@ -456,12 +611,56 @@ export async function syncPortalProfileToAirtable(input: {
   }
 
   const matches = findMatchingClientRecords(rows, input.portalKey, input.organizationName)
+  const {
+    fieldUpdates,
+    updatedFields,
+    normalizedTargetZipCodes,
+  } = buildFieldUpdates(config, input)
+
   if (matches.length === 0) {
+    if (!input.createIfMissing) {
+      return {
+        synced: false,
+        reason: 'client_not_found',
+        message:
+          'Could not find matching Airtable client row. Add or fix AIRTABLE_PORTAL_KEY_MAP_JSON for this portal key.',
+      }
+    }
+
+    const createBusinessName =
+      cleanString(input.businessName) ||
+      cleanString(input.organizationName) ||
+      getMappedBusinessNameForPortalKey(input.portalKey)
+
+    if (!createBusinessName) {
+      return {
+        synced: false,
+        reason: 'client_not_found',
+        message:
+          'Could not find matching Airtable client row, and no business name was available to create one.',
+      }
+    }
+
+    const createInput = {
+      ...input,
+      businessName: createBusinessName,
+    }
+    const createFieldResult = buildFieldUpdates(config, createInput)
+    const createdRecord = await createAirtableClientRecord(config, createFieldResult.fieldUpdates)
+    if ('error' in createdRecord) {
+      return {
+        synced: false,
+        reason: 'create_failed',
+        message: createdRecord.error,
+      }
+    }
+
     return {
-      synced: false,
-      reason: 'client_not_found',
-      message:
-        'Could not find matching Airtable client row. Add or fix AIRTABLE_PORTAL_KEY_MAP_JSON for this portal key.',
+      synced: true,
+      airtableRecordId: createdRecord.id,
+      targetZipCodes: createFieldResult.normalizedTargetZipCodes,
+      updatedFields: createFieldResult.updatedFields,
+      created: true,
     }
   }
   if (matches.length > 1) {
@@ -473,89 +672,6 @@ export async function syncPortalProfileToAirtable(input: {
   }
 
   const target = matches[0]
-  const fieldUpdates: Record<string, string | null> = {}
-  const updatedFields: string[] = []
-  let normalizedTargetZipCodes: string[] | undefined
-
-  if (hasOwn(input, 'businessName')) {
-    fieldUpdates[config.nameFieldId] = cleanString(input.businessName) || null
-    updatedFields.push(config.nameFieldId)
-  }
-
-  if (hasOwn(input, 'contractorName')) {
-    fieldUpdates[config.contractorNameFieldId] = cleanString(input.contractorName) || null
-    updatedFields.push(config.contractorNameFieldId)
-  }
-
-  if (hasOwn(input, 'targetZipCodes')) {
-    normalizedTargetZipCodes = Array.from(
-      new Set((input.targetZipCodes || []).map((zip) => cleanString(zip)).filter((zip) => ZIP_RE.test(zip)))
-    )
-    fieldUpdates[config.targetZipFieldId] =
-      normalizedTargetZipCodes.length > 0 ? normalizedTargetZipCodes.join(', ') : null
-    updatedFields.push(config.targetZipFieldId)
-  }
-
-  if (hasOwn(input, 'businessPhone')) {
-    fieldUpdates[config.businessPhoneFieldId] = cleanString(input.businessPhone) || null
-    updatedFields.push(config.businessPhoneFieldId)
-  } else if (hasOwn(input, 'leadDeliveryPhones')) {
-    const leadDeliveryPhones = normalizePhoneList(input.leadDeliveryPhones)
-    fieldUpdates[config.businessPhoneFieldId] = leadDeliveryPhones[0] || null
-    updatedFields.push(config.businessPhoneFieldId)
-  }
-
-  if (hasOwn(input, 'leadNotificationPhone')) {
-    fieldUpdates[config.notificationPhoneFieldId] = cleanString(input.leadNotificationPhone) || null
-    updatedFields.push(config.notificationPhoneFieldId)
-  }
-
-  if (hasOwn(input, 'leadNotificationEmail')) {
-    fieldUpdates[config.notificationEmailFieldId] = normalizeEmailValue(input.leadNotificationEmail)
-    updatedFields.push(config.notificationEmailFieldId)
-  }
-
-  if (hasOwn(input, 'leadProspectEmail')) {
-    fieldUpdates[config.prospectEmailFieldId] = normalizeEmailValue(input.leadProspectEmail)
-    updatedFields.push(config.prospectEmailFieldId)
-  }
-
-  if (hasOwn(input, 'pricingTier')) {
-    fieldUpdates[config.pricingTierFieldId] = cleanString(input.pricingTier) || null
-    updatedFields.push(config.pricingTierFieldId)
-  }
-
-  if (hasOwn(input, 'desiredLeadVolumeDaily')) {
-    const leadsPerDayRaw = input.desiredLeadVolumeDaily
-    const leadsPerDay =
-      typeof leadsPerDayRaw === 'number' && Number.isFinite(leadsPerDayRaw) && leadsPerDayRaw > 0
-        ? String(Math.floor(leadsPerDayRaw))
-        : null
-    fieldUpdates[config.leadsPerDayFieldId] = leadsPerDay
-    updatedFields.push(config.leadsPerDayFieldId)
-  }
-
-  if (hasOwn(input, 'clientNotes')) {
-    fieldUpdates[config.clientNotesFieldId] = cleanString(input.clientNotes) || null
-    updatedFields.push(config.clientNotesFieldId)
-  }
-
-  if (hasOwn(input, 'servicesOffered')) {
-    const services =
-      typeof input.servicesOffered === 'string'
-        ? cleanString(input.servicesOffered)
-        : Array.isArray(input.servicesOffered)
-          ? input.servicesOffered.map((value) => cleanString(value)).filter(Boolean).join(', ')
-          : null
-    fieldUpdates[config.servicesOfferedFieldId] = services || null
-    updatedFields.push(config.servicesOfferedFieldId)
-  }
-
-  if (hasOwn(input, 'clientCity')) {
-    fieldUpdates[config.clientCityFieldId] = cleanString(input.clientCity) || null
-    updatedFields.push(config.clientCityFieldId)
-  }
-
   if (Object.keys(fieldUpdates).length === 0) {
     return {
       synced: true,

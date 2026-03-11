@@ -10,6 +10,7 @@ type ResyncResponse = {
   success: boolean
   error?: string
   updatedFields?: string[]
+  created?: boolean
 }
 
 export default function AirtableResyncButton({ portalKey }: Props) {
@@ -35,7 +36,11 @@ export default function AirtableResyncButton({ portalKey }: Props) {
       }
 
       const count = Array.isArray(data.updatedFields) ? data.updatedFields.length : 0
-      setNotice(count > 0 ? `Airtable synced (${count} fields).` : 'Airtable sync complete.')
+      if (data?.created) {
+        setNotice(count > 0 ? `Airtable row created (${count} fields).` : 'Airtable row created.')
+      } else {
+        setNotice(count > 0 ? `Airtable synced (${count} fields).` : 'Airtable sync complete.')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not resync Airtable row.')
     } finally {
