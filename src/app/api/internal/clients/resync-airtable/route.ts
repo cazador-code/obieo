@@ -93,7 +93,12 @@ export async function POST(request: NextRequest) {
         ? Math.floor(desiredLeadVolumeDailyRaw)
         : undefined
     const billingModel = toBillingModel(organizationRecord.billingModel)
-    const pricingTier = resolveAirtablePricingTier({ billingModel, leadUnitPriceCents })
+    const leadCommitmentTotalRaw = organizationRecord.leadCommitmentTotal
+    const leadCommitmentTotal =
+      typeof leadCommitmentTotalRaw === 'number' && Number.isFinite(leadCommitmentTotalRaw)
+        ? Math.floor(leadCommitmentTotalRaw)
+        : undefined
+    const pricingTier = resolveAirtablePricingTier({ billingModel, leadUnitPriceCents, leadCommitmentTotal })
     const businessAddress = cleanOptionalString(
       typeof organizationRecord.businessAddress === 'string' ? organizationRecord.businessAddress : undefined
     )

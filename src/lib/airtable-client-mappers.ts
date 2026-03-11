@@ -21,11 +21,24 @@ export function buildContractorName(input: {
 export function resolveAirtablePricingTier(input: {
   billingModel?: BillingModel
   leadUnitPriceCents: number
+  leadCommitmentTotal?: number | null
 }): string | undefined {
   if (!input.billingModel) return undefined
 
   if (input.billingModel === 'package_40_paid_in_full' || input.billingModel === 'commitment_40_with_10_upfront') {
-    return '40 Lead Package'
+    const packageSize =
+      typeof input.leadCommitmentTotal === 'number' && Number.isFinite(input.leadCommitmentTotal)
+        ? Math.max(1, Math.floor(input.leadCommitmentTotal))
+        : 40
+
+    const packageMap: Record<number, string> = {
+      10: '10 Lead Package',
+      20: '20 Lead Package',
+      40: '40 Lead Package',
+      80: '80 Lead Package',
+    }
+
+    return packageMap[packageSize]
   }
 
   if (input.billingModel !== 'pay_per_lead_perpetual' && input.billingModel !== 'pay_per_lead_40_first_lead') {

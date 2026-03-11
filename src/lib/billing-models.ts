@@ -17,6 +17,16 @@ export interface BillingModelDefaults {
   initialChargeCents: number
 }
 
+function normalizePositiveInt(value: number | null | undefined): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null
+  const normalized = Math.floor(value)
+  return normalized > 0 ? normalized : null
+}
+
+function formatCurrency(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`
+}
+
 export const BILLING_MODEL_LABELS: Record<BillingModel, string> = {
   package_40_paid_in_full: '$1,600 paid in full (40 leads)',
   commitment_40_with_10_upfront: '$400 upfront, then billed per 10 leads (40 total)',
@@ -75,4 +85,51 @@ export function getBillingModelDefaults(
     leadCommitmentTotal: null,
     initialChargeCents: unit,
   }
+}
+
+export function formatBillingTermsSummary(input: {
+  billingModel?: BillingModel | string | null
+  prepaidLeadCredits?: number | null
+  leadCommitmentTotal?: number | null
+  initialChargeCents?: number | null
+  leadChargeThreshold?: number | null
+  leadUnitPriceCents?: number | null
+}): string | null {
+  if (!input.billingModel) return null
+
+  const billingModel =
+    typeof input.billingModel === 'string' ? normalizeBillingModel(input.billingModel) : input.billingModel
+  const leadUnitPriceCents = normalizePositiveInt(input.leadUnitPriceCents) || 4000
+  const defaults = getBillingModelDefaults(billingModel, leadUnitPriceCents)
+
+  const prepaidLeadCredits = normalizePositiveInt(input.prepaidLeadCredits) ?? defaults.prepaidLeadCredits
+  const leadCommitmentTotal = normalizePositiveInt(input.leadCommitmentTotal) ?? defaults.leadCommitmentTotal
+  const initialChargeCents = normalizePositiveInt(input.initialChargeCents) ?? defaults.initialChargeCents
+  const leadChargeThreshold = normalizePositiveInt(input.leadChargeThreshold) ?? defaults.leadChargeThreshold
+  const unitPriceCents = normalizePositiveInt(input.leadUnitPriceCents) ?? defaults.leadUnitPriceCents
+
+  const matchesDefaults =
+    prepaidLeadCredits === defaults.prepaidLeadCredits &&
+    (leadCommitmentTotal ?? null) === (defaults.leadCommitmentTotal ?? null) &&
+    initialChargeCents === defaults.initialChargeCents &&
+    leadChargeThreshold === defaults.leadChargeThreshold &&
+    unitPriceCents === defaults.leadUnitPriceCents
+
+  if (matchesDefaults) {
+    return BILLING_MODEL_LABELS[billingModel]
+  }
+
+  if (billingModel === 'package_40_paid_in_full') {
+    return `Custom paid-in-full package: ${prepaidLeadCredits} prepaid leads, ${formatCurrency(initialChargeCents)} upfront, ${leadCommitmentTotal ?? prepaidLeadCredits} total commitment, ${formatCurrency(unitPriceCents)}/lead`
+  }
+
+  if (billingModel === 'commitment_40_with_10_upfront') {
+    return `Custom commitment package: ${prepaidLeadCredits} prepaid leads, ${formatCurrency(initialChargeCents)} upfront, ${leadCommitmentTotal ?? prepaidLeadCredits} total commitment, ${formatCurrency(unitPriceCents)}/lead, billed every ${leadChargeThreshold} leads`
+  }
+
+  if (billingModel === 'pay_per_lead_perpetual') {
+    return `Pay-per-lead: ${formatCurrency(unitPriceCents)}/lead with ${formatCurrency(initialChargeCents)} verification, billed every ${leadChargeThreshold} lead${leadChargeThreshold === 1 ? '' : 's'}`
+  }
+
+  return `Pay-per-lead: ${formatCurrency(unitPriceCents)}/lead with ${formatCurrency(initialChargeCents)} first charge, billed every ${leadChargeThreshold} lead${leadChargeThreshold === 1 ? '' : 's'}`
 }

@@ -5,6 +5,7 @@ import {
   resolveAirtableClientCity,
   resolveAirtablePricingTier,
 } from '@/lib/airtable-client-mappers'
+import { formatBillingTermsSummary } from '@/lib/billing-models'
 import { syncPortalProfileToAirtable } from '@/lib/airtable-client-zips'
 import type { PortalEditableProfile } from '@/lib/portal-profile'
 import { api } from '../../convex/_generated/api'
@@ -601,11 +602,25 @@ export async function submitClientOnboardingInConvex(input: {
       const pricingTier = resolveAirtablePricingTier({
         billingModel: input.billingModel,
         leadUnitPriceCents: input.leadUnitPriceCents,
+        leadCommitmentTotal: input.leadCommitmentTotal,
+      })
+      const billingTermsSummary = formatBillingTermsSummary({
+        billingModel: input.billingModel,
+        prepaidLeadCredits: input.prepaidLeadCredits,
+        leadCommitmentTotal: input.leadCommitmentTotal,
+        initialChargeCents: input.initialChargeCents,
+        leadChargeThreshold: input.leadChargeThreshold,
+        leadUnitPriceCents: input.leadUnitPriceCents,
       })
       const clientCity = resolveAirtableClientCity({
         businessAddress: input.businessAddress,
         serviceAreas: input.serviceAreas,
       })
+      const notesForAirtable = [input.notes]
+      if (billingTermsSummary && billingTermsSummary.toLowerCase().startsWith('custom ')) {
+        notesForAirtable.push(`Billing terms: ${billingTermsSummary}`)
+      }
+      const mergedClientNotes = notesForAirtable.filter(Boolean).join('\n\n') || undefined
 
       const airtableSync = await syncPortalProfileToAirtable({
         portalKey: input.portalKey,
@@ -621,7 +636,7 @@ export async function submitClientOnboardingInConvex(input: {
         ...(contractorName ? { contractorName } : {}),
         ...(pricingTier ? { pricingTier } : {}),
         ...(input.desiredLeadVolumeDaily ? { desiredLeadVolumeDaily: input.desiredLeadVolumeDaily } : {}),
-        ...(input.notes ? { clientNotes: input.notes } : {}),
+        ...(mergedClientNotes ? { clientNotes: mergedClientNotes } : {}),
         ...(input.serviceTypes && input.serviceTypes.length > 0 ? { servicesOffered: input.serviceTypes } : {}),
         ...(clientCity ? { clientCity } : {}),
       })

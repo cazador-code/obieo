@@ -1,8 +1,12 @@
 import Stripe from 'stripe'
 import { clerkClient } from '@clerk/nextjs/server'
 import { Resend } from 'resend'
-import { BILLING_MODEL_LABELS, normalizeBillingModel } from '@/lib/billing-models'
-import { getLeadgenIntentByPortalKeyInConvex, markLeadgenInvitedInConvex } from '@/lib/convex'
+import { BILLING_MODEL_LABELS, formatBillingTermsSummary, normalizeBillingModel } from '@/lib/billing-models'
+import {
+  getLeadgenIntentByPortalKeyInConvex,
+  getOrganizationSnapshotInConvex,
+  markLeadgenInvitedInConvex,
+} from '@/lib/convex'
 
 const ACTIVATION_CHARGE_KINDS = new Set([
   'paid_in_full',
@@ -57,6 +61,12 @@ function getBillingModelLabel(billingModel?: string): string | null {
   if (!billingModel) return null
   const normalized = normalizeBillingModel(billingModel)
   return BILLING_MODEL_LABELS[normalized] || null
+}
+
+function getPositiveInt(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined
+  const normalized = Math.floor(value)
+  return normalized > 0 ? normalized : undefined
 }
 
 function getOpsRecipients(): string[] {
@@ -139,6 +149,7 @@ async function sendOpsActivationNotice(input: {
   source: 'checkout' | 'invoice' | 'ignition' | 'whop' | 'manual'
   sourceId: string
   billingModel?: string
+  billingTerms?: string
   chargeKind?: string
   loginUrl: string
   onboardingUrl?: string
@@ -160,7 +171,8 @@ async function sendOpsActivationNotice(input: {
       <p><strong>Portal Key:</strong> ${input.portalKey || 'N/A'}</p>
       <p><strong>Source:</strong> ${input.source}</p>
       <p><strong>Source ID:</strong> ${input.sourceId}</p>
-      <p><strong>Billing Model:</strong> ${input.billingModel || 'N/A'}</p>
+      <p><strong>Billing Terms:</strong> ${input.billingTerms || getBillingModelLabel(input.billingModel) || input.billingModel || 'N/A'}</p>
+      <p><strong>Billing Model Key:</strong> ${input.billingModel || 'N/A'}</p>
       <p><strong>Charge Kind:</strong> ${input.chargeKind || 'N/A'}</p>
       <p><strong>Onboarding URL:</strong> ${
         input.onboardingUrl ? `<a href="${input.onboardingUrl}">${input.onboardingUrl}</a>` : 'N/A'
@@ -177,6 +189,7 @@ async function sendCustomerPaymentNotice(input: {
   source: ActivationCandidate['source']
   sourceId: string
   billingModel?: string
+  billingTerms?: string
   loginUrl: string
   onboardingUrl?: string
 }) {
@@ -185,7 +198,7 @@ async function sendCustomerPaymentNotice(input: {
 
   const resend = new Resend(apiKey)
   const sourceLabel = getPaymentSourceLabel(input.source)
-  const billingModelLabel = getBillingModelLabel(input.billingModel)
+  const billingModelLabel = input.billingTerms || getBillingModelLabel(input.billingModel)
   const companyName = input.companyName || 'there'
   const subject = input.onboardingUrl
     ? `You're in - complete your Obieo onboarding`
@@ -275,9 +288,20 @@ export async function activateCustomer(input: {
     input.candidate.journey === 'leadgen_payment_first' && portalKey
       ? await getLeadgenIntentByPortalKeyInConvex({ portalKey })
       : null
+  const organizationSnapshot = portalKey ? await getOrganizationSnapshotInConvex({ portalKey }) : null
+  const organization = organizationSnapshot?.organization || {}
   const onboardingUrl = leadgenIntent?.token
     ? `${getAppBaseUrl()}/onboarding?token=${encodeURIComponent(leadgenIntent.token)}`
     : undefined
+  const billingTerms =
+    formatBillingTermsSummary({
+      billingModel: input.candidate.billingModel || normalizeString(organization.billingModel),
+      prepaidLeadCredits: getPositiveInt(organization.prepaidLeadCredits),
+      leadCommitmentTotal: getPositiveInt(organization.leadCommitmentTotal),
+      initialChargeCents: getPositiveInt(organization.initialChargeCents),
+      leadChargeThreshold: getPositiveInt(organization.leadChargeThreshold),
+      leadUnitPriceCents: getPositiveInt(organization.leadUnitPriceCents),
+    }) || undefined
 
   if (
     !input.forceResendInvitation &&
@@ -374,6 +398,7 @@ export async function activateCustomer(input: {
       source: input.candidate.source,
       sourceId: input.candidate.sourceId,
       billingModel: input.candidate.billingModel,
+      billingTerms,
       loginUrl,
       onboardingUrl,
     })
@@ -389,6 +414,7 @@ export async function activateCustomer(input: {
       source: input.candidate.source,
       sourceId: input.candidate.sourceId,
       billingModel: input.candidate.billingModel,
+      billingTerms,
       chargeKind: input.candidate.chargeKind,
       loginUrl,
       onboardingUrl,
