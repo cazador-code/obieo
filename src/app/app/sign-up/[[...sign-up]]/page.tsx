@@ -1,6 +1,7 @@
 import { SignUp } from '@clerk/nextjs'
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
+import { buildAuthUrl, extractTicket, resolveRedirectUrl } from '../../auth/auth-redirect'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,10 +12,9 @@ export default async function SignUpPage({
 }) {
   const { userId } = await auth()
   const params = (await searchParams) || {}
-  const raw = params.redirect_url
-  const redirectUrl = Array.isArray(raw) ? raw[0] : raw
-  const resolvedRedirectUrl =
-    typeof redirectUrl === 'string' && redirectUrl.startsWith('/') ? redirectUrl : '/portal'
+  const ticket = extractTicket(params)
+  const resolvedRedirectUrl = resolveRedirectUrl(params.redirect_url)
+  const signInUrl = buildAuthUrl('/sign-in', ticket)
 
   // Prevent redirect loops when a signed-in user lands on /sign-up.
   if (userId) {
@@ -26,7 +26,7 @@ export default async function SignUpPage({
       <SignUp
         path="/sign-up"
         routing="path"
-        signInUrl="/sign-in"
+        signInUrl={signInUrl}
         forceRedirectUrl={resolvedRedirectUrl}
         fallbackRedirectUrl="/portal"
         signInForceRedirectUrl={resolvedRedirectUrl}
