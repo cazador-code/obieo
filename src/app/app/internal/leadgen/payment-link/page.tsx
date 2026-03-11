@@ -36,6 +36,24 @@ function cleanString(value: string) {
   return value.trim()
 }
 
+function parsePositiveInt(value: string): number | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const parsed = Number(trimmed)
+  if (!Number.isFinite(parsed)) return null
+  const normalized = Math.floor(parsed)
+  return normalized > 0 ? normalized : null
+}
+
+function parsePositiveCurrencyToCents(value: string): number | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const parsed = Number(trimmed)
+  if (!Number.isFinite(parsed)) return null
+  const cents = Math.round(parsed * 100)
+  return cents > 0 ? cents : null
+}
+
 function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
@@ -78,6 +96,10 @@ export default function PaymentLinkPage() {
   const [companyName, setCompanyName] = useState('')
   const [billingEmail, setBillingEmail] = useState('')
   const [billingName, setBillingName] = useState('')
+  const [useCustomPackageTerms, setUseCustomPackageTerms] = useState(false)
+  const [customIncludedLeads, setCustomIncludedLeads] = useState('')
+  const [customTotalCommitmentLeads, setCustomTotalCommitmentLeads] = useState('')
+  const [customAmountCollected, setCustomAmountCollected] = useState('')
   const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>('ignition')
   const [paymentReference, setPaymentReference] = useState('')
   const [source, setSource] = useState('')
@@ -87,12 +109,51 @@ export default function PaymentLinkPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [result, setResult] = useState<Extract<ApiResponse, { success: true }> | null>(null)
 
+  const isPaidInFullPackage = billingModel === 'package_40_paid_in_full'
+  const customPackageRequested = isPaidInFullPackage && useCustomPackageTerms
+  const parsedIncludedLeads = parsePositiveInt(customIncludedLeads)
+  const parsedAmountCollectedCents = parsePositiveCurrencyToCents(customAmountCollected)
+  const parsedCommitmentLeads = parsePositiveInt(customTotalCommitmentLeads)
+  const effectiveCommitmentLeads = parsedCommitmentLeads ?? parsedIncludedLeads
+  const derivedLeadUnitPriceCents =
+    parsedIncludedLeads && parsedAmountCollectedCents
+      ? Math.round(parsedAmountCollectedCents / parsedIncludedLeads)
+      : null
+  const customPackageHasRequiredValues = Boolean(
+    parsedIncludedLeads && parsedAmountCollectedCents && effectiveCommitmentLeads && derivedLeadUnitPriceCents
+  )
+  const customPackageHasValidCommitment = Boolean(
+    !customPackageRequested ||
+      (parsedIncludedLeads && effectiveCommitmentLeads && effectiveCommitmentLeads >= parsedIncludedLeads)
+  )
+
   const canSubmit = useMemo(() => {
-    return Boolean(cleanString(companyName) && isValidEmail(cleanString(billingEmail)) && billingModel)
-  }, [billingModel, companyName, billingEmail])
+    const hasCoreFields = Boolean(cleanString(companyName) && isValidEmail(cleanString(billingEmail)) && billingModel)
+    if (!hasCoreFields) return false
+    if (!customPackageRequested) return true
+    return customPackageHasRequiredValues && customPackageHasValidCommitment
+  }, [
+    billingModel,
+    companyName,
+    billingEmail,
+    customPackageHasRequiredValues,
+    customPackageHasValidCommitment,
+    customPackageRequested,
+  ])
 
   async function handleConfirmPayment(e: FormEvent) {
     e.preventDefault()
+
+    if (customPackageRequested) {
+      if (!customPackageHasRequiredValues) {
+        setSubmitError('Custom package terms require included leads and amount collected.')
+        return
+      }
+      if (!customPackageHasValidCommitment) {
+        setSubmitError('Total package commitment must be greater than or equal to the included leads.')
+        return
+      }
+    }
 
     setSubmitting(true)
     setSubmitError(null)
@@ -112,6 +173,9 @@ export default function PaymentLinkPage() {
           paymentProvider,
           paymentReference: paymentReference || undefined,
           source: source || undefined,
+          prepaidLeadCredits: customPackageRequested ? parsedIncludedLeads : undefined,
+          leadCommitmentTotal: customPackageRequested ? effectiveCommitmentLeads : undefined,
+          initialChargeCents: customPackageRequested ? parsedAmountCollectedCents : undefined,
           forceResendInvitation,
         }),
       })
@@ -211,6 +275,81 @@ export default function PaymentLinkPage() {
                 </select>
               </label>
             </div>
+
+            {isPaidInFullPackage && (
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-4">
+                <label className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={useCustomPackageTerms}
+                    onChange={(e) => setUseCustomPackageTerms(e.target.checked)}
+                  />
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">
+                    Use custom paid-in-full package terms
+                  </span>
+                </label>
+                <p className="mt-2 text-xs text-[var(--text-muted)]">
+                  Use this when the sold package is not the standard 40 leads for $1,600. Example: 25 leads for
+                  $1,000.
+                </p>
+
+                {useCustomPackageTerms && (
+                  <div className="mt-4 grid gap-4 md:grid-cols-3">
+                    <label>
+                      <span className="block text-sm font-semibold text-[var(--text-primary)]">Included leads</span>
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={customIncludedLeads}
+                        onChange={(e) => setCustomIncludedLeads(e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3"
+                        placeholder="25"
+                      />
+                    </label>
+
+                    <label>
+                      <span className="block text-sm font-semibold text-[var(--text-primary)]">
+                        Total commitment leads
+                      </span>
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={customTotalCommitmentLeads}
+                        onChange={(e) => setCustomTotalCommitmentLeads(e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3"
+                        placeholder="Defaults to included leads"
+                      />
+                    </label>
+
+                    <label>
+                      <span className="block text-sm font-semibold text-[var(--text-primary)]">
+                        Amount collected (USD)
+                      </span>
+                      <input
+                        type="number"
+                        min={1}
+                        step="0.01"
+                        value={customAmountCollected}
+                        onChange={(e) => setCustomAmountCollected(e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3"
+                        placeholder="1000"
+                      />
+                    </label>
+                  </div>
+                )}
+
+                {useCustomPackageTerms && derivedLeadUnitPriceCents && parsedIncludedLeads && effectiveCommitmentLeads && (
+                  <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3 text-sm text-[var(--text-secondary)]">
+                    Saving this client as {parsedIncludedLeads} prepaid leads for $
+                    {((parsedAmountCollectedCents || 0) / 100).toFixed(2)} total, with a $
+                    {(derivedLeadUnitPriceCents / 100).toFixed(2)} per-lead value and {effectiveCommitmentLeads} total
+                    committed leads.
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="grid gap-4 md:grid-cols-2">
               <label>

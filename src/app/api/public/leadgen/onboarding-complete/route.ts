@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import {
+  getOrganizationSnapshotInConvex,
   getLeadgenIntentByTokenInConvex,
   markLeadgenOnboardingCompletedInConvex,
   submitClientOnboardingInConvex,
@@ -29,6 +30,11 @@ function normalizeOptionalPositiveInt(value: unknown): number | undefined {
   if (typeof value !== 'number' || !Number.isFinite(value)) return undefined
   const intVal = Math.floor(value)
   return intVal > 0 ? intVal : undefined
+}
+
+function getPositiveNumber(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined
+  return value > 0 ? Math.floor(value) : undefined
 }
 
 function getPortalKeyFromUser(user: { publicMetadata?: Record<string, unknown> }): string | null {
@@ -151,18 +157,25 @@ export async function POST(request: NextRequest) {
 
   const billingModel = intent.billingModel || 'package_40_paid_in_full'
   const defaults = getBillingModelDefaults(billingModel, 4000)
+  const existingSnapshot = await getOrganizationSnapshotInConvex({ portalKey: resolvedPortalKey })
+  const existingOrganization = existingSnapshot?.organization || {}
+  const prepaidLeadCredits = getPositiveNumber(existingOrganization.prepaidLeadCredits) || defaults.prepaidLeadCredits
+  const leadCommitmentTotal = getPositiveNumber(existingOrganization.leadCommitmentTotal) || defaults.leadCommitmentTotal || undefined
+  const initialChargeCents = getPositiveNumber(existingOrganization.initialChargeCents) || defaults.initialChargeCents
+  const leadChargeThreshold = getPositiveNumber(existingOrganization.leadChargeThreshold) || defaults.leadChargeThreshold
+  const leadUnitPriceCents = getPositiveNumber(existingOrganization.leadUnitPriceCents) || defaults.leadUnitPriceCents
 
-  // Ensure org is present and has correct paid-in-full billing defaults.
+  // Preserve custom package terms already saved at payment confirmation; only fall back to billing-model defaults.
   await upsertOrganizationInConvex({
     portalKey: resolvedPortalKey,
     name: intent.companyName,
     stripeCustomerId: intent.stripeCustomerId || undefined,
     billingModel,
-    prepaidLeadCredits: defaults.prepaidLeadCredits,
-    leadCommitmentTotal: defaults.leadCommitmentTotal || undefined,
-    initialChargeCents: defaults.initialChargeCents,
-    leadChargeThreshold: defaults.leadChargeThreshold,
-    leadUnitPriceCents: defaults.leadUnitPriceCents,
+    prepaidLeadCredits,
+    leadCommitmentTotal,
+    initialChargeCents,
+    leadChargeThreshold,
+    leadUnitPriceCents,
     isActive: true,
   })
 
@@ -185,11 +198,11 @@ export async function POST(request: NextRequest) {
     leadNotificationEmail: cleanString(payload.leadNotificationEmail) || undefined,
     leadProspectEmail: cleanString(payload.leadProspectEmail) || undefined,
     billingModel,
-    prepaidLeadCredits: defaults.prepaidLeadCredits,
-    leadCommitmentTotal: defaults.leadCommitmentTotal || undefined,
-    initialChargeCents: defaults.initialChargeCents,
-    leadChargeThreshold: defaults.leadChargeThreshold,
-    leadUnitPriceCents: defaults.leadUnitPriceCents,
+    prepaidLeadCredits,
+    leadCommitmentTotal,
+    initialChargeCents,
+    leadChargeThreshold,
+    leadUnitPriceCents,
     notes: undefined,
   })
 

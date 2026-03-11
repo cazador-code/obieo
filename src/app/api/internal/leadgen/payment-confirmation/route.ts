@@ -28,6 +28,9 @@ type RequestBody = {
   utmMedium?: unknown
   utmContent?: unknown
   leadUnitPriceCents?: unknown
+  prepaidLeadCredits?: unknown
+  leadCommitmentTotal?: unknown
+  initialChargeCents?: unknown
   forceResendInvitation?: unknown
 }
 
@@ -96,6 +99,12 @@ function normalizePositiveInt(value: unknown, fallback: number): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return fallback
   const intVal = Math.floor(value)
   return intVal > 0 ? intVal : fallback
+}
+
+function normalizeOptionalPositiveInt(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined
+  const intVal = Math.floor(value)
+  return intVal > 0 ? intVal : undefined
 }
 
 function isValidEmail(value: string): boolean {
@@ -170,6 +179,9 @@ export async function POST(request: NextRequest) {
     const paymentReference = cleanString(body.paymentReference)
     const forceResendInvitation = body.forceResendInvitation === true
     const leadUnitPriceCentsInput = normalizePositiveInt(body.leadUnitPriceCents, 4000)
+    const prepaidLeadCreditsOverride = normalizeOptionalPositiveInt(body.prepaidLeadCredits)
+    const leadCommitmentTotalOverride = normalizeOptionalPositiveInt(body.leadCommitmentTotal)
+    const initialChargeCentsOverride = normalizeOptionalPositiveInt(body.initialChargeCents)
 
     if (!companyName || !billingEmail) {
       return NextResponse.json(
@@ -239,15 +251,54 @@ export async function POST(request: NextRequest) {
     }
 
     const defaults = getBillingModelDefaults(billingModel, leadUnitPriceCentsInput)
+    const customPackageRequested =
+      prepaidLeadCreditsOverride !== undefined ||
+      leadCommitmentTotalOverride !== undefined ||
+      initialChargeCentsOverride !== undefined
+
+    if (customPackageRequested && billingModel !== 'package_40_paid_in_full') {
+      return NextResponse.json(
+        { success: false, error: 'Custom package terms are currently only supported for paid-in-full packages.' },
+        { status: 400 }
+      )
+    }
+
+    let prepaidLeadCredits = defaults.prepaidLeadCredits
+    let leadCommitmentTotal = defaults.leadCommitmentTotal || undefined
+    let initialChargeCents = defaults.initialChargeCents
+    let leadUnitPriceCents = defaults.leadUnitPriceCents
+
+    if (customPackageRequested) {
+      if (!prepaidLeadCreditsOverride || !initialChargeCentsOverride) {
+        return NextResponse.json(
+          { success: false, error: 'Custom package terms require included leads and amount collected.' },
+          { status: 400 }
+        )
+      }
+
+      const resolvedCommitment = leadCommitmentTotalOverride ?? prepaidLeadCreditsOverride
+      if (resolvedCommitment < prepaidLeadCreditsOverride) {
+        return NextResponse.json(
+          { success: false, error: 'Total package commitment must be greater than or equal to the included leads.' },
+          { status: 400 }
+        )
+      }
+
+      prepaidLeadCredits = prepaidLeadCreditsOverride
+      leadCommitmentTotal = resolvedCommitment
+      initialChargeCents = initialChargeCentsOverride
+      leadUnitPriceCents = Math.max(100, Math.round(initialChargeCentsOverride / prepaidLeadCreditsOverride))
+    }
+
     const upsertedOrg = await upsertOrganizationInConvex({
       portalKey,
       name: companyName,
       billingModel,
-      prepaidLeadCredits: defaults.prepaidLeadCredits,
-      leadCommitmentTotal: defaults.leadCommitmentTotal || undefined,
-      initialChargeCents: defaults.initialChargeCents,
+      prepaidLeadCredits,
+      leadCommitmentTotal,
+      initialChargeCents,
       leadChargeThreshold: defaults.leadChargeThreshold,
-      leadUnitPriceCents: defaults.leadUnitPriceCents,
+      leadUnitPriceCents,
       isActive: true,
     })
     if (!upsertedOrg) {
