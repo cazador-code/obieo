@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { getInternalClientsDashboardData, type InternalClientRow } from '@/lib/internal-clients'
-import { createInternalPortalPreviewToken } from '@/lib/internal-portal-preview'
 import AirtableResyncButton from './AirtableResyncButton'
 import ZipRequestActions from './ZipRequestActions'
 
@@ -87,15 +86,6 @@ export default async function InternalClientsPage({
 
     return searchable.includes(query)
   })
-  const previewTokenByPortalKey = new Map<string, string>()
-  await Promise.all(
-    filteredRows.map(async (row) => {
-      const token = await createInternalPortalPreviewToken(row.portalKey)
-      if (!token) return
-      previewTokenByPortalKey.set(row.portalKey, token)
-    })
-  )
-
   return (
     <main className="min-h-screen bg-[var(--bg-primary)] px-4 py-10">
       <div className="mx-auto max-w-7xl">
@@ -256,14 +246,15 @@ export default async function InternalClientsPage({
                       </td>
                       <td className="border-b border-[var(--border)] px-3 py-3">
                         <div className="flex flex-col gap-2 text-xs">
-                          {previewTokenByPortalKey.get(row.portalKey) && (
-                            <Link
-                              href={`/portal?preview_token=${encodeURIComponent(previewTokenByPortalKey.get(row.portalKey) || '')}`}
-                              className="inline-flex rounded-lg bg-[var(--accent)] px-3 py-1.5 font-semibold text-white hover:bg-[var(--accent-hover)]"
+                          <form action="/api/internal/portal/session" method="post">
+                            <input type="hidden" name="portalKey" value={row.portalKey} />
+                            <button
+                              type="submit"
+                              className="inline-flex w-full rounded-lg bg-[var(--accent)] px-3 py-1.5 font-semibold text-white hover:bg-[var(--accent-hover)]"
                             >
-                              View Client Portal
-                            </Link>
-                          )}
+                              Support Login
+                            </button>
+                          </form>
                           {row.onboardingLink && (
                             <Link
                               href={row.onboardingLink}
