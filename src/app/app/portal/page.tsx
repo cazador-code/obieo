@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import LeadTopUpCard from './LeadTopUpCard'
@@ -9,7 +10,11 @@ import {
   getOrganizationSnapshotInConvex,
   type LeadEventSnapshot,
 } from '@/lib/convex'
-import { resolveInternalPortalPreviewToken } from '@/lib/internal-portal-preview'
+import {
+  INTERNAL_PORTAL_SUPPORT_COOKIE_NAME,
+  resolveInternalPortalPreviewToken,
+  resolveInternalPortalSupportToken,
+} from '@/lib/internal-portal-preview'
 import { profileFromOrganization } from '@/lib/portal-profile'
 import { getStripeClient } from '@/lib/stripe'
 
@@ -43,20 +48,26 @@ export default async function PortalPage({
 }) {
   const params = (await searchParams) || {}
   const previewToken = getFirstParam(params.preview_token).trim()
+  const supportToken = (await cookies()).get(INTERNAL_PORTAL_SUPPORT_COOKIE_NAME)?.value?.trim() || ''
   const resumeOnboarding = getFirstParam(params.resume_onboarding).trim() === '1'
   const previewPortalKey = previewToken ? await resolveInternalPortalPreviewToken(previewToken) : null
   const isPreviewRequest = Boolean(previewToken)
-  const isPreviewMode = Boolean(previewPortalKey)
+  const isPreviewMode = isPreviewRequest && Boolean(previewPortalKey)
+  const supportPortalKey =
+    !isPreviewRequest && supportToken ? await resolveInternalPortalSupportToken(supportToken) : null
+  const supportModePortalKey = isPreviewMode ? previewPortalKey : supportPortalKey
+  const isSupportSessionMode = !isPreviewMode && Boolean(supportPortalKey)
+  const isSupportMode = Boolean(supportModePortalKey)
 
   const { userId } = await auth()
-  if (isPreviewRequest && !isPreviewMode) {
+  if (isPreviewRequest && !previewPortalKey) {
     return (
       <main className="min-h-screen bg-[var(--bg-primary)] px-4 py-12">
         <div className="mx-auto max-w-2xl rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-lg">
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Preview Link Expired</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Support Link Expired</h1>
           <p className="mt-3 text-[var(--text-secondary)]">
-            This internal preview link is invalid or expired. Open the client dashboard and click
-            <span className="font-semibold"> View Client Portal </span>
+            This internal support link is invalid or expired. Open the client dashboard and click
+            <span className="font-semibold"> Support Login </span>
             again to generate a fresh link.
           </p>
           <div className="mt-6">
@@ -72,16 +83,16 @@ export default async function PortalPage({
     )
   }
 
-  if (!userId && !isPreviewMode) {
+  if (!userId && !isSupportMode) {
     redirect('/sign-in?redirect_url=/portal')
   }
 
   const clerk = await clerkClient()
   let emailAddress = ''
-  let portalKey: string | null = previewPortalKey
+  let portalKey: string | null = supportModePortalKey
   let userPublicMetadata: Record<string, unknown> | null = null
 
-  if (userId) {
+  if (userId && !supportModePortalKey) {
     const user = await clerk.users.getUser(userId)
     userPublicMetadata = (user.publicMetadata as Record<string, unknown> | null) || null
     emailAddress =
@@ -186,7 +197,7 @@ export default async function PortalPage({
     const intent = await getLeadgenIntentByPortalKeyInConvex({ portalKey })
     onboardingIntentToken = intent?.token || null
     if (intent?.token) {
-      if (!resumeOnboarding) {
+      if (!resumeOnboarding && !isSupportMode) {
         redirect(`/onboarding?token=${encodeURIComponent(intent.token)}`)
       }
     }
@@ -199,9 +210,32 @@ export default async function PortalPage({
           Client Portal
         </h1>
         {isPreviewMode ? (
-          <p className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
+          <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-3 text-sm font-medium text-amber-800">
             Internal preview mode. You are viewing this portal as <code>{portalKey}</code>.
-          </p>
+          </div>
+        ) : isSupportSessionMode ? (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-3 text-sm font-medium text-amber-800">
+            <p>
+              Internal support session. You are viewing this portal as <code>{portalKey}</code>.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <form action="/api/internal/portal/session" method="post">
+                <input type="hidden" name="action" value="clear" />
+                <button
+                  type="submit"
+                  className="inline-flex rounded-lg border border-amber-400 bg-white px-3 py-1.5 font-semibold text-amber-900 hover:bg-amber-100"
+                >
+                  Exit Support Session
+                </button>
+              </form>
+              <Link
+                href="/internal/clients"
+                className="inline-flex rounded-lg border border-amber-400 bg-white px-3 py-1.5 font-semibold text-amber-900 hover:bg-amber-100"
+              >
+                Back to Clients Dashboard
+              </Link>
+            </div>
+          </div>
         ) : (
           <p className="mt-3 text-[var(--text-secondary)]">
             You are signed in{emailAddress ? ` as ${emailAddress}` : ''}.
@@ -219,7 +253,7 @@ export default async function PortalPage({
                 href={`/onboarding?token=${encodeURIComponent(onboardingIntentToken)}`}
                 className="inline-flex rounded-xl bg-[var(--accent)] px-4 py-2 font-semibold text-white hover:bg-[var(--accent-hover)]"
               >
-                Finish Setup
+                {isSupportMode ? 'Open Setup Draft' : 'Finish Setup'}
               </Link>
             </div>
           </div>
@@ -258,13 +292,26 @@ export default async function PortalPage({
             </section>
           </div>
 
-          <LeadTopUpCard />
+          {isSupportMode ? (
+            <section className="flex h-full flex-col justify-between rounded-2xl border border-amber-300 bg-amber-50 p-6 shadow-md">
+              <div>
+                <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-amber-900">
+                  Billing Locked In Support Session
+                </h2>
+                <p className="mt-2 text-sm text-amber-800">
+                  Admin support login can update portal settings, but billing actions stay client-only so we do not create invoices from an impersonated session.
+                </p>
+              </div>
+            </section>
+          ) : (
+            <LeadTopUpCard />
+          )}
         </div>
 
         <PortalProfileEditor
           initialProfile={initialPortalProfile}
-          isPreviewMode={isPreviewMode}
-          previewToken={isPreviewMode ? previewToken : undefined}
+          isSupportMode={isSupportMode}
+          previewToken={isPreviewMode ? previewToken : null}
         />
 
         <section className="mt-8 rounded-2xl border-0 bg-[var(--bg-card)] p-6 shadow-md ring-1 ring-[var(--border)]">

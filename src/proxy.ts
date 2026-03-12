@@ -1,6 +1,10 @@
 import { clerkMiddleware } from '@clerk/nextjs/server'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import {
+  INTERNAL_PORTAL_SUPPORT_COOKIE_NAME,
+  resolveInternalPortalSupportToken,
+} from '@/lib/internal-portal-preview'
 
 /* ------------------------------------------------------------------ */
 /*  Subdomain routing                                                  */
@@ -26,7 +30,7 @@ const INTERNAL_AUTH_BASE_PATHS = [
   '/api/internal/clients',
   '/api/internal/leadgen/payment-link',
   '/api/internal/leadgen/payment-confirmation',
-  '/api/internal/portal/profile',
+  '/api/internal/portal',
   '/api/internal/zip-change-request',
 ] as const
 
@@ -70,12 +74,37 @@ function requiresInternalBasicAuth(pathname: string): boolean {
   )
 }
 
-export default clerkMiddleware((_auth, request: NextRequest) => {
+function isInternalPortalProfilePath(pathname: string): boolean {
+  return pathname === '/api/internal/portal/profile' || pathname.startsWith('/api/internal/portal/profile/')
+}
+
+function isInternalPortalSessionPath(pathname: string): boolean {
+  return pathname === '/api/internal/portal/session' || pathname.startsWith('/api/internal/portal/session/')
+}
+
+async function hasValidInternalPortalSupportCookie(request: NextRequest): Promise<boolean> {
+  const token = request.cookies.get(INTERNAL_PORTAL_SUPPORT_COOKIE_NAME)?.value?.trim() || ''
+  if (!token) return false
+  const portalKey = await resolveInternalPortalSupportToken(token)
+  return Boolean(portalKey)
+}
+
+export default clerkMiddleware(async (_auth, request: NextRequest) => {
   const { pathname } = request.nextUrl
   const hostname = request.headers.get('host') || ''
 
   // 1. Internal basic-auth guard (validate first, then continue to rewrite logic)
   if (requiresInternalBasicAuth(pathname)) {
+    // The profile route already validates support cookies and preview tokens itself.
+    if (isInternalPortalProfilePath(pathname)) {
+      return NextResponse.next()
+    }
+
+    // Support-session exit requests originate from /portal without Basic Auth headers.
+    if (isInternalPortalSessionPath(pathname) && (await hasValidInternalPortalSupportCookie(request))) {
+      return NextResponse.next()
+    }
+
     const expectedUser = process.env.INTERNAL_LEADGEN_BASIC_AUTH_USER || ''
     const expectedPass = process.env.INTERNAL_LEADGEN_BASIC_AUTH_PASS || ''
     if (!expectedUser || !expectedPass) {

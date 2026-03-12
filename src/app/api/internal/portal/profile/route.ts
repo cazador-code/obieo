@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { updatePortalProfileInConvex } from '@/lib/convex'
 import { syncPortalProfileToAirtable } from '@/lib/airtable-client-zips'
-import { resolveInternalPortalPreviewToken } from '@/lib/internal-portal-preview'
+import {
+  INTERNAL_PORTAL_SUPPORT_COOKIE_NAME,
+  resolveInternalPortalPreviewToken,
+  resolveInternalPortalSupportToken,
+} from '@/lib/internal-portal-preview'
 import { sendPortalProfileChangeNotification } from '@/lib/portal-profile-notifications'
 import { normalizePortalEditableProfile } from '@/lib/portal-profile'
 import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
@@ -32,6 +36,20 @@ function getBasicAuthUser(request: NextRequest): string | undefined {
   return user || undefined
 }
 
+async function resolvePortalKeyForInternalRequest(
+  request: NextRequest,
+  previewToken: string | null
+): Promise<string | null> {
+  const supportToken = request.cookies.get(INTERNAL_PORTAL_SUPPORT_COOKIE_NAME)?.value?.trim() || ''
+  if (supportToken) {
+    const portalKey = await resolveInternalPortalSupportToken(supportToken)
+    if (portalKey) return portalKey
+  }
+
+  if (!previewToken) return null
+  return resolveInternalPortalPreviewToken(previewToken)
+}
+
 export async function PATCH(request: NextRequest) {
   const ip = getClientIp(request)
   const { success, remaining } = await auditLimiter.limit(ip)
@@ -47,13 +65,12 @@ export async function PATCH(request: NextRequest) {
   }
 
   const previewToken = normalizeString(body.previewToken)
-  if (!previewToken) {
-    return NextResponse.json({ success: false, error: 'Missing preview token' }, { status: 400 })
-  }
-
-  const portalKey = await resolveInternalPortalPreviewToken(previewToken)
+  const portalKey = await resolvePortalKeyForInternalRequest(request, previewToken)
   if (!portalKey) {
-    return NextResponse.json({ success: false, error: 'Invalid or expired preview token' }, { status: 403 })
+    return NextResponse.json(
+      { success: false, error: 'Internal support session is missing or expired.' },
+      { status: 403 }
+    )
   }
 
   const validation = normalizePortalEditableProfile(body.profile)

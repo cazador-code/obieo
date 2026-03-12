@@ -59,12 +59,12 @@ function optionalText(value: string): string | undefined {
 
 export default function PortalProfileEditor({
   initialProfile,
-  isPreviewMode,
+  isSupportMode,
   previewToken,
 }: {
   initialProfile: PortalEditableProfile
-  isPreviewMode: boolean
-  previewToken?: string
+  isSupportMode: boolean
+  previewToken?: string | null
 }) {
   const [serviceAreasRaw, setServiceAreasRaw] = useState(initialProfile.serviceAreas.join('\n'))
   const [targetZipCodes, setTargetZipCodes] = useState(initialProfile.targetZipCodes)
@@ -150,21 +150,17 @@ export default function PortalProfileEditor({
       return
     }
 
-    if (isPreviewMode && !previewToken) {
-      setSaveError('Internal preview token is missing. Open this portal again from the internal dashboard.')
-      return
-    }
-
     setSaving(true)
 
     try {
-      const endpoint = isPreviewMode ? '/api/internal/portal/profile' : '/api/portal/profile'
+      const endpoint =
+        isSupportMode || previewToken ? '/api/internal/portal/profile' : '/api/portal/profile'
       const response = await fetch(endpoint, {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           profile: validation.profile,
-          previewToken: isPreviewMode ? previewToken : undefined,
+          previewToken,
         }),
       })
 
@@ -197,7 +193,7 @@ export default function PortalProfileEditor({
     setZipRequestError(null)
     setZipRequestNotice(null)
 
-    if (isPreviewMode) {
+    if (isSupportMode) {
       setZipRequestError('ZIP requests are only available in client mode.')
       return
     }
@@ -247,7 +243,7 @@ export default function PortalProfileEditor({
             Update where leads are sent and who should receive alerts.
           </p>
         </div>
-        {isPreviewMode ? (
+        {isSupportMode ? (
           <span className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
             Internal admin edit mode
           </span>
@@ -410,7 +406,7 @@ export default function PortalProfileEditor({
         </div>
       </form>
 
-      {!isPreviewMode ? (
+      {!isSupportMode ? (
         <form
           onSubmit={handleZipRequestSubmit}
           className="mt-8 grid gap-5 rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-5"
