@@ -10,7 +10,33 @@ const INTERNAL_PORTAL_SUPPORT_EXPIRATION =
   process.env.INTERNAL_PORTAL_SUPPORT_TOKEN_EXPIRATION?.trim() || '30m'
 
 export const INTERNAL_PORTAL_SUPPORT_COOKIE_NAME = 'obieo_internal_portal_support'
-export const INTERNAL_PORTAL_SUPPORT_COOKIE_MAX_AGE_SECONDS = 60 * 30
+
+function parseExpirationToSeconds(value: string, fallbackSeconds: number): number {
+  const cleaned = value.trim().toLowerCase()
+  const match = cleaned.match(/^(\d+)([smhd])$/)
+  if (!match) return fallbackSeconds
+
+  const amount = Number(match[1])
+  if (!Number.isFinite(amount) || amount <= 0) return fallbackSeconds
+
+  switch (match[2]) {
+    case 's':
+      return amount
+    case 'm':
+      return amount * 60
+    case 'h':
+      return amount * 60 * 60
+    case 'd':
+      return amount * 60 * 60 * 24
+    default:
+      return fallbackSeconds
+  }
+}
+
+export const INTERNAL_PORTAL_SUPPORT_COOKIE_MAX_AGE_SECONDS = parseExpirationToSeconds(
+  INTERNAL_PORTAL_SUPPORT_EXPIRATION,
+  60 * 30
+)
 
 type InternalPortalPreviewPayload = {
   scope?: string

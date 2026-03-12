@@ -50,10 +50,13 @@ export default async function PortalPage({
   const previewToken = getFirstParam(params.preview_token).trim()
   const supportToken = (await cookies()).get(INTERNAL_PORTAL_SUPPORT_COOKIE_NAME)?.value?.trim() || ''
   const resumeOnboarding = getFirstParam(params.resume_onboarding).trim() === '1'
-  const supportPortalKey = supportToken ? await resolveInternalPortalSupportToken(supportToken) : null
   const previewPortalKey = previewToken ? await resolveInternalPortalPreviewToken(previewToken) : null
-  const supportModePortalKey = supportPortalKey || previewPortalKey
   const isPreviewRequest = Boolean(previewToken)
+  const isPreviewMode = isPreviewRequest && Boolean(previewPortalKey)
+  const supportPortalKey =
+    !isPreviewRequest && supportToken ? await resolveInternalPortalSupportToken(supportToken) : null
+  const supportModePortalKey = isPreviewMode ? previewPortalKey : supportPortalKey
+  const isSupportSessionMode = !isPreviewMode && Boolean(supportPortalKey)
   const isSupportMode = Boolean(supportModePortalKey)
 
   const { userId } = await auth()
@@ -206,7 +209,11 @@ export default async function PortalPage({
         <h1 className="font-[family-name:var(--font-display)] text-4xl font-bold tracking-tight text-[var(--text-primary)] md:text-5xl">
           Client Portal
         </h1>
-        {isSupportMode ? (
+        {isPreviewMode ? (
+          <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-3 text-sm font-medium text-amber-800">
+            Internal preview mode. You are viewing this portal as <code>{portalKey}</code>.
+          </div>
+        ) : isSupportSessionMode ? (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-3 text-sm font-medium text-amber-800">
             <p>
               Internal support session. You are viewing this portal as <code>{portalKey}</code>.
@@ -304,6 +311,7 @@ export default async function PortalPage({
         <PortalProfileEditor
           initialProfile={initialPortalProfile}
           isSupportMode={isSupportMode}
+          previewToken={isPreviewMode ? previewToken : null}
         />
 
         <section className="mt-8 rounded-2xl border-0 bg-[var(--bg-card)] p-6 shadow-md ring-1 ring-[var(--border)]">

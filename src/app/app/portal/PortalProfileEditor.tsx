@@ -60,9 +60,11 @@ function optionalText(value: string): string | undefined {
 export default function PortalProfileEditor({
   initialProfile,
   isSupportMode,
+  previewToken,
 }: {
   initialProfile: PortalEditableProfile
   isSupportMode: boolean
+  previewToken?: string | null
 }) {
   const [serviceAreasRaw, setServiceAreasRaw] = useState(initialProfile.serviceAreas.join('\n'))
   const [targetZipCodes, setTargetZipCodes] = useState(initialProfile.targetZipCodes)
@@ -151,12 +153,14 @@ export default function PortalProfileEditor({
     setSaving(true)
 
     try {
-      const endpoint = isSupportMode ? '/api/internal/portal/profile' : '/api/portal/profile'
+      const endpoint =
+        isSupportMode || previewToken ? '/api/internal/portal/profile' : '/api/portal/profile'
       const response = await fetch(endpoint, {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           profile: validation.profile,
+          previewToken,
         }),
       })
 

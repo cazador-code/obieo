@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import {
   createInternalPortalSupportToken,
   INTERNAL_PORTAL_SUPPORT_COOKIE_MAX_AGE_SECONDS,
@@ -13,7 +14,31 @@ function normalizeString(value: FormDataEntryValue | null): string | null {
   return cleaned.length > 0 ? cleaned : null
 }
 
+function isSameOriginRequest(request: NextRequest): boolean {
+  const source = request.headers.get('origin') || request.headers.get('referer')
+  if (!source) return false
+
+  try {
+    return new URL(source).origin === request.nextUrl.origin
+  } catch {
+    return false
+  }
+}
+
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { success, remaining } = await auditLimiter.limit(ip)
+  if (!success) {
+    return rateLimitResponse(remaining)
+  }
+
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json(
+      { success: false, error: 'Cross-origin requests are not allowed.' },
+      { status: 403 }
+    )
+  }
+
   const formData = await request.formData()
   const action = normalizeString(formData.get('action'))
 
