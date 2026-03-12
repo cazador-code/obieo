@@ -1,5 +1,3 @@
-import 'server-only'
-
 import { SignJWT, jwtVerify } from 'jose'
 
 const INTERNAL_PORTAL_PREVIEW_SCOPE = 'internal_portal_preview'
@@ -33,10 +31,12 @@ function parseExpirationToSeconds(value: string, fallbackSeconds: number): numbe
   }
 }
 
-export const INTERNAL_PORTAL_SUPPORT_COOKIE_MAX_AGE_SECONDS = parseExpirationToSeconds(
+const INTERNAL_PORTAL_SUPPORT_TTL_SECONDS = parseExpirationToSeconds(
   INTERNAL_PORTAL_SUPPORT_EXPIRATION,
   60 * 30
 )
+
+export const INTERNAL_PORTAL_SUPPORT_COOKIE_MAX_AGE_SECONDS = INTERNAL_PORTAL_SUPPORT_TTL_SECONDS
 
 type InternalPortalPreviewPayload = {
   scope?: string
@@ -79,7 +79,7 @@ export async function createInternalPortalSupportToken(portalKey: string): Promi
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime(INTERNAL_PORTAL_SUPPORT_EXPIRATION)
+    .setExpirationTime(Math.floor(Date.now() / 1000) + INTERNAL_PORTAL_SUPPORT_TTL_SECONDS)
     .sign(secret)
 }
 
