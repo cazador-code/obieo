@@ -5,6 +5,7 @@ import {
   resolveAirtablePricingTier,
   cleanOptionalString,
 } from '@/lib/airtable-client-mappers'
+import { backfillPortalLeadHistoryFromAirtable } from '@/lib/airtable-lead-backfill'
 import { syncPortalProfileToAirtable } from '@/lib/airtable-client-zips'
 import { getOrganizationSnapshotInConvex } from '@/lib/convex'
 import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
@@ -119,6 +120,10 @@ export async function POST(request: NextRequest) {
     const leadProspectEmail = cleanOptionalString(
       typeof organizationRecord.leadProspectEmail === 'string' ? organizationRecord.leadProspectEmail : undefined
     )
+    const leadBackfill = await backfillPortalLeadHistoryFromAirtable({
+      portalKey,
+      organizationName: organizationName || undefined,
+    })
 
     const syncResult = await syncPortalProfileToAirtable({
       portalKey,
@@ -154,6 +159,7 @@ export async function POST(request: NextRequest) {
       airtableRecordId: syncResult.airtableRecordId,
       updatedFields: syncResult.updatedFields || [],
       created: Boolean(syncResult.created),
+      leadBackfill,
     })
   } catch (error) {
     console.error('Failed to resync Airtable client', { portalKey, error })

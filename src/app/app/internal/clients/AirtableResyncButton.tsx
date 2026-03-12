@@ -11,6 +11,13 @@ type ResyncResponse = {
   error?: string
   updatedFields?: string[]
   created?: boolean
+  leadBackfill?: {
+    totalLinkedLeadRows: number
+    scannedLeadRows: number
+    createdLeadEvents: number
+    duplicateLeadEvents: number
+    failedLeadEvents: number
+  }
 }
 
 export default function AirtableResyncButton({ portalKey }: Props) {
@@ -36,10 +43,22 @@ export default function AirtableResyncButton({ portalKey }: Props) {
       }
 
       const count = Array.isArray(data.updatedFields) ? data.updatedFields.length : 0
+      const leadBackfill = data.leadBackfill
+      const leadSummary = leadBackfill
+        ? ` Leads synced: +${leadBackfill.createdLeadEvents}, dupes ${leadBackfill.duplicateLeadEvents}, failed ${leadBackfill.failedLeadEvents}.`
+        : ''
       if (data?.created) {
-        setNotice(count > 0 ? `Airtable row created (${count} fields).` : 'Airtable row created.')
+        setNotice(
+          count > 0
+            ? `Airtable row created (${count} fields).${leadSummary}`
+            : `Airtable row created.${leadSummary}`
+        )
       } else {
-        setNotice(count > 0 ? `Airtable synced (${count} fields).` : 'Airtable sync complete.')
+        setNotice(
+          count > 0
+            ? `Airtable synced (${count} fields).${leadSummary}`
+            : `Airtable sync complete.${leadSummary}`
+        )
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not resync Airtable row.')
