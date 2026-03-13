@@ -86,7 +86,7 @@ def normalize_phone(value: str | None) -> str:
     digits = re.sub(r"\D", "", value or "")
     if len(digits) == 11 and digits.startswith("1"):
         digits = digits[1:]
-    return digits
+    return digits if len(digits) == 10 else ""
 
 
 def detect_column(fieldnames: Iterable[str] | None, preferred: str | None, options: tuple[str, ...], label: str) -> str:
@@ -296,7 +296,7 @@ def main() -> int:
         excluded_writer = None
         excluded_handle = None
         if excluded_output_path:
-            excluded_writer, excluded_handle = csv_writer(excluded_output_path, fieldnames + ["exclusionReason"])
+            excluded_writer, excluded_handle = csv_writer(excluded_output_path, [*fieldnames, "exclusionReason"])
 
         summary = build_summary(
             args=args,

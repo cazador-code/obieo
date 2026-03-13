@@ -1,15 +1,8 @@
 import 'server-only'
 
 import { recordLeadDeliveryInConvex } from '@/lib/convex'
+import airtableBackfillDefaults from '@/lib/airtable-backfill-defaults.json'
 
-const DEFAULT_AIRTABLE_BASE_ID = 'appqsVEAHr4AaaBAt'
-const DEFAULT_CLIENT_TABLE_ID = 'tblK1w4DWwbtEBZGf'
-const DEFAULT_CLIENT_NAME_FIELD_ID = 'fldcUUlwTa7ilHUUt'
-const DEFAULT_CLIENT_LINKED_LEADS_FIELD_ID = 'fldd3DxeRrwsAi8um'
-const DEFAULT_LEAD_SHEET_TABLE_ID = 'tblvzFd4X0M1ejhX4'
-const DEFAULT_LEAD_SHEET_NAME_FIELD_ID = 'fldky20wCEiA9whfa'
-const DEFAULT_LEAD_SHEET_TIMESTAMP_FIELD_ID = 'fldNalvQg96GHhtOg'
-const DEFAULT_LEAD_SHEET_STATUS_FIELD_ID = 'fldaKVkT2R2RYIT7y'
 const AIRTABLE_LIST_MAX_PAGES = 200
 const ALLOWED_DELIVERY_STATUSES = new Set(['delivered', 'completed'])
 
@@ -119,17 +112,19 @@ function getAirtableConfig(): AirtableConfig | null {
 
   return {
     token,
-    baseId: process.env.AIRTABLE_CLIENT_BASE_ID?.trim() || DEFAULT_AIRTABLE_BASE_ID,
-    clientTableId: process.env.AIRTABLE_CLIENT_TABLE_ID?.trim() || DEFAULT_CLIENT_TABLE_ID,
-    clientNameFieldId: process.env.AIRTABLE_CLIENT_NAME_FIELD_ID?.trim() || DEFAULT_CLIENT_NAME_FIELD_ID,
+    baseId: process.env.AIRTABLE_CLIENT_BASE_ID?.trim() || airtableBackfillDefaults.baseId,
+    clientTableId: process.env.AIRTABLE_CLIENT_TABLE_ID?.trim() || airtableBackfillDefaults.clientTableId,
+    clientNameFieldId:
+      process.env.AIRTABLE_CLIENT_NAME_FIELD_ID?.trim() || airtableBackfillDefaults.clientNameFieldId,
     clientLinkedLeadsFieldId:
-      process.env.AIRTABLE_CLIENT_LINKED_LEADS_FIELD_ID?.trim() || DEFAULT_CLIENT_LINKED_LEADS_FIELD_ID,
-    leadSheetTableId: process.env.AIRTABLE_LEAD_SHEET_TABLE_ID?.trim() || DEFAULT_LEAD_SHEET_TABLE_ID,
-    leadSheetNameFieldId: process.env.AIRTABLE_LEAD_SHEET_NAME_FIELD_ID?.trim() || DEFAULT_LEAD_SHEET_NAME_FIELD_ID,
+      process.env.AIRTABLE_CLIENT_LINKED_LEADS_FIELD_ID?.trim() || airtableBackfillDefaults.clientLinkedLeadsFieldId,
+    leadSheetTableId: process.env.AIRTABLE_LEAD_SHEET_TABLE_ID?.trim() || airtableBackfillDefaults.leadSheetTableId,
+    leadSheetNameFieldId:
+      process.env.AIRTABLE_LEAD_SHEET_NAME_FIELD_ID?.trim() || airtableBackfillDefaults.leadSheetNameFieldId,
     leadSheetTimestampFieldId:
-      process.env.AIRTABLE_LEAD_SHEET_TIMESTAMP_FIELD_ID?.trim() || DEFAULT_LEAD_SHEET_TIMESTAMP_FIELD_ID,
+      process.env.AIRTABLE_LEAD_SHEET_TIMESTAMP_FIELD_ID?.trim() || airtableBackfillDefaults.leadSheetTimestampFieldId,
     leadSheetStatusFieldId:
-      process.env.AIRTABLE_LEAD_SHEET_STATUS_FIELD_ID?.trim() || DEFAULT_LEAD_SHEET_STATUS_FIELD_ID,
+      process.env.AIRTABLE_LEAD_SHEET_STATUS_FIELD_ID?.trim() || airtableBackfillDefaults.leadSheetStatusFieldId,
   }
 }
 

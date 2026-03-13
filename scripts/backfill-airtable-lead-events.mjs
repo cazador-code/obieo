@@ -3,17 +3,10 @@
 import fs from 'fs'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '../convex/_generated/api.js'
+import airtableBackfillDefaults from '../src/lib/airtable-backfill-defaults.json' with { type: 'json' }
 
 const DEFAULT_APP_ENV_FILE = '.env.local'
 const DEFAULT_AIRTABLE_ENV_FILE = '.vercel/.env.production.local'
-const DEFAULT_AIRTABLE_BASE_ID = 'appqsVEAHr4AaaBAt'
-const DEFAULT_CLIENT_TABLE_ID = 'tblK1w4DWwbtEBZGf'
-const DEFAULT_CLIENT_NAME_FIELD_ID = 'fldcUUlwTa7ilHUUt'
-const DEFAULT_CLIENT_LINKED_LEADS_FIELD_ID = 'fldd3DxeRrwsAi8um'
-const DEFAULT_LEAD_SHEET_TABLE_ID = 'tblvzFd4X0M1ejhX4'
-const DEFAULT_LEAD_SHEET_NAME_FIELD_ID = 'fldky20wCEiA9whfa'
-const DEFAULT_LEAD_SHEET_TIMESTAMP_FIELD_ID = 'fldNalvQg96GHhtOg'
-const DEFAULT_LEAD_SHEET_STATUS_FIELD_ID = 'fldaKVkT2R2RYIT7y'
 const AIRTABLE_LIST_MAX_PAGES = 200
 const ALLOWED_DELIVERY_STATUSES = new Set(['delivered', 'completed'])
 
@@ -185,7 +178,7 @@ async function main() {
   const convexUrl = cleanString(appEnv.CONVEX_URL)
   const convexAuthSecret = cleanString(appEnv.CONVEX_AUTH_ADAPTER_SECRET)
   const airtableToken = cleanString(airtableEnv.AIRTABLE_PERSONAL_ACCESS_TOKEN || airtableEnv.AIRTABLE_API_KEY)
-  const baseId = cleanString(airtableEnv.AIRTABLE_CLIENT_BASE_ID || DEFAULT_AIRTABLE_BASE_ID)
+  const baseId = cleanString(airtableEnv.AIRTABLE_CLIENT_BASE_ID || airtableBackfillDefaults.baseId)
   const portalMap = parsePortalMap(airtableEnv.AIRTABLE_PORTAL_KEY_MAP_JSON || '')
 
   if (!convexUrl || !convexAuthSecret) {
@@ -224,21 +217,25 @@ async function main() {
   const clientRows = await listTableRows({
     token: airtableToken,
     baseId,
-    tableId: cleanString(airtableEnv.AIRTABLE_CLIENT_TABLE_ID || DEFAULT_CLIENT_TABLE_ID),
+    tableId: cleanString(airtableEnv.AIRTABLE_CLIENT_TABLE_ID || airtableBackfillDefaults.clientTableId),
     fieldIds: [
-      cleanString(airtableEnv.AIRTABLE_CLIENT_NAME_FIELD_ID || DEFAULT_CLIENT_NAME_FIELD_ID),
-      cleanString(airtableEnv.AIRTABLE_CLIENT_LINKED_LEADS_FIELD_ID || DEFAULT_CLIENT_LINKED_LEADS_FIELD_ID),
+      cleanString(airtableEnv.AIRTABLE_CLIENT_NAME_FIELD_ID || airtableBackfillDefaults.clientNameFieldId),
+      cleanString(
+        airtableEnv.AIRTABLE_CLIENT_LINKED_LEADS_FIELD_ID || airtableBackfillDefaults.clientLinkedLeadsFieldId
+      ),
     ],
   })
 
   const leadRows = await listTableRows({
     token: airtableToken,
     baseId,
-    tableId: cleanString(airtableEnv.AIRTABLE_LEAD_SHEET_TABLE_ID || DEFAULT_LEAD_SHEET_TABLE_ID),
+    tableId: cleanString(airtableEnv.AIRTABLE_LEAD_SHEET_TABLE_ID || airtableBackfillDefaults.leadSheetTableId),
     fieldIds: [
-      cleanString(airtableEnv.AIRTABLE_LEAD_SHEET_NAME_FIELD_ID || DEFAULT_LEAD_SHEET_NAME_FIELD_ID),
-      cleanString(airtableEnv.AIRTABLE_LEAD_SHEET_TIMESTAMP_FIELD_ID || DEFAULT_LEAD_SHEET_TIMESTAMP_FIELD_ID),
-      cleanString(airtableEnv.AIRTABLE_LEAD_SHEET_STATUS_FIELD_ID || DEFAULT_LEAD_SHEET_STATUS_FIELD_ID),
+      cleanString(airtableEnv.AIRTABLE_LEAD_SHEET_NAME_FIELD_ID || airtableBackfillDefaults.leadSheetNameFieldId),
+      cleanString(
+        airtableEnv.AIRTABLE_LEAD_SHEET_TIMESTAMP_FIELD_ID || airtableBackfillDefaults.leadSheetTimestampFieldId
+      ),
+      cleanString(airtableEnv.AIRTABLE_LEAD_SHEET_STATUS_FIELD_ID || airtableBackfillDefaults.leadSheetStatusFieldId),
     ],
   })
 
@@ -246,9 +243,23 @@ async function main() {
     leadRows.map((row) => [
       row.id,
       {
-        leadName: cleanString(row?.fields?.[cleanString(airtableEnv.AIRTABLE_LEAD_SHEET_NAME_FIELD_ID || DEFAULT_LEAD_SHEET_NAME_FIELD_ID)]) || undefined,
-        deliveredAt: toUnixTimestampMs(row?.fields?.[cleanString(airtableEnv.AIRTABLE_LEAD_SHEET_TIMESTAMP_FIELD_ID || DEFAULT_LEAD_SHEET_TIMESTAMP_FIELD_ID)]),
-        status: cleanString(row?.fields?.[cleanString(airtableEnv.AIRTABLE_LEAD_SHEET_STATUS_FIELD_ID || DEFAULT_LEAD_SHEET_STATUS_FIELD_ID)]) || undefined,
+        leadName:
+          cleanString(
+            row?.fields?.[cleanString(airtableEnv.AIRTABLE_LEAD_SHEET_NAME_FIELD_ID || airtableBackfillDefaults.leadSheetNameFieldId)]
+          ) || undefined,
+        deliveredAt: toUnixTimestampMs(
+          row?.fields?.[
+            cleanString(
+              airtableEnv.AIRTABLE_LEAD_SHEET_TIMESTAMP_FIELD_ID || airtableBackfillDefaults.leadSheetTimestampFieldId
+            )
+          ]
+        ),
+        status:
+          cleanString(
+            row?.fields?.[
+              cleanString(airtableEnv.AIRTABLE_LEAD_SHEET_STATUS_FIELD_ID || airtableBackfillDefaults.leadSheetStatusFieldId)
+            ]
+          ) || undefined,
       },
     ])
   )
@@ -257,11 +268,17 @@ async function main() {
 
   for (const clientRow of clientRows) {
     const fields = clientRow.fields || {}
-    const businessName = cleanString(fields[cleanString(airtableEnv.AIRTABLE_CLIENT_NAME_FIELD_ID || DEFAULT_CLIENT_NAME_FIELD_ID)])
+    const businessName = cleanString(
+      fields[cleanString(airtableEnv.AIRTABLE_CLIENT_NAME_FIELD_ID || airtableBackfillDefaults.clientNameFieldId)]
+    )
     const normalizedBusinessName = normalizeName(businessName)
     const tokenKey = normalizeNameTokenKey(businessName)
     const linkedLeadIds = getLinkedRecordIds(
-      fields[cleanString(airtableEnv.AIRTABLE_CLIENT_LINKED_LEADS_FIELD_ID || DEFAULT_CLIENT_LINKED_LEADS_FIELD_ID)]
+      fields[
+        cleanString(
+          airtableEnv.AIRTABLE_CLIENT_LINKED_LEADS_FIELD_ID || airtableBackfillDefaults.clientLinkedLeadsFieldId
+        )
+      ]
     )
 
     if (linkedLeadIds.length === 0) continue
