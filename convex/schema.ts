@@ -114,7 +114,8 @@ export default defineSchema({
     payloadJson: v.optional(v.string()),
   })
     .index('by_portalKey', ['portalKey'])
-    .index('by_portal_and_kind', ['portalKey', 'kind']),
+    .index('by_portal_and_kind', ['portalKey', 'kind'])
+    .index('by_referenceId_and_kind', ['referenceId', 'kind']),
 
   onboardingSubmissions: defineTable({
     organizationId: v.optional(v.id('organizations')),

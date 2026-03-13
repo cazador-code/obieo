@@ -245,7 +245,7 @@ function getSingleSelectName(value: unknown): string {
 }
 
 async function listAirtableClientRecords(config: AirtableConfig): Promise<AirtableClientRecord[]> {
-  const fields = [config.nameFieldId, config.statusFieldId, config.targetZipFieldId]
+  const fields = [config.nameFieldId, config.userIdFieldId, config.statusFieldId, config.targetZipFieldId]
   const results: AirtableClientRecord[] = []
   let offset: string | null = null
   let pageCount = 0

@@ -30,7 +30,7 @@ type ApiResponse =
       onboardingUrl: string
       activation: ActivationResult
     }
-  | { success: false; error: string }
+  | { success: false; error: string; candidatePortalKeys?: string[] }
 
 function cleanString(value: string) {
   return value.trim()
@@ -127,6 +127,7 @@ export default function PaymentLinkPage() {
 
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [candidatePortalKeys, setCandidatePortalKeys] = useState<string[]>([])
   const [result, setResult] = useState<Extract<ApiResponse, { success: true }> | null>(null)
 
   const customPackageRequested = billingSelection === CUSTOM_PACKAGE_SELECTION
@@ -183,6 +184,7 @@ export default function PaymentLinkPage() {
 
     setSubmitting(true)
     setSubmitError(null)
+    setCandidatePortalKeys([])
     setResult(null)
 
     try {
@@ -212,11 +214,14 @@ export default function PaymentLinkPage() {
         ({ success: false, error: `Invalid response (${response.status}). Please check logs.` } as ApiResponse)
 
       if (!response.ok || !data.success) {
-        setSubmitError((data as { error?: string }).error || 'Failed to confirm payment.')
+        const errorData = data as Extract<ApiResponse, { success: false }>
+        setSubmitError(errorData.error || 'Failed to confirm payment.')
+        setCandidatePortalKeys(Array.isArray(errorData.candidatePortalKeys) ? errorData.candidatePortalKeys : [])
         return
       }
 
       setResult(data)
+      setCandidatePortalKeys([])
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Request failed.')
     } finally {
@@ -306,6 +311,25 @@ export default function PaymentLinkPage() {
                   Leave blank for brand-new clients. Fill this in for repeat purchases when you know the existing client
                   key.
                 </p>
+                {candidatePortalKeys.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs font-semibold text-[var(--text-primary)]">
+                      Suggested existing portal keys (click to use):
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {candidatePortalKeys.map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setPortalKey(key)}
+                          className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-2 py-1 font-mono text-xs text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+                        >
+                          {key}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </label>
             </div>
 

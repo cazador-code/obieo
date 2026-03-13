@@ -1107,13 +1107,20 @@ export const applyConfirmedPurchase = mutation({
     assertAuthorized(args.authSecret)
     const now = Date.now()
 
-    const existingOrganization = await getOrganizationByPortalKey(ctx, args.portalKey)
     const prior = await ctx.db
       .query('billingEvents')
-      .withIndex('by_portal_and_kind', (q) => q.eq('portalKey', args.portalKey).eq('kind', 'external_payment'))
-      .filter((q) => q.eq(q.field('referenceId'), args.purchaseKey))
+      .withIndex('by_referenceId_and_kind', (q) =>
+        q.eq('referenceId', args.purchaseKey).eq('kind', 'external_payment')
+      )
       .first()
 
+    if (prior && prior.portalKey !== args.portalKey) {
+      throw new Error(
+        `Purchase replay portal mismatch for purchaseKey=${args.purchaseKey}: existing portalKey=${prior.portalKey}, requested portalKey=${args.portalKey}`
+      )
+    }
+
+    const existingOrganization = await getOrganizationByPortalKey(ctx, args.portalKey)
     if (prior) {
       return {
         alreadyApplied: true,

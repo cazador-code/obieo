@@ -483,11 +483,12 @@ export async function resolveClientIdentityByBillingInConvex(input: {
       latestIntentUpdatedAt: number | null
     }
   | { status: 'ambiguous'; portalKeys: string[] }
+  | null
 > {
   const client = getConvexClient()
   const authSecret = getConvexAuthSecret()
   if (!client || !authSecret) {
-    return { status: 'none', portalKeys: [] }
+    return null
   }
 
   try {
@@ -508,7 +509,7 @@ export async function resolveClientIdentityByBillingInConvex(input: {
       | { status: 'ambiguous'; portalKeys: string[] }
   } catch (error) {
     console.error('Convex resolveClientIdentityByBilling failed:', error)
-    return { status: 'none', portalKeys: [] }
+    return null
   }
 }
 

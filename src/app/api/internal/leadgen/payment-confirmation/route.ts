@@ -150,8 +150,49 @@ function getAppBaseUrl(): string {
   return process.env.NEXT_PUBLIC_APP_URL?.trim() || process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'http://localhost:3000'
 }
 
+function hashForLog(value: string): string {
+  return crypto.createHash('sha256').update(value).digest('hex').slice(0, 12)
+}
+
+function redactEmailForLog(value: unknown): unknown {
+  if (typeof value !== 'string') return value
+  const normalized = value.trim().toLowerCase()
+  if (!normalized) return null
+  const atIndex = normalized.indexOf('@')
+  if (atIndex <= 0) return `email:sha256:${hashForLog(normalized)}`
+  return `email:${normalized.slice(atIndex + 1)}:sha256:${hashForLog(normalized)}`
+}
+
+function redactPortalKeyForLog(value: unknown): unknown {
+  if (typeof value !== 'string') return value
+  const normalized = value.trim()
+  if (!normalized) return null
+  return `pk:sha256:${hashForLog(normalized)}`
+}
+
+function sanitizePaymentConfirmationLogDetails(details: Record<string, unknown>): Record<string, unknown> {
+  const sanitized: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(details)) {
+    const normalizedKey = key.toLowerCase()
+    if (normalizedKey.includes('billingemail') || normalizedKey === 'email') {
+      sanitized[key] = redactEmailForLog(value)
+      continue
+    }
+    if (normalizedKey.includes('portalkey')) {
+      if (Array.isArray(value)) {
+        sanitized[key] = value.map((entry) => redactPortalKeyForLog(entry))
+      } else {
+        sanitized[key] = redactPortalKeyForLog(value)
+      }
+      continue
+    }
+    sanitized[key] = value
+  }
+  return sanitized
+}
+
 function logPaymentConfirmation(event: string, details: Record<string, unknown>) {
-  console.info(`[leadgen-payment-confirmation] ${event}`, details)
+  console.info(`[leadgen-payment-confirmation] ${event}`, sanitizePaymentConfirmationLogDetails(details))
 }
 
 export async function POST(request: NextRequest) {
@@ -224,6 +265,21 @@ export async function POST(request: NextRequest) {
     const purchaseKey = `${paymentProvider}:${paymentReference}`
     const activeIntent = await findActiveLeadgenIntentInConvex({ billingEmail, companyName })
     const billingIdentity = await resolveClientIdentityByBillingInConvex({ billingEmail, companyName })
+    if (!billingIdentity) {
+      logPaymentConfirmation('billing_identity_resolution_unavailable', {
+        paymentEventId: purchaseKey,
+        requestedPortalKey,
+        billingEmail,
+        companyName,
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Unable to verify the existing client identity right now. Please retry or route this payment to manual review.',
+        },
+        { status: 503 }
+      )
+    }
     const clientDecision = resolveLeadgenClientDecision({
       requestedPortalKey,
       activeIntentPortalKey: activeIntent?.portalKey || null,
@@ -242,7 +298,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (clientDecision.kind === 'manual_review') {
-      await queueLeadgenManualReviewInConvex({
+      const manualReviewRecord = await queueLeadgenManualReviewInConvex({
         paymentEventId: purchaseKey,
         portalKey: requestedPortalKey || undefined,
         companyName,
@@ -259,6 +315,16 @@ export async function POST(request: NextRequest) {
           billingIdentity,
         }),
       })
+      if (!manualReviewRecord?.queued) {
+        logPaymentConfirmation('manual_review_queue_failed', {
+          paymentEventId: purchaseKey,
+          reason: clientDecision.reason,
+        })
+        return NextResponse.json(
+          { success: false, error: 'Failed to queue manual review. Please retry.' },
+          { status: 500 }
+        )
+      }
 
       logPaymentConfirmation('manual_review_required', {
         paymentEventId: purchaseKey,
@@ -298,7 +364,7 @@ export async function POST(request: NextRequest) {
       !existingOrganization?.organization
     ) {
       const details = `The submitted portalKey=${portalKey} does not match any existing client record. Re-submit with the exact existing stable client identifier.`
-      await queueLeadgenManualReviewInConvex({
+      const manualReviewRecord = await queueLeadgenManualReviewInConvex({
         paymentEventId: purchaseKey,
         portalKey,
         companyName,
@@ -314,6 +380,16 @@ export async function POST(request: NextRequest) {
           requestedPortalKey,
         }),
       })
+      if (!manualReviewRecord?.queued) {
+        logPaymentConfirmation('manual_review_queue_failed', {
+          paymentEventId: purchaseKey,
+          reason: 'missing_stable_client_identifier',
+        })
+        return NextResponse.json(
+          { success: false, error: 'Failed to queue manual review. Please retry.' },
+          { status: 500 }
+        )
+      }
 
       logPaymentConfirmation('manual_review_required', {
         paymentEventId: purchaseKey,
@@ -357,16 +433,6 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         )
       }
-    }
-
-    const paidIntent = await markLeadgenPaidInConvex({
-      portalKey,
-    })
-    if (!paidIntent) {
-      return NextResponse.json(
-        { success: false, error: 'Failed to mark leadgen intent as paid. Check Convex config.' },
-        { status: 500 }
-      )
     }
 
     const defaults = getBillingModelDefaults(billingModel, leadUnitPriceCentsInput)
@@ -434,6 +500,16 @@ export async function POST(request: NextRequest) {
     if (!purchaseApplication) {
       return NextResponse.json(
         { success: false, error: 'Failed to apply purchase to organization. Check Convex config.' },
+        { status: 500 }
+      )
+    }
+
+    const paidIntent = await markLeadgenPaidInConvex({
+      portalKey,
+    })
+    if (!paidIntent) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to mark leadgen intent as paid. Check Convex config.' },
         { status: 500 }
       )
     }

@@ -63,6 +63,47 @@ test('repeat purchase with the exact existing portal key reuses the original cli
   })
 })
 
+test('active intent portal key reuses the original client even without a submitted portal key', () => {
+  const billingIdentity: BillingIdentityResolution = {
+    status: 'unique',
+    portalKey: 'oz-home-services-d4f6e8',
+    portalKeys: ['oz-home-services-d4f6e8'],
+    latestIntentStatus: 'checkout_created',
+    latestIntentUpdatedAt: 1,
+  }
+
+  const decision = resolveLeadgenClientDecision({
+    requestedPortalKey: null,
+    activeIntentPortalKey: 'oz-home-services-d4f6e8',
+    billingIdentity,
+  })
+
+  assert.deepEqual(decision, {
+    kind: 'reuse_existing',
+    portalKey: 'oz-home-services-d4f6e8',
+    source: 'active_intent',
+  })
+})
+
+test('ambiguous billing identity can still reuse when the submitted portal key exactly matches a candidate', () => {
+  const billingIdentity: BillingIdentityResolution = {
+    status: 'ambiguous',
+    portalKeys: ['alpha-123', 'beta-456'],
+  }
+
+  const decision = resolveLeadgenClientDecision({
+    requestedPortalKey: 'beta-456',
+    activeIntentPortalKey: null,
+    billingIdentity,
+  })
+
+  assert.deepEqual(decision, {
+    kind: 'reuse_existing',
+    portalKey: 'beta-456',
+    source: 'requested_portal_key',
+  })
+})
+
 test('ambiguous repeat purchase fails closed into manual review', () => {
   const billingIdentity: BillingIdentityResolution = {
     status: 'ambiguous',

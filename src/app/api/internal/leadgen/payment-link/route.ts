@@ -118,8 +118,55 @@ function generateToken(): string {
   return crypto.randomBytes(32).toString('base64url')
 }
 
+function hashForLog(value: string): string {
+  return crypto.createHash('sha256').update(value).digest('hex').slice(0, 12)
+}
+
+function redactPortalKeyForLog(value: string): string {
+  return `portal_${hashForLog(value)}`
+}
+
+function redactEmailForLog(value: string): string {
+  return `email_${hashForLog(value)}`
+}
+
+function sanitizeLogDetails(details: Record<string, unknown>): Record<string, unknown> {
+  const portalKeyFields = new Set([
+    'portalKey',
+    'requestedPortalKey',
+    'activeIntentPortalKey',
+    'billingIdentityPortalKeys',
+    'candidatePortalKeys',
+  ])
+
+  const sanitized: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(details)) {
+    if (key === 'billingEmail' && typeof value === 'string') {
+      sanitized[key] = redactEmailForLog(value)
+      continue
+    }
+
+    if (portalKeyFields.has(key)) {
+      if (typeof value === 'string') {
+        sanitized[key] = redactPortalKeyForLog(value)
+        continue
+      }
+      if (Array.isArray(value)) {
+        sanitized[key] = value
+          .filter((item): item is string => typeof item === 'string')
+          .map((item) => redactPortalKeyForLog(item))
+        continue
+      }
+    }
+
+    sanitized[key] = value
+  }
+
+  return sanitized
+}
+
 function logPaymentLink(event: string, details: Record<string, unknown>) {
-  console.info(`[leadgen-payment-link] ${event}`, details)
+  console.info(`[leadgen-payment-link] ${event}`, sanitizeLogDetails(details))
 }
 
 function isLeadgenStripeActive(): boolean {
@@ -223,7 +270,22 @@ export async function POST(request: NextRequest) {
 
     const activeIntent = await findActiveLeadgenIntentInConvex({ billingEmail, companyName })
     const billingIdentity = await resolveClientIdentityByBillingInConvex({ billingEmail, companyName })
-    const paymentEventId = `checkout:${billingEmail}:${companyName}`
+    const paymentEventId = `checkout:${crypto.randomUUID()}`
+    if (!billingIdentity) {
+      logPaymentLink('billing_identity_resolution_unavailable', {
+        paymentEventId,
+        requestedPortalKey,
+        billingEmail,
+        companyName,
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Unable to verify the existing client identity right now. Please retry or route this payment to manual review.',
+        },
+        { status: 503 }
+      )
+    }
     const clientDecision = resolveLeadgenClientDecision({
       requestedPortalKey,
       activeIntentPortalKey: activeIntent?.portalKey || null,
@@ -253,7 +315,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (clientDecision.kind === 'manual_review') {
-      await queueLeadgenManualReviewInConvex({
+      const manualReviewRecord = await queueLeadgenManualReviewInConvex({
         paymentEventId,
         portalKey: requestedPortalKey || undefined,
         companyName,
@@ -268,6 +330,16 @@ export async function POST(request: NextRequest) {
           billingIdentity,
         }),
       })
+      if (!manualReviewRecord?.queued) {
+        logPaymentLink('manual_review_queue_failed', {
+          paymentEventId,
+          reason: clientDecision.reason,
+        })
+        return NextResponse.json(
+          { success: false, error: 'Failed to queue manual review. Please retry.' },
+          { status: 500 }
+        )
+      }
 
       logPaymentLink('manual_review_required', {
         paymentEventId,
@@ -313,18 +385,47 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const portalKey =
-      clientDecision.kind === 'reuse_existing'
-        ? clientDecision.portalKey
-        : generatePortalKey(companyName)
-    const portalIntent =
-      activeIntent?.portalKey === portalKey
-        ? activeIntent
-        : await getLeadgenIntentByPortalKeyInConvex({ portalKey })
-    const existingOrganization =
-      clientDecision.kind === 'reuse_existing' && clientDecision.source === 'requested_portal_key'
-        ? await getOrganizationSnapshotInConvex({ portalKey })
-        : null
+    let portalKey: string
+    let portalIntent: Awaited<ReturnType<typeof getLeadgenIntentByPortalKeyInConvex>> | null = null
+    let existingOrganization: Awaited<ReturnType<typeof getOrganizationSnapshotInConvex>> | null = null
+
+    if (clientDecision.kind === 'reuse_existing') {
+      portalKey = clientDecision.portalKey
+      portalIntent =
+        activeIntent?.portalKey === portalKey
+          ? activeIntent
+          : await getLeadgenIntentByPortalKeyInConvex({ portalKey })
+      existingOrganization =
+        clientDecision.source === 'requested_portal_key'
+          ? await getOrganizationSnapshotInConvex({ portalKey })
+          : null
+    } else {
+      const MAX_PORTAL_KEY_ATTEMPTS = 10
+      let attempts = 0
+      let resolvedPortalKey: string | null = null
+
+      while (attempts < MAX_PORTAL_KEY_ATTEMPTS) {
+        const candidatePortalKey = generatePortalKey(companyName)
+        const candidateIntent = await getLeadgenIntentByPortalKeyInConvex({ portalKey: candidatePortalKey })
+        const candidateOrganization = await getOrganizationSnapshotInConvex({ portalKey: candidatePortalKey })
+        if (!candidateIntent && !candidateOrganization?.organization) {
+          resolvedPortalKey = candidatePortalKey
+          break
+        }
+        attempts += 1
+      }
+
+      if (!resolvedPortalKey) {
+        return NextResponse.json(
+          { success: false, error: 'Failed to generate a unique client key. Please retry.' },
+          { status: 500 }
+        )
+      }
+
+      portalKey = resolvedPortalKey
+      portalIntent = null
+      existingOrganization = null
+    }
 
     if (
       clientDecision.kind === 'reuse_existing' &&
@@ -333,7 +434,7 @@ export async function POST(request: NextRequest) {
       !existingOrganization?.organization
     ) {
       const details = `The submitted portalKey=${portalKey} does not match any existing client record. Re-submit with the exact existing stable client identifier.`
-      await queueLeadgenManualReviewInConvex({
+      const manualReviewRecord = await queueLeadgenManualReviewInConvex({
         paymentEventId,
         portalKey,
         companyName,
@@ -347,6 +448,16 @@ export async function POST(request: NextRequest) {
           requestedPortalKey,
         }),
       })
+      if (!manualReviewRecord?.queued) {
+        logPaymentLink('manual_review_queue_failed', {
+          paymentEventId,
+          reason: 'missing_stable_client_identifier',
+        })
+        return NextResponse.json(
+          { success: false, error: 'Failed to queue manual review. Please retry.' },
+          { status: 500 }
+        )
+      }
 
       logPaymentLink('manual_review_required', {
         paymentEventId,
