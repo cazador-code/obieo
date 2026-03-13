@@ -4,7 +4,12 @@ import { getStripeClient } from '@/lib/stripe'
 import { authLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { activateCustomer, getActivationCandidateFromCheckout } from '@/lib/stripe-activation'
 import { getBillingModelDefaults, normalizeBillingModel } from '@/lib/billing-models'
-import { markLeadgenPaidInConvex, upsertOrganizationInConvex } from '@/lib/convex'
+import {
+  applyConfirmedPurchaseInConvex,
+  markLeadgenPaidInConvex,
+  queueLeadgenManualReviewInConvex,
+  upsertOrganizationInConvex,
+} from '@/lib/convex'
 
 export const runtime = 'nodejs'
 
@@ -41,6 +46,10 @@ function normalizeString(value: unknown): string | null {
 
 function isLeadgenStripeActive(): boolean {
   return process.env.LEADGEN_STRIPE_ACTIVE?.trim() === 'true'
+}
+
+function logStripeActivate(event: string, details: Record<string, unknown>) {
+  console.info(`[stripe-public-activate] ${event}`, details)
 }
 
 export async function POST(request: NextRequest) {
@@ -87,9 +96,47 @@ export async function POST(request: NextRequest) {
     if (session.payment_status === 'paid' && session.metadata?.obieo_journey === 'leadgen_payment_first') {
       const portalKey = normalizeString(session.metadata?.portal_key)
       const companyName = normalizeString(session.metadata?.company_name) || undefined
+      const billingEmail =
+        normalizeString(session.customer_details?.email) ||
+        normalizeString(session.customer_email) ||
+        undefined
       const stripeCustomerId = typeof session.customer === 'string' ? session.customer : undefined
       const billingModel =
         session.metadata?.billing_model ? normalizeBillingModel(session.metadata.billing_model) : 'package_40_paid_in_full'
+      const purchaseKey = `stripe_checkout:${session.id}`
+
+      if (!portalKey) {
+        await queueLeadgenManualReviewInConvex({
+          paymentEventId: purchaseKey,
+          companyName,
+          billingEmail,
+          reason: 'missing_stable_client_identifier',
+          details:
+            'Stripe activation fallback saw a paid leadgen_payment_first checkout without portal_key metadata. Activation stopped for manual review.',
+          payloadJson: JSON.stringify({
+            checkoutSessionId: session.id,
+            stripeCustomerId,
+            billingModel,
+            amountTotal: session.amount_total,
+            metadata: session.metadata,
+          }),
+        })
+
+        logStripeActivate('manual_review_required', {
+          purchaseKey,
+          reason: 'missing_stable_client_identifier',
+        })
+
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              'This checkout is missing the stable client identifier (portalKey). Activation was stopped and queued for manual review.',
+            manualReviewRequired: true,
+          },
+          { status: 409 }
+        )
+      }
 
       if (portalKey) {
         await markLeadgenPaidInConvex({
@@ -99,17 +146,51 @@ export async function POST(request: NextRequest) {
         })
 
         const defaults = getBillingModelDefaults(billingModel, 4000)
-        await upsertOrganizationInConvex({
+        const purchase = await applyConfirmedPurchaseInConvex({
           portalKey,
-          name: companyName,
-          stripeCustomerId,
+          purchaseKey,
+          companyName,
           billingModel,
           prepaidLeadCredits: defaults.prepaidLeadCredits,
           leadCommitmentTotal: defaults.leadCommitmentTotal || undefined,
-          initialChargeCents: defaults.initialChargeCents,
+          initialChargeCents:
+            typeof session.amount_total === 'number' && session.amount_total > 0
+              ? session.amount_total
+              : defaults.initialChargeCents,
           leadChargeThreshold: defaults.leadChargeThreshold,
           leadUnitPriceCents: defaults.leadUnitPriceCents,
+          payloadJson: JSON.stringify({
+            checkoutSessionId: session.id,
+            stripeCustomerId,
+            billingEmail,
+            billingModel,
+            amountTotal: session.amount_total,
+            currency: session.currency,
+            paymentStatus: session.payment_status,
+          }),
+        })
+
+        if (!purchase) {
+          return NextResponse.json(
+            { success: false, error: 'Failed to apply Stripe checkout purchase.' },
+            { status: 500 }
+          )
+        }
+
+        await upsertOrganizationInConvex({
+          portalKey,
+          stripeCustomerId,
+          billingModel,
           isActive: true,
+        })
+
+        logStripeActivate('purchase_applied', {
+          purchaseKey,
+          portalKey,
+          organizationCreated: purchase.organizationCreated,
+          purchaseRowCreated: !purchase.alreadyApplied,
+          prepaidLeadCredits: purchase.prepaidLeadCredits,
+          leadCommitmentTotal: purchase.leadCommitmentTotal,
         })
       }
     }

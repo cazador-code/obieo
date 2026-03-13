@@ -164,7 +164,93 @@ export async function recordInvoiceEventInConvex(input: {
     authSecret,
     ...input,
   })
-  return result as { billingEventId: string }
+  return result as { billingEventId: string; alreadyRecorded: boolean }
+}
+
+export async function recordPurchaseEventInConvex(input: {
+  portalKey: string
+  purchaseKey: string
+  kind: string
+  status: string
+  amountCents?: number
+  payloadJson?: string
+}) {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const dynamicClient = asDynamicConvexClient(client)
+    const result = await dynamicClient.mutation('leadLedger:recordPurchaseEvent', {
+      authSecret,
+      ...input,
+    })
+    return result as { billingEventId: string; alreadyRecorded: boolean }
+  } catch (error) {
+    console.error('Convex recordPurchaseEvent failed:', error)
+    return null
+  }
+}
+
+export async function applyConfirmedPurchaseInConvex(input: {
+  portalKey: string
+  purchaseKey: string
+  companyName?: string
+  billingModel: BillingModel
+  prepaidLeadCredits?: number
+  leadCommitmentTotal?: number
+  initialChargeCents?: number
+  leadChargeThreshold: number
+  leadUnitPriceCents: number
+  payloadJson?: string
+}) {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const dynamicClient = asDynamicConvexClient(client)
+    const result = await dynamicClient.mutation('leadLedger:applyConfirmedPurchase', {
+      authSecret,
+      ...input,
+    })
+    return result as {
+      alreadyApplied: boolean
+      organizationCreated: boolean
+      organizationId: string | null
+      prepaidLeadCredits: number
+      leadCommitmentTotal: number | null
+    }
+  } catch (error) {
+    console.error('Convex applyConfirmedPurchase failed:', error)
+    return null
+  }
+}
+
+export async function queueLeadgenManualReviewInConvex(input: {
+  paymentEventId: string
+  portalKey?: string
+  companyName?: string
+  billingEmail?: string
+  reason: string
+  details: string
+  payloadJson?: string
+}) {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) return null
+
+  try {
+    const dynamicClient = asDynamicConvexClient(client)
+    const result = await dynamicClient.mutation('leadLedger:queueLeadgenManualReview', {
+      authSecret,
+      ...input,
+    })
+    return result as { queued: boolean }
+  } catch (error) {
+    console.error('Convex queueLeadgenManualReview failed:', error)
+    return null
+  }
 }
 
 export async function grantLeadCreditsFromInvoiceInConvex(input: {
@@ -384,6 +470,49 @@ export async function findActiveLeadgenIntentInConvex(input: {
   }
 }
 
+export async function resolveClientIdentityByBillingInConvex(input: {
+  billingEmail: string
+  companyName: string
+}): Promise<
+  | { status: 'none'; portalKeys: string[] }
+  | {
+      status: 'unique'
+      portalKey: string
+      portalKeys: string[]
+      latestIntentStatus: string | null
+      latestIntentUpdatedAt: number | null
+    }
+  | { status: 'ambiguous'; portalKeys: string[] }
+  | null
+> {
+  const client = getConvexClient()
+  const authSecret = getConvexAuthSecret()
+  if (!client || !authSecret) {
+    return null
+  }
+
+  try {
+    const dynamicClient = asDynamicConvexClient(client)
+    const result = await dynamicClient.query('leadgen:resolveClientIdentityByBilling', {
+      authSecret,
+      ...input,
+    })
+    return result as
+      | { status: 'none'; portalKeys: string[] }
+      | {
+          status: 'unique'
+          portalKey: string
+          portalKeys: string[]
+          latestIntentStatus: string | null
+          latestIntentUpdatedAt: number | null
+        }
+      | { status: 'ambiguous'; portalKeys: string[] }
+  } catch (error) {
+    console.error('Convex resolveClientIdentityByBilling failed:', error)
+    return null
+  }
+}
+
 export async function createLeadgenIntentInConvex(input: {
   portalKey: string
   companyName: string
@@ -591,7 +720,12 @@ export async function submitClientOnboardingInConvex(input: {
       authSecret,
       ...input,
     })
-    const submissionResult = result as { submissionId: string; organizationId: string; portalKey: string }
+    const submissionResult = result as {
+      submissionId: string
+      organizationId: string
+      portalKey: string
+      organizationCreated: boolean
+    }
 
     try {
       const contractorName = buildContractorName({
@@ -626,7 +760,7 @@ export async function submitClientOnboardingInConvex(input: {
         portalKey: input.portalKey,
         organizationName: input.companyName,
         businessName: input.companyName,
-        createIfMissing: true,
+        createIfMissing: submissionResult.organizationCreated,
         ...(input.targetZipCodes ? { targetZipCodes: input.targetZipCodes } : {}),
         ...(input.businessPhone ? { businessPhone: input.businessPhone } : {}),
         ...(input.leadRoutingPhones.length > 0 ? { leadDeliveryPhones: input.leadRoutingPhones } : {}),

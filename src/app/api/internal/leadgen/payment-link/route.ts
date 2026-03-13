@@ -8,13 +8,19 @@ import { getBillingModelDefaults, normalizeBillingModel } from '@/lib/billing-mo
 import {
   createLeadgenIntentInConvex,
   findActiveLeadgenIntentInConvex,
+  getLeadgenIntentByPortalKeyInConvex,
+  getOrganizationSnapshotInConvex,
+  queueLeadgenManualReviewInConvex,
+  resolveClientIdentityByBillingInConvex,
   upsertOrganizationInConvex,
   updateLeadgenCheckoutDetailsInConvex,
 } from '@/lib/convex'
+import { resolveLeadgenClientDecision } from '@/lib/leadgen-repeat-purchase'
 
 export const runtime = 'nodejs'
 
 type RequestBody = {
+  portalKey?: unknown
   companyName?: unknown
   billingEmail?: unknown
   billingName?: unknown
@@ -112,6 +118,57 @@ function generateToken(): string {
   return crypto.randomBytes(32).toString('base64url')
 }
 
+function hashForLog(value: string): string {
+  return crypto.createHash('sha256').update(value).digest('hex').slice(0, 12)
+}
+
+function redactPortalKeyForLog(value: string): string {
+  return `portal_${hashForLog(value)}`
+}
+
+function redactEmailForLog(value: string): string {
+  return `email_${hashForLog(value)}`
+}
+
+function sanitizeLogDetails(details: Record<string, unknown>): Record<string, unknown> {
+  const portalKeyFields = new Set([
+    'portalKey',
+    'requestedPortalKey',
+    'activeIntentPortalKey',
+    'billingIdentityPortalKeys',
+    'candidatePortalKeys',
+  ])
+
+  const sanitized: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(details)) {
+    if (key === 'billingEmail' && typeof value === 'string') {
+      sanitized[key] = redactEmailForLog(value)
+      continue
+    }
+
+    if (portalKeyFields.has(key)) {
+      if (typeof value === 'string') {
+        sanitized[key] = redactPortalKeyForLog(value)
+        continue
+      }
+      if (Array.isArray(value)) {
+        sanitized[key] = value
+          .filter((item): item is string => typeof item === 'string')
+          .map((item) => redactPortalKeyForLog(item))
+        continue
+      }
+    }
+
+    sanitized[key] = value
+  }
+
+  return sanitized
+}
+
+function logPaymentLink(event: string, details: Record<string, unknown>) {
+  console.info(`[leadgen-payment-link] ${event}`, sanitizeLogDetails(details))
+}
+
 function isLeadgenStripeActive(): boolean {
   return process.env.LEADGEN_STRIPE_ACTIVE?.trim() === 'true'
 }
@@ -196,12 +253,14 @@ export async function POST(request: NextRequest) {
     }
 
     const companyName = cleanString(body.companyName)
-    const billingEmail = cleanString(body.billingEmail)
+    const billingEmailRaw = cleanString(body.billingEmail)
+    const billingEmail = billingEmailRaw ? billingEmailRaw.toLowerCase() : null
     const billingName = cleanString(body.billingName) || undefined
     const billingModelRaw = cleanString(body.billingModel)
     const billingModel = billingModelRaw ? normalizeBillingModel(billingModelRaw) : 'package_40_paid_in_full'
     const testDiscountRaw = cleanString(body.testDiscount) || ''
     const forceNew = body.forceNew === true
+    const requestedPortalKey = cleanString(body.portalKey)
     if (!companyName || !billingEmail) {
       return NextResponse.json(
         { success: false, error: 'companyName and billingEmail are required' },
@@ -209,49 +268,218 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const existing = await findActiveLeadgenIntentInConvex({ billingEmail, companyName })
-    if (existing) {
-      if (existing.billingModel && existing.billingModel !== billingModel) {
+    const activeIntent = await findActiveLeadgenIntentInConvex({ billingEmail, companyName })
+    const billingIdentity = await resolveClientIdentityByBillingInConvex({ billingEmail, companyName })
+    const paymentEventId = `checkout:${crypto.randomUUID()}`
+    if (!billingIdentity) {
+      logPaymentLink('billing_identity_resolution_unavailable', {
+        paymentEventId,
+        requestedPortalKey,
+        billingEmail,
+        companyName,
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Unable to verify the existing client identity right now. Please retry or route this payment to manual review.',
+        },
+        { status: 503 }
+      )
+    }
+    const clientDecision = resolveLeadgenClientDecision({
+      requestedPortalKey,
+      activeIntentPortalKey: activeIntent?.portalKey || null,
+      billingIdentity,
+    })
+
+    logPaymentLink('received', {
+      paymentEventId,
+      requestedPortalKey,
+      billingEmail,
+      companyName,
+      activeIntentPortalKey: activeIntent?.portalKey || null,
+      billingIdentityStatus: billingIdentity.status,
+      billingIdentityPortalKeys: billingIdentity.portalKeys,
+      clientDecision: clientDecision.kind,
+    })
+
+    if (forceNew && (activeIntent || billingIdentity.status !== 'none' || requestedPortalKey)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'forceNew is disabled for existing or repeat-purchase clients. Re-use the existing portalKey instead of creating a second client identity.',
+        },
+        { status: 409 }
+      )
+    }
+
+    if (clientDecision.kind === 'manual_review') {
+      const manualReviewRecord = await queueLeadgenManualReviewInConvex({
+        paymentEventId,
+        portalKey: requestedPortalKey || undefined,
+        companyName,
+        billingEmail,
+        reason: clientDecision.reason,
+        details: clientDecision.message,
+        payloadJson: JSON.stringify({
+          companyName,
+          billingEmail,
+          billingModel,
+          requestedPortalKey,
+          billingIdentity,
+        }),
+      })
+      if (!manualReviewRecord?.queued) {
+        logPaymentLink('manual_review_queue_failed', {
+          paymentEventId,
+          reason: clientDecision.reason,
+        })
         return NextResponse.json(
-          {
-            success: false,
-            error: `Existing leadgen intent already exists for this billing email/company with billingModel=${existing.billingModel}. Use a new billing email (recommended) or complete/expire the existing intent.`,
-          },
-          { status: 409 }
+          { success: false, error: 'Failed to queue manual review. Please retry.' },
+          { status: 500 }
         )
       }
 
-      if (existing.status !== 'checkout_created' && existing.status !== 'paid' && existing.status !== 'invited') {
+      logPaymentLink('manual_review_required', {
+        paymentEventId,
+        reason: clientDecision.reason,
+        candidatePortalKeys: clientDecision.candidatePortalKeys,
+      })
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: clientDecision.message,
+          manualReviewRequired: true,
+          candidatePortalKeys: clientDecision.candidatePortalKeys,
+        },
+        { status: 409 }
+      )
+    }
+
+    if (activeIntent) {
+      if (activeIntent.status !== 'checkout_created' && activeIntent.status !== 'paid' && activeIntent.status !== 'invited') {
         // Unexpected, but return it anyway.
-        return NextResponse.json({ success: true, ...existing })
+        return NextResponse.json({ success: true, ...activeIntent })
       }
 
-      if (!forceNew && !testDiscountRaw && existing.status === 'checkout_created' && existing.checkoutUrl) {
+      if (!forceNew && !testDiscountRaw && activeIntent.status === 'checkout_created' && activeIntent.checkoutUrl) {
         return NextResponse.json({
           success: true,
-          portalKey: existing.portalKey,
-          checkoutUrl: existing.checkoutUrl,
-          status: existing.status,
-          tokenExpiresAt: existing.tokenExpiresAt,
+          portalKey: activeIntent.portalKey,
+          checkoutUrl: activeIntent.checkoutUrl,
+          status: activeIntent.status,
+          tokenExpiresAt: activeIntent.tokenExpiresAt,
         })
       }
 
-      if (existing.status === 'paid' || existing.status === 'invited') {
+      if (activeIntent.status === 'paid' || activeIntent.status === 'invited') {
         return NextResponse.json({
           success: true,
-          portalKey: existing.portalKey,
-          checkoutUrl: existing.checkoutUrl || null,
-          status: existing.status,
-          tokenExpiresAt: existing.tokenExpiresAt,
+          portalKey: activeIntent.portalKey,
+          checkoutUrl: activeIntent.checkoutUrl || null,
+          status: activeIntent.status,
+          tokenExpiresAt: activeIntent.tokenExpiresAt,
         })
       }
     }
 
-    const portalKey = existing?.portalKey || generatePortalKey(companyName)
-    const leadgenToken = existing?.token || generateToken()
-    const tokenExpiresAt = existing?.tokenExpiresAt || Date.now() + 30 * 24 * 60 * 60 * 1000
+    let portalKey: string
+    let portalIntent: Awaited<ReturnType<typeof getLeadgenIntentByPortalKeyInConvex>> | null = null
+    let existingOrganization: Awaited<ReturnType<typeof getOrganizationSnapshotInConvex>> | null = null
 
-    if (!existing) {
+    if (clientDecision.kind === 'reuse_existing') {
+      portalKey = clientDecision.portalKey
+      portalIntent =
+        activeIntent?.portalKey === portalKey
+          ? activeIntent
+          : await getLeadgenIntentByPortalKeyInConvex({ portalKey })
+      existingOrganization =
+        clientDecision.source === 'requested_portal_key'
+          ? await getOrganizationSnapshotInConvex({ portalKey })
+          : null
+    } else {
+      const MAX_PORTAL_KEY_ATTEMPTS = 10
+      let attempts = 0
+      let resolvedPortalKey: string | null = null
+
+      while (attempts < MAX_PORTAL_KEY_ATTEMPTS) {
+        const candidatePortalKey = generatePortalKey(companyName)
+        const candidateIntent = await getLeadgenIntentByPortalKeyInConvex({ portalKey: candidatePortalKey })
+        const candidateOrganization = await getOrganizationSnapshotInConvex({ portalKey: candidatePortalKey })
+        if (!candidateIntent && !candidateOrganization?.organization) {
+          resolvedPortalKey = candidatePortalKey
+          break
+        }
+        attempts += 1
+      }
+
+      if (!resolvedPortalKey) {
+        return NextResponse.json(
+          { success: false, error: 'Failed to generate a unique client key. Please retry.' },
+          { status: 500 }
+        )
+      }
+
+      portalKey = resolvedPortalKey
+      portalIntent = null
+      existingOrganization = null
+    }
+
+    if (
+      clientDecision.kind === 'reuse_existing' &&
+      clientDecision.source === 'requested_portal_key' &&
+      !portalIntent &&
+      !existingOrganization?.organization
+    ) {
+      const details = `The submitted portalKey=${portalKey} does not match any existing client record. Re-submit with the exact existing stable client identifier.`
+      const manualReviewRecord = await queueLeadgenManualReviewInConvex({
+        paymentEventId,
+        portalKey,
+        companyName,
+        billingEmail,
+        reason: 'missing_stable_client_identifier',
+        details,
+        payloadJson: JSON.stringify({
+          companyName,
+          billingEmail,
+          billingModel,
+          requestedPortalKey,
+        }),
+      })
+      if (!manualReviewRecord?.queued) {
+        logPaymentLink('manual_review_queue_failed', {
+          paymentEventId,
+          reason: 'missing_stable_client_identifier',
+        })
+        return NextResponse.json(
+          { success: false, error: 'Failed to queue manual review. Please retry.' },
+          { status: 500 }
+        )
+      }
+
+      logPaymentLink('manual_review_required', {
+        paymentEventId,
+        reason: 'missing_stable_client_identifier',
+        portalKey,
+      })
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: details,
+          manualReviewRequired: true,
+          candidatePortalKeys: [],
+        },
+        { status: 409 }
+      )
+    }
+
+    const leadgenToken = portalIntent?.token || generateToken()
+    const tokenExpiresAt = portalIntent?.tokenExpiresAt || Date.now() + 30 * 24 * 60 * 60 * 1000
+
+    if (!portalIntent) {
       const created = await createLeadgenIntentInConvex({
         portalKey,
         companyName,
@@ -347,6 +575,15 @@ export async function POST(request: NextRequest) {
         billingModel,
       })
     }
+
+    logPaymentLink('checkout_created', {
+      paymentEventId,
+      portalKey,
+      existingClientFound: clientDecision.kind === 'reuse_existing',
+      clientResolutionSource: clientDecision.kind === 'reuse_existing' ? clientDecision.source : 'new_client',
+      checkoutSessionId: provisioned.initialCheckoutSessionId,
+      stripeCustomerId: provisioned.stripeCustomerId,
+    })
 
     return NextResponse.json({
       success: true,

@@ -13,12 +13,6 @@ interface AirtableFailedChargePayload {
   portal_key?: string
   clientKey?: string
   client_key?: string
-  businessName?: string
-  business_name?: string
-  clientCompany?: string
-  client_company?: string
-  name?: string
-  email?: string
 }
 
 function normalizeString(value: unknown): string | null {
@@ -103,20 +97,10 @@ export async function POST(request: NextRequest) {
     normalizeString(payload.clientKey) ||
     normalizeString(payload.client_key) ||
     undefined
-  const businessName =
-    normalizeString(payload.businessName) ||
-    normalizeString(payload.business_name) ||
-    normalizeString(payload.clientCompany) ||
-    normalizeString(payload.client_company) ||
-    normalizeString(payload.name) ||
-    undefined
-  const email = normalizeString(payload.email) || undefined
 
   const linkResult = await linkFailedChargeRecordToClient({
     recordId,
     portalKey,
-    businessName,
-    email,
   })
 
   if (!linkResult.linked) {

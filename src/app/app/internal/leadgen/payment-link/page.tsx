@@ -30,7 +30,7 @@ type ApiResponse =
       onboardingUrl: string
       activation: ActivationResult
     }
-  | { success: false; error: string }
+  | { success: false; error: string; candidatePortalKeys?: string[] }
 
 function cleanString(value: string) {
   return value.trim()
@@ -116,6 +116,7 @@ export default function PaymentLinkPage() {
   const [companyName, setCompanyName] = useState('')
   const [billingEmail, setBillingEmail] = useState('')
   const [billingName, setBillingName] = useState('')
+  const [portalKey, setPortalKey] = useState('')
   const [customIncludedLeads, setCustomIncludedLeads] = useState('')
   const [customTotalCommitmentLeads, setCustomTotalCommitmentLeads] = useState('')
   const [customAmountCollected, setCustomAmountCollected] = useState('')
@@ -126,6 +127,7 @@ export default function PaymentLinkPage() {
 
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [candidatePortalKeys, setCandidatePortalKeys] = useState<string[]>([])
   const [result, setResult] = useState<Extract<ApiResponse, { success: true }> | null>(null)
 
   const customPackageRequested = billingSelection === CUSTOM_PACKAGE_SELECTION
@@ -147,7 +149,12 @@ export default function PaymentLinkPage() {
   )
 
   const canSubmit = useMemo(() => {
-    const hasCoreFields = Boolean(cleanString(companyName) && isValidEmail(cleanString(billingEmail)) && billingSelection)
+    const hasCoreFields = Boolean(
+      cleanString(companyName) &&
+        isValidEmail(cleanString(billingEmail)) &&
+        cleanString(paymentReference) &&
+        billingSelection
+    )
     if (!hasCoreFields) return false
     if (!customPackageRequested) return true
     return customPackageHasRequiredValues && customPackageHasValidCommitment
@@ -155,6 +162,7 @@ export default function PaymentLinkPage() {
     billingSelection,
     companyName,
     billingEmail,
+    paymentReference,
     customPackageHasRequiredValues,
     customPackageHasValidCommitment,
     customPackageRequested,
@@ -176,6 +184,7 @@ export default function PaymentLinkPage() {
 
     setSubmitting(true)
     setSubmitError(null)
+    setCandidatePortalKeys([])
     setResult(null)
 
     try {
@@ -189,6 +198,7 @@ export default function PaymentLinkPage() {
           companyName,
           billingEmail,
           billingName: billingName || undefined,
+          portalKey: portalKey || undefined,
           paymentProvider,
           paymentReference: paymentReference || undefined,
           source: source || undefined,
@@ -204,11 +214,14 @@ export default function PaymentLinkPage() {
         ({ success: false, error: `Invalid response (${response.status}). Please check logs.` } as ApiResponse)
 
       if (!response.ok || !data.success) {
-        setSubmitError((data as { error?: string }).error || 'Failed to confirm payment.')
+        const errorData = data as Extract<ApiResponse, { success: false }>
+        setSubmitError(errorData.error || 'Failed to confirm payment.')
+        setCandidatePortalKeys(Array.isArray(errorData.candidatePortalKeys) ? errorData.candidatePortalKeys : [])
         return
       }
 
       setResult(data)
+      setCandidatePortalKeys([])
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Request failed.')
     } finally {
@@ -285,6 +298,43 @@ export default function PaymentLinkPage() {
               </label>
 
               <label>
+                <span className="block text-sm font-semibold text-[var(--text-primary)]">
+                  Existing portal key (optional)
+                </span>
+                <input
+                  value={portalKey}
+                  onChange={(e) => setPortalKey(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 font-mono text-sm"
+                  placeholder="Use for re-ups / ambiguous matches"
+                />
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  Leave blank for brand-new clients. Fill this in for repeat purchases when you know the existing client
+                  key.
+                </p>
+                {candidatePortalKeys.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs font-semibold text-[var(--text-primary)]">
+                      Suggested existing portal keys (click to use):
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {candidatePortalKeys.map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setPortalKey(key)}
+                          className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-2 py-1 font-mono text-xs text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+                        >
+                          {key}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </label>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <label>
                 <span className="block text-sm font-semibold text-[var(--text-primary)]">Payment provider</span>
                 <select
                   value={paymentProvider}
@@ -298,6 +348,7 @@ export default function PaymentLinkPage() {
                   ))}
                 </select>
               </label>
+              <div />
             </div>
 
             {customPackageRequested && (
@@ -365,13 +416,16 @@ export default function PaymentLinkPage() {
 
             <div className="grid gap-4 md:grid-cols-2">
               <label>
-                <span className="block text-sm font-semibold text-[var(--text-primary)]">Payment reference (optional)</span>
+                <span className="block text-sm font-semibold text-[var(--text-primary)]">Payment reference</span>
                 <input
                   value={paymentReference}
                   onChange={(e) => setPaymentReference(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
                   placeholder="invoice_123 / order_abc"
                 />
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  Required so repeated confirmations stay idempotent and create one purchase row per payment.
+                </p>
               </label>
 
               <label>

@@ -98,6 +98,70 @@ export const findActiveLeadgenIntent = query({
   },
 })
 
+export const resolveClientIdentityByBilling = query({
+  args: {
+    authSecret: v.string(),
+    billingEmail: v.string(),
+    companyName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+    const billingEmail = normalizeString(args.billingEmail)
+    const companyName = normalizeString(args.companyName)
+    if (!billingEmail || !companyName) {
+      return {
+        status: 'none' as const,
+        portalKeys: [] as string[],
+      }
+    }
+
+    const candidates = (await ctx.db
+      .query('leadgenIntents')
+      .withIndex('by_billingEmail', (q) => q.eq('billingEmail', billingEmail))
+      .collect()) as LeadgenIntentRecord[]
+
+    const exactCompanyMatches = candidates.filter((intent) => intent.companyName === companyName)
+    const scopedMatches = exactCompanyMatches.length > 0 ? exactCompanyMatches : candidates
+    const uniquePortalKeys = Array.from(
+      new Set(
+        scopedMatches
+          .map((intent) => normalizeString(intent.portalKey))
+          .filter((value): value is string => Boolean(value))
+      )
+    )
+
+    if (uniquePortalKeys.length === 0) {
+      return {
+        status: 'none' as const,
+        portalKeys: [] as string[],
+      }
+    }
+
+    if (uniquePortalKeys.length > 1) {
+      return {
+        status: 'ambiguous' as const,
+        portalKeys: uniquePortalKeys.sort(),
+      }
+    }
+
+    const [portalKey] = uniquePortalKeys
+    const latest = scopedMatches
+      .filter((intent) => intent.portalKey === portalKey)
+      .reduce((winner, current) => {
+        if (!winner) return current
+        return current.updatedAt > winner.updatedAt ? current : winner
+      }, null as LeadgenIntentRecord | null)
+
+    return {
+      status: 'unique' as const,
+      portalKey,
+      portalKeys: [portalKey],
+      latestIntentStatus: latest?.status || null,
+      latestIntentUpdatedAt: latest?.updatedAt || null,
+    }
+  },
+})
+
 export const createLeadgenIntent = mutation({
   args: {
     authSecret: v.string(),
