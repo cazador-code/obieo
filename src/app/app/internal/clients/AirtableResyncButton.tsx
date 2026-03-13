@@ -6,11 +6,40 @@ type Props = {
   portalKey: string
 }
 
+type LeadBackfillResponse = {
+  synced: boolean
+  reason?: 'not_configured' | 'client_not_found' | 'client_ambiguous' | 'fetch_failed' | 'convex_write_failed'
+  message?: string
+  totalLinkedLeadRows: number
+  scannedLeadRows: number
+  createdLeadEvents: number
+  duplicateLeadEvents: number
+  failedLeadEvents: number
+}
+
 type ResyncResponse = {
   success: boolean
   error?: string
   updatedFields?: string[]
   created?: boolean
+  leadBackfill?: LeadBackfillResponse
+}
+
+function humanizeLeadBackfillReason(reason: LeadBackfillResponse['reason']): string {
+  switch (reason) {
+    case 'not_configured':
+      return 'Airtable lead backfill is not configured.'
+    case 'client_not_found':
+      return 'Backfill could not find a matching Airtable client row.'
+    case 'client_ambiguous':
+      return 'Backfill matched multiple Airtable client rows.'
+    case 'fetch_failed':
+      return 'Backfill could not read Airtable rows.'
+    case 'convex_write_failed':
+      return 'Backfill could not write one or more leads into Convex.'
+    default:
+      return 'Airtable lead backfill failed.'
+  }
 }
 
 export default function AirtableResyncButton({ portalKey }: Props) {
@@ -36,10 +65,30 @@ export default function AirtableResyncButton({ portalKey }: Props) {
       }
 
       const count = Array.isArray(data.updatedFields) ? data.updatedFields.length : 0
+      const leadBackfill = data.leadBackfill
+      const leadSummary =
+        leadBackfill && leadBackfill.synced
+          ? ` Leads synced: +${leadBackfill.createdLeadEvents}, dupes ${leadBackfill.duplicateLeadEvents}, failed ${leadBackfill.failedLeadEvents}.`
+          : ''
+      const leadBackfillError =
+        leadBackfill && !leadBackfill.synced
+          ? leadBackfill.message || humanizeLeadBackfillReason(leadBackfill.reason)
+          : null
       if (data?.created) {
-        setNotice(count > 0 ? `Airtable row created (${count} fields).` : 'Airtable row created.')
+        setNotice(
+          count > 0
+            ? `Airtable row created (${count} fields).${leadSummary}`
+            : `Airtable row created.${leadSummary}`
+        )
       } else {
-        setNotice(count > 0 ? `Airtable synced (${count} fields).` : 'Airtable sync complete.')
+        setNotice(
+          count > 0
+            ? `Airtable synced (${count} fields).${leadSummary}`
+            : `Airtable sync complete.${leadSummary}`
+        )
+      }
+      if (leadBackfillError) {
+        setError(`Lead backfill warning: ${leadBackfillError}`)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not resync Airtable row.')

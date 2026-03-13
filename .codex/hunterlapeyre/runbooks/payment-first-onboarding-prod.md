@@ -77,6 +77,24 @@ Generate a Stripe Checkout link for a leadgen customer (paid-in-full or pay-per-
    - Customer accepts invite, signs in, completes onboarding form.
    - Customer lands on `/portal` and sees “Buy More Leads”.
 
+## Fast Triage: "Couldn't find your account" on onboarding
+- Symptoms:
+  - Internal clients shows `users: 0` and `pending invites > 0`
+  - Customer opens onboarding and lands on Clerk `Sign in`
+  - Clerk shows `Couldn't find your account.`
+- Meaning:
+  - This usually means account creation never completed yet. It is not evidence that the email address format is wrong.
+- Check the URL first:
+  - If the customer is opening plain `/onboarding?token=...`, that is a setup/resume link, not guaranteed account creation by itself.
+  - If the browser lands on plain `/sign-in?redirect_url=/onboarding...`, they are in generic auth, not invite acceptance.
+  - If an invite link originally included a Clerk ticket but the app stripped it during redirect, the user will also end up in generic auth.
+- Production fix status:
+  - Merge commit `157b41d` on `main` preserves Clerk ticket params during onboarding auth handoff and routes invite-ticket flows to `sign-up` instead of dead-end `sign-in`.
+- Operator action:
+  - Make sure production includes `157b41d` (or later).
+  - Resend the invite after deploy so the customer uses the newest flow.
+  - Tell the customer to use the newest invite email/link, not a manually copied onboarding URL.
+
 ## Verification
 - Stripe
   - Events: `checkout.session.completed` shows webhook delivery **200 OK** to `https://www.obieo.com/api/webhooks/stripe`.
