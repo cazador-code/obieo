@@ -56,6 +56,49 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
 - E2E:
 
 ## Session Notes (append, newest first)
+### 2026-03-13 (SMS runner PR merge + branch closeout)
+- What we did:
+  - Merged PR #13 for the local-first SMS campaign runner into `main` after CodeRabbit follow-up fixes, green local proof, and green Vercel.
+  - Retargeted the PR from `codex/airtable-backfill-and-sms-tooling` to `main`, confirmed the diff stayed limited to the SMS runner slice, then merged it.
+  - Performed full branch cleanup: switched to `main`, fast-forward pulled latest `origin/main`, deleted local and remote `codex/sms-runner-operator-hardening`, and confirmed repo state is clean.
+  - Ran mandatory analyzers and deterministic gate on the final clean tree:
+    - security-reviewer: `status=pass`, `summary=No scoped code changes found for security review.`, `findings=0`, `counts(high/medium/low)=0/0/0`, `scope(mode)=none`
+    - code-simplifier: `status=pass`, `summary=No scoped code changes found.`, `findings=0`, `counts(major/medium/minor)=0/0/0`, `scope(mode)=none`
+    - deterministic gate: `npm run verify` `pass`
+- Commands used:
+  - `npm run typecheck`
+  - `npm run lint`
+  - `node_modules/.bin/tsx scripts/test_sms_campaign_runner.ts`
+  - `gh pr edit 13 --base main`
+  - `gh pr view 13 --json number,title,url,state,baseRefName,headRefName,isDraft,mergeable,mergeStateStatus`
+  - `gh pr checks 13`
+  - `npx vercel ls obieo`
+  - `npx vercel inspect obieo-git-codex-sms-runner-operat-c01ec4-cazador-codes-projects.vercel.app`
+  - `gh pr merge 13 --merge`
+  - `git checkout main`
+  - `git pull origin main`
+  - `git branch -d codex/sms-runner-operator-hardening`
+  - `git push origin --delete codex/sms-runner-operator-hardening`
+  - `python3 "$HOME/.codex/skills/security-reviewer/scripts/run_security_review.py" --repo "$PWD" --pretty`
+  - `python3 "$HOME/.codex/skills/code-simplifier/scripts/run_code_simplifier.py" --repo "$PWD" --pretty`
+  - `npm run verify`
+  - `git status --short`
+  - `git rev-parse --abbrev-ref --symbolic-full-name @{u}`
+  - `git rev-list --left-right --count HEAD...@{u}`
+  - `git stash list`
+- Patterns discovered:
+  - The safest merge path for stacked branch work is: retarget PR to `main` first, re-check the exact `origin/main...HEAD` file list, then wait for GitHub status contexts to catch up before merging.
+  - Vercel can be `Ready` before GitHub flips the PR check to `pass`; use `npx vercel inspect <preview-url>` to distinguish status-sync lag from a real deploy failure.
+  - Final branch closeout is fastest when done in this fixed order: merge confirmation -> `main` checkout -> pull -> branch delete local -> branch delete remote -> sync/stash proof.
+- Gotchas:
+  - Some git operations touching `.git/index.lock` required escalated permissions in this environment even on a clean tree.
+  - `gh pr checks` can still show Vercel `pending` briefly after Vercel itself reports the deployment `Ready`.
+  - Unrelated work can remain safely parked in stash during PR cleanup; current preserved stash is `stash@{0}: post-sms-runner-commit-unrelated-changes-2026-03-13`.
+- Next-time start:
+  - Start merge closeout with `git status --short`, `gh pr view <n> --json baseRefName,headRefName,mergeable,mergeStateStatus`, and `git diff --name-only origin/main...HEAD`.
+  - If Vercel looks stuck, check `npx vercel inspect <preview-url>` before assuming the PR is actually blocked.
+  - After merge, confirm repo safety with `git branch --show-current`, `git status --short`, `git rev-list --left-right --count HEAD...@{u}`, and `git stash list`.
+
 ### 2026-03-04 (closure pass after cleanup + push)
 - What we did:
   - Committed and pushed SOP hardening updates for GHL preflight and name-casing safeguards to `main` (`7e840f8`).
