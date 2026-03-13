@@ -134,15 +134,23 @@ def detect_clean_columns(
     if not require_clean:
         return None, None
 
+    # When --require-clean is enabled, fail fast if screening columns are missing.
+    # Silently continuing would produce misleading "clean" outputs.
     try:
         line_type_column = detect_column(fieldnames, None, COMMON_LINE_TYPE_COLUMNS, "candidate line type")
-    except ValueError:
-        line_type_column = None
+    except ValueError as exc:
+        raise ValueError(
+            "--require-clean requires a line-type column (expected one of "
+            f"{COMMON_LINE_TYPE_COLUMNS}). {exc}"
+        ) from exc
 
     try:
         dnc_type_column = detect_column(fieldnames, None, COMMON_DNC_TYPE_COLUMNS, "candidate DNC type")
-    except ValueError:
-        dnc_type_column = None
+    except ValueError as exc:
+        raise ValueError(
+            "--require-clean requires a DNC-type column (expected one of "
+            f"{COMMON_DNC_TYPE_COLUMNS}). {exc}"
+        ) from exc
 
     return line_type_column, dnc_type_column
 

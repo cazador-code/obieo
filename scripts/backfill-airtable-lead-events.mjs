@@ -15,6 +15,7 @@ const DEFAULT_LEAD_SHEET_NAME_FIELD_ID = 'fldky20wCEiA9whfa'
 const DEFAULT_LEAD_SHEET_TIMESTAMP_FIELD_ID = 'fldNalvQg96GHhtOg'
 const DEFAULT_LEAD_SHEET_STATUS_FIELD_ID = 'fldaKVkT2R2RYIT7y'
 const AIRTABLE_LIST_MAX_PAGES = 200
+const ALLOWED_DELIVERY_STATUSES = new Set(['delivered', 'completed'])
 
 function readCliArgs() {
   const out = {
@@ -105,7 +106,16 @@ function toUnixTimestampMs(value) {
     const parsedDate = Date.parse(value)
     if (!Number.isNaN(parsedDate)) return parsedDate
   }
-  return Date.now()
+  return undefined
+}
+
+function normalizeStatus(value) {
+  return cleanString(value).toLowerCase()
+}
+
+function isAllowedDeliveryStatus(value) {
+  if (!value) return false
+  return ALLOWED_DELIVERY_STATUSES.has(normalizeStatus(value))
 }
 
 function parsePortalMap(raw) {
@@ -282,6 +292,7 @@ async function main() {
     let created = 0
     let duplicates = 0
     let failed = 0
+    let skipped = 0
 
     for (const leadId of linkedLeadIds) {
       const lead = leadRowMap.get(leadId)
@@ -289,22 +300,55 @@ async function main() {
         failed += 1
         continue
       }
+      const sourceExternalId = `airtable:lead-sheet:${leadId}`
 
-      const result = await convex.mutation(api.leadLedger.recordLeadDelivery, {
-        authSecret: convexAuthSecret,
-        portalKey,
-        sourceExternalId: `airtable:lead-sheet:${leadId}`,
-        idempotencyKey: `airtable:lead-sheet:${leadId}`,
-        deliveredAt: lead.deliveredAt,
-        quantity: 1,
-        source: 'airtable_backfill',
-        name: lead.leadName,
-      })
+      if (!isAllowedDeliveryStatus(lead.status)) {
+        skipped += 1
+        console.info('Skipping Airtable lead row due to non-delivered status.', {
+          portalKey,
+          leadId,
+          sourceExternalId,
+          status: lead.status || 'missing',
+        })
+        continue
+      }
 
-      if (result?.duplicate) {
-        duplicates += 1
-      } else {
-        created += 1
+      if (typeof lead.deliveredAt !== 'number' || !Number.isFinite(lead.deliveredAt)) {
+        failed += 1
+        console.error('Skipping Airtable lead row due to invalid deliveredAt timestamp.', {
+          portalKey,
+          leadId,
+          sourceExternalId,
+          status: lead.status || 'missing',
+        })
+        continue
+      }
+
+      try {
+        const result = await convex.mutation(api.leadLedger.recordLeadDelivery, {
+          authSecret: convexAuthSecret,
+          portalKey,
+          sourceExternalId,
+          idempotencyKey: sourceExternalId,
+          deliveredAt: lead.deliveredAt,
+          quantity: 1,
+          source: 'airtable_backfill',
+          name: lead.leadName,
+        })
+
+        if (result?.duplicate) {
+          duplicates += 1
+        } else {
+          created += 1
+        }
+      } catch (error) {
+        failed += 1
+        console.error('Convex mutation failed while recording Airtable lead row.', {
+          portalKey,
+          leadId,
+          sourceExternalId,
+          error: error instanceof Error ? error.message : String(error),
+        })
       }
     }
 
@@ -315,6 +359,7 @@ async function main() {
       created,
       duplicates,
       failed,
+      skipped,
     })
   }
 

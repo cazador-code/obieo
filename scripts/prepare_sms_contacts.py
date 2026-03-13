@@ -48,7 +48,10 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Write separate chunk files for each ZIP code",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.chunk_size <= 0:
+        parser.error("--chunk-size must be a positive integer greater than 0.")
+    return args
 
 
 def detect_column(fieldnames: list[str], options: tuple[str, ...], label: str) -> str:

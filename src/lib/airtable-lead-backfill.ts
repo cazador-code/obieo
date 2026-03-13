@@ -11,6 +11,7 @@ const DEFAULT_LEAD_SHEET_NAME_FIELD_ID = 'fldky20wCEiA9whfa'
 const DEFAULT_LEAD_SHEET_TIMESTAMP_FIELD_ID = 'fldNalvQg96GHhtOg'
 const DEFAULT_LEAD_SHEET_STATUS_FIELD_ID = 'fldaKVkT2R2RYIT7y'
 const AIRTABLE_LIST_MAX_PAGES = 200
+const ALLOWED_DELIVERY_STATUSES = new Set(['delivered', 'completed'])
 
 type AirtableConfig = {
   token: string
@@ -36,7 +37,7 @@ type AirtableLeadRow = {
   id: string
   leadName?: string
   status?: string
-  deliveredAt: number
+  deliveredAt?: number
 }
 
 export type AirtableLeadBackfillResult = {
@@ -137,7 +138,7 @@ function getLinkedRecordIds(value: unknown): string[] {
   return value.map((entry) => cleanString(entry)).filter(Boolean)
 }
 
-function toUnixTimestampMs(value: unknown): number {
+function toUnixTimestampMs(value: unknown): number | undefined {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value > 1_000_000_000_000 ? Math.floor(value) : Math.floor(value * 1000)
   }
@@ -151,7 +152,16 @@ function toUnixTimestampMs(value: unknown): number {
     if (!Number.isNaN(parsedDate)) return parsedDate
   }
 
-  return Date.now()
+  return undefined
+}
+
+function normalizeStatus(value: unknown): string {
+  return cleanString(value).toLowerCase()
+}
+
+function isAllowedDeliveryStatus(status: string | undefined): boolean {
+  if (!status) return false
+  return ALLOWED_DELIVERY_STATUSES.has(normalizeStatus(status))
 }
 
 async function listAirtableClientRows(config: AirtableConfig): Promise<AirtableClientRow[]> {
@@ -371,15 +381,49 @@ export async function backfillPortalLeadHistoryFromAirtable(input: {
   let failedLeadEvents = 0
 
   for (const leadRow of leadRows) {
-    const convexResult = await recordLeadDeliveryInConvex({
-      portalKey: input.portalKey,
-      sourceExternalId: `airtable:lead-sheet:${leadRow.id}`,
-      idempotencyKey: `airtable:lead-sheet:${leadRow.id}`,
-      deliveredAt: leadRow.deliveredAt,
-      quantity: 1,
-      source: 'airtable_backfill',
-      name: leadRow.leadName,
-    })
+    const sourceExternalId = `airtable:lead-sheet:${leadRow.id}`
+    if (!isAllowedDeliveryStatus(leadRow.status)) {
+      console.info('Skipping Airtable lead row during backfill due to non-delivered status.', {
+        portalKey: input.portalKey,
+        leadId: leadRow.id,
+        sourceExternalId,
+        status: leadRow.status || 'missing',
+      })
+      continue
+    }
+
+    if (typeof leadRow.deliveredAt !== 'number' || !Number.isFinite(leadRow.deliveredAt)) {
+      console.error('Skipping Airtable lead row during backfill due to invalid deliveredAt timestamp.', {
+        portalKey: input.portalKey,
+        leadId: leadRow.id,
+        sourceExternalId,
+        rawStatus: leadRow.status || 'missing',
+      })
+      failedLeadEvents += 1
+      continue
+    }
+
+    let convexResult
+    try {
+      convexResult = await recordLeadDeliveryInConvex({
+        portalKey: input.portalKey,
+        sourceExternalId,
+        idempotencyKey: sourceExternalId,
+        deliveredAt: leadRow.deliveredAt,
+        quantity: 1,
+        source: 'airtable_backfill',
+        name: leadRow.leadName,
+      })
+    } catch (error) {
+      console.error('Failed to record Airtable lead row during backfill.', {
+        portalKey: input.portalKey,
+        leadId: leadRow.id,
+        sourceExternalId,
+        error,
+      })
+      failedLeadEvents += 1
+      continue
+    }
 
     if (!convexResult) {
       failedLeadEvents += 1

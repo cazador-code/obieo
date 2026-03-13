@@ -24,17 +24,21 @@ Build client outreach lists from the DealMachine master export, remove any phone
    - Run `scripts/dedupe_sms_candidates.py` against the raw candidate CSV.
    - Pass each prior client GHL-ready CSV with repeated `--history`.
    - For older GHL exports, pass `--history-phone-column "Phone Number"` explicitly.
-3. Format delivery files:
+3. Run mandatory compliance scrub before formatting:
+   - Run Landline Remover and DNC screening on the deduped candidate file.
+   - Do not proceed to final formatting until this scrub is complete and approved.
+   - Record the scrub output artifact path(s), counts removed, and operator approval in the delivery notes.
+4. Format delivery files:
    - Convert names to Proper Case.
    - Split address into street, city, state, and zip.
    - Use the minimal final schema: `First Name`, `Last Name`, `Phone Number`, `Street Address`, `City`, `State`, `Zip Code`.
    - Group rows by ZIP first, then chunk oversized ZIPs into 5,000-contact parts.
-4. Build operator-friendly folder structure:
+5. Build operator-friendly folder structure:
    - `00_README.txt`
    - `01_final_5000_contact_lists/`
    - `02_source_and_reports/`
    - Include ZIP summary and file summary reports.
-5. If replacing an already-delivered folder:
+6. If replacing an already-delivered folder:
    - Rename the older folder to a sibling backup path first.
    - Move the rebuilt ZIP-only folder into place only after verification passes.
 
