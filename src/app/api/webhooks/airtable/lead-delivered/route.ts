@@ -21,10 +21,6 @@ interface AirtableLeadDeliveredPayload {
   portal_key?: string
   clientKey?: string
   client_key?: string
-  businessName?: string
-  business_name?: string
-  clientCompany?: string
-  client_company?: string
   quantity?: number
   deliveredAt?: string | number
   source?: string
@@ -48,12 +44,6 @@ function normalizeString(value: unknown): string | null {
   if (typeof value !== 'string') return null
   const cleaned = value.trim()
   return cleaned || null
-}
-
-function normalizeLookupKey(value: string | null): string | null {
-  if (!value) return null
-  const key = value.trim().toLowerCase()
-  return key || null
 }
 
 function toUnixTimestampMs(value: unknown): number {
@@ -83,28 +73,6 @@ function normalizePositiveInteger(value: unknown, fallback: number): number {
 
 function hashPayload(payload: AirtableLeadDeliveredPayload): string {
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex')
-}
-
-function parsePortalMapFromEnv(): Record<string, string> {
-  const raw = process.env.AIRTABLE_PORTAL_KEY_MAP_JSON
-  if (!raw?.trim()) return {}
-
-  try {
-    const parsed = JSON.parse(raw) as unknown
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
-
-    const output: Record<string, string> = {}
-    for (const [rawKey, rawValue] of Object.entries(parsed as Record<string, unknown>)) {
-      const key = normalizeLookupKey(rawKey)
-      const value = normalizeString(rawValue)
-      if (!key || !value) continue
-      output[key] = value
-    }
-    return output
-  } catch (error) {
-    console.error('Invalid AIRTABLE_PORTAL_KEY_MAP_JSON:', error)
-    return {}
-  }
 }
 
 function resolveIdempotencyKey(payload: AirtableLeadDeliveredPayload): string {
@@ -164,26 +132,7 @@ function resolvePortalKey(payload: AirtableLeadDeliveredPayload): string | null 
   ]
     .map((value) => normalizeString(value))
     .find(Boolean)
-  if (direct) return direct
-
-  const lookupMap = parsePortalMapFromEnv()
-  if (Object.keys(lookupMap).length === 0) return null
-
-  const companyHints = [
-    payload.businessName,
-    payload.business_name,
-    payload.clientCompany,
-    payload.client_company,
-  ]
-
-  for (const hint of companyHints) {
-    const normalizedHint = normalizeLookupKey(normalizeString(hint))
-    if (!normalizedHint) continue
-    const mapped = lookupMap[normalizedHint]
-    if (mapped) return mapped
-  }
-
-  return null
+  return direct || null
 }
 
 export async function POST(request: NextRequest) {
@@ -217,7 +166,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: 'Unable to resolve portalKey',
         hint:
-          'Pass portalKey in payload, or configure AIRTABLE_PORTAL_KEY_MAP_JSON with {"business name":"portalKey"}.',
+          'Pass portalKey (or clientKey) in payload. Lead delivery now fails closed when stable client identity is missing.',
       },
       { status: 400 }
     )
@@ -277,13 +226,6 @@ export async function POST(request: NextRequest) {
     leadSheetLink = await linkLeadSheetRecordToClient({
       recordId: leadSheetRecordId,
       portalKey,
-      businessName:
-        normalizeString(payload.businessName) ||
-        normalizeString(payload.business_name) ||
-        normalizeString(payload.clientCompany) ||
-        normalizeString(payload.client_company) ||
-        undefined,
-      email: normalizeString(payload.email) || undefined,
     })
 
     if (!leadSheetLink.linked && leadSheetLink.reason !== 'client_not_found') {

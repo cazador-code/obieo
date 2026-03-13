@@ -2,6 +2,7 @@ import { mutation, query } from './_generated/server'
 import type { DatabaseReader, DatabaseWriter } from './_generated/server'
 import type { Doc, Id } from './_generated/dataModel'
 import { v } from 'convex/values'
+import { rollForwardPurchaseTotals } from '../src/lib/leadgen-repeat-purchase'
 
 type OrganizationRecord = Doc<'organizations'>
 type LeadEventRecord = Doc<'leadEvents'>
@@ -485,6 +486,7 @@ export const submitClientOnboarding = mutation({
       submissionId,
       organizationId,
       portalKey: args.portalKey,
+      organizationCreated: !existing,
     }
   },
 })
@@ -1021,6 +1023,16 @@ export const recordInvoiceEvent = mutation({
     assertAuthorized(args.authSecret)
     const organization = await getOrganizationByPortalKey(ctx, args.portalKey)
 
+    const prior = await ctx.db
+      .query('billingEvents')
+      .withIndex('by_portal_and_kind', (q) => q.eq('portalKey', args.portalKey).eq('kind', 'invoice'))
+      .filter((q) => q.eq(q.field('referenceId'), args.invoiceId))
+      .first()
+
+    if (prior) {
+      return { billingEventId: prior._id, alreadyRecorded: true }
+    }
+
     const billingEventId = await ctx.db.insert('billingEvents', {
       organizationId: organization?._id,
       portalKey: args.portalKey,
@@ -1034,7 +1046,190 @@ export const recordInvoiceEvent = mutation({
       }),
     })
 
-    return { billingEventId }
+    return { billingEventId, alreadyRecorded: false }
+  },
+})
+
+export const recordPurchaseEvent = mutation({
+  args: {
+    authSecret: v.string(),
+    portalKey: v.string(),
+    purchaseKey: v.string(),
+    kind: v.string(),
+    status: v.string(),
+    amountCents: v.optional(v.number()),
+    payloadJson: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+    const organization = await getOrganizationByPortalKey(ctx, args.portalKey)
+
+    const prior = await ctx.db
+      .query('billingEvents')
+      .withIndex('by_portal_and_kind', (q) => q.eq('portalKey', args.portalKey).eq('kind', args.kind))
+      .filter((q) => q.eq(q.field('referenceId'), args.purchaseKey))
+      .first()
+
+    if (prior) {
+      return { billingEventId: prior._id, alreadyRecorded: true }
+    }
+
+    const billingEventId = await ctx.db.insert('billingEvents', {
+      organizationId: organization?._id,
+      portalKey: args.portalKey,
+      kind: args.kind,
+      status: args.status,
+      referenceId: args.purchaseKey,
+      amountCents: args.amountCents,
+      createdAt: Date.now(),
+      payloadJson: args.payloadJson,
+    })
+
+    return { billingEventId, alreadyRecorded: false }
+  },
+})
+
+export const applyConfirmedPurchase = mutation({
+  args: {
+    authSecret: v.string(),
+    portalKey: v.string(),
+    purchaseKey: v.string(),
+    companyName: v.optional(v.string()),
+    billingModel: BILLING_MODEL_VALIDATION,
+    prepaidLeadCredits: v.optional(v.number()),
+    leadCommitmentTotal: v.optional(v.number()),
+    initialChargeCents: v.optional(v.number()),
+    leadChargeThreshold: v.number(),
+    leadUnitPriceCents: v.number(),
+    payloadJson: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+    const now = Date.now()
+
+    const existingOrganization = await getOrganizationByPortalKey(ctx, args.portalKey)
+    const prior = await ctx.db
+      .query('billingEvents')
+      .withIndex('by_portal_and_kind', (q) => q.eq('portalKey', args.portalKey).eq('kind', 'external_payment'))
+      .filter((q) => q.eq(q.field('referenceId'), args.purchaseKey))
+      .first()
+
+    if (prior) {
+      return {
+        alreadyApplied: true,
+        organizationCreated: false,
+        organizationId: existingOrganization?._id || null,
+        prepaidLeadCredits: existingOrganization?.prepaidLeadCredits ?? 0,
+        leadCommitmentTotal: existingOrganization?.leadCommitmentTotal ?? null,
+      }
+    }
+
+    const totals = rollForwardPurchaseTotals({
+      currentPrepaidLeadCredits: existingOrganization?.prepaidLeadCredits ?? 0,
+      currentLeadCommitmentTotal: existingOrganization?.leadCommitmentTotal ?? null,
+      purchasePrepaidLeadCredits: args.prepaidLeadCredits ?? 0,
+      purchaseLeadCommitmentTotal: args.leadCommitmentTotal ?? null,
+    })
+
+    let organizationId: Id<'organizations'>
+    let organizationCreated = false
+
+    if (existingOrganization) {
+      organizationId = existingOrganization._id
+      await ctx.db.patch(existingOrganization._id, {
+        ...(args.companyName !== undefined ? { name: args.companyName } : {}),
+        billingModel: args.billingModel,
+        prepaidLeadCredits: totals.nextPrepaidLeadCredits,
+        ...(totals.nextLeadCommitmentTotal !== null
+          ? { leadCommitmentTotal: totals.nextLeadCommitmentTotal }
+          : {}),
+        ...(args.initialChargeCents !== undefined ? { initialChargeCents: args.initialChargeCents } : {}),
+        leadChargeThreshold: Math.floor(args.leadChargeThreshold),
+        leadUnitPriceCents: Math.floor(args.leadUnitPriceCents),
+        isActive: true,
+        updatedAt: now,
+      })
+    } else {
+      organizationId = await ctx.db.insert('organizations', {
+        portalKey: args.portalKey,
+        ...(args.companyName !== undefined ? { name: args.companyName } : {}),
+        billingModel: args.billingModel,
+        prepaidLeadCredits: totals.nextPrepaidLeadCredits,
+        ...(totals.nextLeadCommitmentTotal !== null
+          ? { leadCommitmentTotal: totals.nextLeadCommitmentTotal }
+          : {}),
+        initialChargeCents: args.initialChargeCents,
+        leadChargeThreshold: Math.floor(args.leadChargeThreshold),
+        leadUnitPriceCents: Math.floor(args.leadUnitPriceCents),
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      })
+      organizationCreated = true
+    }
+
+    await ctx.db.insert('billingEvents', {
+      organizationId,
+      portalKey: args.portalKey,
+      kind: 'external_payment',
+      status: 'confirmed',
+      referenceId: args.purchaseKey,
+      amountCents: args.initialChargeCents,
+      createdAt: now,
+      payloadJson: JSON.stringify({
+        billingModel: args.billingModel,
+        ...(args.payloadJson ? { requestPayloadJson: args.payloadJson } : {}),
+        prepaidBefore: totals.currentPrepaidLeadCredits,
+        prepaidPurchased: totals.purchasePrepaidLeadCredits,
+        prepaidAfter: totals.nextPrepaidLeadCredits,
+        commitmentBefore: totals.currentLeadCommitmentTotal,
+        commitmentPurchased: totals.purchaseLeadCommitmentTotal,
+        commitmentAfter: totals.nextLeadCommitmentTotal,
+      }),
+    })
+
+    return {
+      alreadyApplied: false,
+      organizationCreated,
+      organizationId,
+      prepaidLeadCredits: totals.nextPrepaidLeadCredits,
+      leadCommitmentTotal: totals.nextLeadCommitmentTotal,
+    }
+  },
+})
+
+export const queueLeadgenManualReview = mutation({
+  args: {
+    authSecret: v.string(),
+    paymentEventId: v.string(),
+    portalKey: v.optional(v.string()),
+    companyName: v.optional(v.string()),
+    billingEmail: v.optional(v.string()),
+    reason: v.string(),
+    details: v.string(),
+    payloadJson: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    assertAuthorized(args.authSecret)
+    const organization = args.portalKey ? await getOrganizationByPortalKey(ctx, args.portalKey) : null
+
+    await queueEmailNotifications(ctx, {
+      organizationId: organization?._id,
+      portalKey: args.portalKey,
+      kind: 'leadgen_manual_review_required',
+      subject: `Leadgen manual review required: ${args.companyName || args.billingEmail || args.paymentEventId}`,
+      body: args.details,
+      payload: {
+        paymentEventId: args.paymentEventId,
+        portalKey: args.portalKey,
+        companyName: args.companyName,
+        billingEmail: args.billingEmail,
+        reason: args.reason,
+        payloadJson: args.payloadJson,
+      },
+    })
+
+    return { queued: true }
   },
 })
 

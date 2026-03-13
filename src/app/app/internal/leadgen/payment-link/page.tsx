@@ -116,6 +116,7 @@ export default function PaymentLinkPage() {
   const [companyName, setCompanyName] = useState('')
   const [billingEmail, setBillingEmail] = useState('')
   const [billingName, setBillingName] = useState('')
+  const [portalKey, setPortalKey] = useState('')
   const [customIncludedLeads, setCustomIncludedLeads] = useState('')
   const [customTotalCommitmentLeads, setCustomTotalCommitmentLeads] = useState('')
   const [customAmountCollected, setCustomAmountCollected] = useState('')
@@ -147,7 +148,12 @@ export default function PaymentLinkPage() {
   )
 
   const canSubmit = useMemo(() => {
-    const hasCoreFields = Boolean(cleanString(companyName) && isValidEmail(cleanString(billingEmail)) && billingSelection)
+    const hasCoreFields = Boolean(
+      cleanString(companyName) &&
+        isValidEmail(cleanString(billingEmail)) &&
+        cleanString(paymentReference) &&
+        billingSelection
+    )
     if (!hasCoreFields) return false
     if (!customPackageRequested) return true
     return customPackageHasRequiredValues && customPackageHasValidCommitment
@@ -155,6 +161,7 @@ export default function PaymentLinkPage() {
     billingSelection,
     companyName,
     billingEmail,
+    paymentReference,
     customPackageHasRequiredValues,
     customPackageHasValidCommitment,
     customPackageRequested,
@@ -189,6 +196,7 @@ export default function PaymentLinkPage() {
           companyName,
           billingEmail,
           billingName: billingName || undefined,
+          portalKey: portalKey || undefined,
           paymentProvider,
           paymentReference: paymentReference || undefined,
           source: source || undefined,
@@ -285,6 +293,24 @@ export default function PaymentLinkPage() {
               </label>
 
               <label>
+                <span className="block text-sm font-semibold text-[var(--text-primary)]">
+                  Existing portal key (optional)
+                </span>
+                <input
+                  value={portalKey}
+                  onChange={(e) => setPortalKey(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 font-mono text-sm"
+                  placeholder="Use for re-ups / ambiguous matches"
+                />
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  Leave blank for brand-new clients. Fill this in for repeat purchases when you know the existing client
+                  key.
+                </p>
+              </label>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <label>
                 <span className="block text-sm font-semibold text-[var(--text-primary)]">Payment provider</span>
                 <select
                   value={paymentProvider}
@@ -298,6 +324,7 @@ export default function PaymentLinkPage() {
                   ))}
                 </select>
               </label>
+              <div />
             </div>
 
             {customPackageRequested && (
@@ -365,13 +392,16 @@ export default function PaymentLinkPage() {
 
             <div className="grid gap-4 md:grid-cols-2">
               <label>
-                <span className="block text-sm font-semibold text-[var(--text-primary)]">Payment reference (optional)</span>
+                <span className="block text-sm font-semibold text-[var(--text-primary)]">Payment reference</span>
                 <input
                   value={paymentReference}
                   onChange={(e) => setPaymentReference(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3"
                   placeholder="invoice_123 / order_abc"
                 />
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  Required so repeated confirmations stay idempotent and create one purchase row per payment.
+                </p>
               </label>
 
               <label>

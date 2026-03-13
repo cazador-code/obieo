@@ -17,6 +17,7 @@ const DEFAULT_CLIENT_BUSINESS_PHONE_FIELD_ID = 'fldVR1hy8BTi9OrKz'
 const DEFAULT_CLIENT_NOTIFICATION_PHONE_FIELD_ID = 'fld2najORzjs3zdKE'
 const DEFAULT_CLIENT_NOTIFICATION_EMAIL_FIELD_ID = 'fldy7AUYFxf3vB1tL'
 const DEFAULT_CLIENT_PROSPECT_EMAIL_FIELD_ID = 'fldN6PVrSXozaE2JM'
+const DEFAULT_CLIENT_USER_ID_FIELD_ID = 'fld4AuvIhp4xjPgNM'
 const DEFAULT_ACTIVE_STATUS_NAMES = ['3. Ready to Launch', '4. Launched']
 const AIRTABLE_LIST_MAX_PAGES = 200
 
@@ -29,6 +30,7 @@ type AirtableClientRecord = {
   id: string
   businessNameRaw: string
   businessNameNormalized: string
+  clientUserId: string
   statusRaw: string
   statusNormalized: string
   targetZipCodes: string[]
@@ -75,6 +77,7 @@ type AirtableConfig = {
   notificationPhoneFieldId: string
   notificationEmailFieldId: string
   prospectEmailFieldId: string
+  userIdFieldId: string
   activeStatusNames: Set<string>
 }
 
@@ -113,28 +116,6 @@ function parseZipCodes(value: unknown): string[] {
     output.push(part)
   }
   return output
-}
-
-function parsePortalKeyMap(): Record<string, string> {
-  const raw = process.env.AIRTABLE_PORTAL_KEY_MAP_JSON
-  if (!raw || !raw.trim()) return {}
-
-  try {
-    const parsed = JSON.parse(raw) as unknown
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
-
-    const out: Record<string, string> = {}
-    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
-      const businessName = normalizeName(cleanString(key))
-      const portalKey = cleanString(value)
-      if (!businessName || !portalKey) continue
-      out[businessName] = portalKey
-    }
-    return out
-  } catch (error) {
-    console.error('Invalid AIRTABLE_PORTAL_KEY_MAP_JSON:', error)
-    return {}
-  }
 }
 
 function getMappedBusinessNameForPortalKey(portalKey: string): string | undefined {
@@ -208,6 +189,8 @@ function getAirtableConfig(): AirtableConfig | null {
     process.env.AIRTABLE_CLIENT_NOTIFICATION_EMAIL_FIELD_ID?.trim() || DEFAULT_CLIENT_NOTIFICATION_EMAIL_FIELD_ID
   const prospectEmailFieldId =
     process.env.AIRTABLE_CLIENT_PROSPECT_EMAIL_FIELD_ID?.trim() || DEFAULT_CLIENT_PROSPECT_EMAIL_FIELD_ID
+  const userIdFieldId =
+    process.env.AIRTABLE_CLIENT_USER_ID_FIELD_ID?.trim() || DEFAULT_CLIENT_USER_ID_FIELD_ID
 
   if (
     !baseId ||
@@ -224,7 +207,8 @@ function getAirtableConfig(): AirtableConfig | null {
     !businessPhoneFieldId ||
     !notificationPhoneFieldId ||
     !notificationEmailFieldId ||
-    !prospectEmailFieldId
+    !prospectEmailFieldId ||
+    !userIdFieldId
   ) {
     return null
   }
@@ -246,6 +230,7 @@ function getAirtableConfig(): AirtableConfig | null {
     notificationPhoneFieldId,
     notificationEmailFieldId,
     prospectEmailFieldId,
+    userIdFieldId,
     activeStatusNames: getActiveStatusNames(),
   }
 }
@@ -302,6 +287,7 @@ async function listAirtableClientRecords(config: AirtableConfig): Promise<Airtab
     for (const record of records) {
       const fieldsMap = record.fields || {}
       const businessNameRaw = cleanString(fieldsMap[config.nameFieldId])
+      const clientUserId = cleanString(fieldsMap[config.userIdFieldId])
       const statusRaw = getSingleSelectName(fieldsMap[config.statusFieldId])
       const targetZipCodes = parseZipCodes(fieldsMap[config.targetZipFieldId])
 
@@ -309,6 +295,7 @@ async function listAirtableClientRecords(config: AirtableConfig): Promise<Airtab
         id: record.id,
         businessNameRaw,
         businessNameNormalized: normalizeName(businessNameRaw),
+        clientUserId,
         statusRaw,
         statusNormalized: normalizeStatus(statusRaw),
         targetZipCodes,
@@ -322,30 +309,13 @@ async function listAirtableClientRecords(config: AirtableConfig): Promise<Airtab
   return results
 }
 
-function getBusinessNameCandidates(portalKey: string, organizationName?: string): Set<string> {
-  const candidates = new Set<string>()
-  const normalizedPortalKey = portalKey.trim()
-  const portalMap = parsePortalKeyMap()
-  for (const [businessName, mappedPortalKey] of Object.entries(portalMap)) {
-    if (mappedPortalKey.trim() === normalizedPortalKey) {
-      candidates.add(businessName)
-    }
-  }
-
-  const orgName = normalizeName(cleanString(organizationName))
-  if (orgName) candidates.add(orgName)
-
-  return candidates
-}
-
 function findMatchingClientRecords(
   rows: AirtableClientRecord[],
-  portalKey: string,
-  organizationName?: string
+  portalKey: string
 ): AirtableClientRecord[] {
-  const candidates = getBusinessNameCandidates(portalKey, organizationName)
-  if (candidates.size === 0) return []
-  return rows.filter((row) => row.businessNameNormalized && candidates.has(row.businessNameNormalized))
+  const normalizedPortalKey = cleanString(portalKey)
+  if (!normalizedPortalKey) return []
+  return rows.filter((row) => row.clientUserId === normalizedPortalKey)
 }
 
 function normalizePhoneList(values: string[] | null | undefined): string[] {
@@ -378,6 +348,9 @@ function buildFieldUpdates(
     fieldUpdates[config.nameFieldId] = cleanString(input.businessName) || null
     updatedFields.push(config.nameFieldId)
   }
+
+  fieldUpdates[config.userIdFieldId] = cleanString(input.portalKey) || null
+  updatedFields.push(config.userIdFieldId)
 
   if (hasOwn(input, 'contractorName')) {
     fieldUpdates[config.contractorNameFieldId] = cleanString(input.contractorName) || null
@@ -533,7 +506,7 @@ export async function checkAirtableZipConflictsForApproval(input: {
     }
   }
 
-  const selfRows = findMatchingClientRecords(rows, input.portalKey, input.organizationName)
+  const selfRows = findMatchingClientRecords(rows, input.portalKey)
   const selfRecordIdSet = new Set(selfRows.map((row) => row.id))
   const requestedZipSet = new Set(requestedAddZipCodes)
   const conflicts: ZipConflictRow[] = []
@@ -610,7 +583,7 @@ export async function syncPortalProfileToAirtable(input: {
     }
   }
 
-  const matches = findMatchingClientRecords(rows, input.portalKey, input.organizationName)
+  const matches = findMatchingClientRecords(rows, input.portalKey)
   const {
     fieldUpdates,
     updatedFields,
@@ -622,8 +595,7 @@ export async function syncPortalProfileToAirtable(input: {
       return {
         synced: false,
         reason: 'client_not_found',
-        message:
-          'Could not find matching Airtable client row. Add or fix AIRTABLE_PORTAL_KEY_MAP_JSON for this portal key.',
+        message: 'Could not find an Airtable client row with an exact matching User ID.',
       }
     }
 
@@ -667,7 +639,7 @@ export async function syncPortalProfileToAirtable(input: {
     return {
       synced: false,
       reason: 'client_ambiguous',
-      message: 'Found multiple Airtable client rows for this portal key. Narrow AIRTABLE_PORTAL_KEY_MAP_JSON.',
+      message: 'Found multiple Airtable client rows with the same exact User ID.',
     }
   }
 

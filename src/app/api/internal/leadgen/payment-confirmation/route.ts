@@ -3,11 +3,16 @@ import crypto from 'crypto'
 import { auditLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 import { getBillingModelDefaults, normalizeBillingModel } from '@/lib/billing-models'
 import {
+  applyConfirmedPurchaseInConvex,
   createLeadgenIntentInConvex,
   findActiveLeadgenIntentInConvex,
+  getLeadgenIntentByPortalKeyInConvex,
+  getOrganizationSnapshotInConvex,
   markLeadgenPaidInConvex,
-  upsertOrganizationInConvex,
+  queueLeadgenManualReviewInConvex,
+  resolveClientIdentityByBillingInConvex,
 } from '@/lib/convex'
+import { resolveLeadgenClientDecision } from '@/lib/leadgen-repeat-purchase'
 import { activateCustomer } from '@/lib/stripe-activation'
 
 export const runtime = 'nodejs'
@@ -145,6 +150,10 @@ function getAppBaseUrl(): string {
   return process.env.NEXT_PUBLIC_APP_URL?.trim() || process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'http://localhost:3000'
 }
 
+function logPaymentConfirmation(event: string, details: Record<string, unknown>) {
+  console.info(`[leadgen-payment-confirmation] ${event}`, details)
+}
+
 export async function POST(request: NextRequest) {
   try {
     const authResponse = requireBasicAuthInProd(request)
@@ -177,6 +186,7 @@ export async function POST(request: NextRequest) {
     const billingModel = normalizeBillingModel(body.billingModel)
     const paymentProvider = getPaymentProvider(body.paymentProvider)
     const paymentReference = cleanString(body.paymentReference)
+    const requestedPortalKey = cleanString(body.portalKey)
     const forceResendInvitation = body.forceResendInvitation === true
     const leadUnitPriceCentsInput = normalizePositiveInt(body.leadUnitPriceCents, 4000)
     const prepaidLeadCreditsOverride = normalizeOptionalPositiveInt(body.prepaidLeadCredits)
@@ -201,22 +211,131 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const existing = await findActiveLeadgenIntentInConvex({ billingEmail, companyName })
-    if (existing && existing.billingModel && existing.billingModel !== billingModel) {
+    if (!paymentReference) {
       return NextResponse.json(
         {
           success: false,
-          error: `Existing leadgen intent already exists for this billing email/company with billingModel=${existing.billingModel}.`,
+          error: 'paymentReference is required so payment confirmations stay idempotent.',
+        },
+        { status: 400 }
+      )
+    }
+
+    const purchaseKey = `${paymentProvider}:${paymentReference}`
+    const activeIntent = await findActiveLeadgenIntentInConvex({ billingEmail, companyName })
+    const billingIdentity = await resolveClientIdentityByBillingInConvex({ billingEmail, companyName })
+    const clientDecision = resolveLeadgenClientDecision({
+      requestedPortalKey,
+      activeIntentPortalKey: activeIntent?.portalKey || null,
+      billingIdentity,
+    })
+
+    logPaymentConfirmation('received', {
+      paymentEventId: purchaseKey,
+      requestedPortalKey,
+      billingEmail,
+      companyName,
+      activeIntentPortalKey: activeIntent?.portalKey || null,
+      billingIdentityStatus: billingIdentity.status,
+      billingIdentityPortalKeys: billingIdentity.portalKeys,
+      clientDecision: clientDecision.kind,
+    })
+
+    if (clientDecision.kind === 'manual_review') {
+      await queueLeadgenManualReviewInConvex({
+        paymentEventId: purchaseKey,
+        portalKey: requestedPortalKey || undefined,
+        companyName,
+        billingEmail,
+        reason: clientDecision.reason,
+        details: clientDecision.message,
+        payloadJson: JSON.stringify({
+          companyName,
+          billingEmail,
+          billingModel,
+          paymentProvider,
+          paymentReference,
+          requestedPortalKey,
+          billingIdentity,
+        }),
+      })
+
+      logPaymentConfirmation('manual_review_required', {
+        paymentEventId: purchaseKey,
+        reason: clientDecision.reason,
+        candidatePortalKeys: clientDecision.candidatePortalKeys,
+      })
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: clientDecision.message,
+          manualReviewRequired: true,
+          candidatePortalKeys: clientDecision.candidatePortalKeys,
         },
         { status: 409 }
       )
     }
 
-    const portalKey = existing?.portalKey || generatePortalKey(companyName, cleanString(body.portalKey))
-    const token = existing?.token || generateToken()
-    const tokenExpiresAt = existing?.tokenExpiresAt || Date.now() + 30 * 24 * 60 * 60 * 1000
+    const portalKey =
+      clientDecision.kind === 'reuse_existing'
+        ? clientDecision.portalKey
+        : generatePortalKey(companyName)
 
-    if (!existing) {
+    const portalIntent =
+      activeIntent?.portalKey === portalKey
+        ? activeIntent
+        : await getLeadgenIntentByPortalKeyInConvex({ portalKey })
+    const existingOrganization =
+      clientDecision.kind === 'reuse_existing' && clientDecision.source === 'requested_portal_key'
+        ? await getOrganizationSnapshotInConvex({ portalKey })
+        : null
+
+    if (
+      clientDecision.kind === 'reuse_existing' &&
+      clientDecision.source === 'requested_portal_key' &&
+      !portalIntent &&
+      !existingOrganization?.organization
+    ) {
+      const details = `The submitted portalKey=${portalKey} does not match any existing client record. Re-submit with the exact existing stable client identifier.`
+      await queueLeadgenManualReviewInConvex({
+        paymentEventId: purchaseKey,
+        portalKey,
+        companyName,
+        billingEmail,
+        reason: 'missing_stable_client_identifier',
+        details,
+        payloadJson: JSON.stringify({
+          companyName,
+          billingEmail,
+          billingModel,
+          paymentProvider,
+          paymentReference,
+          requestedPortalKey,
+        }),
+      })
+
+      logPaymentConfirmation('manual_review_required', {
+        paymentEventId: purchaseKey,
+        reason: 'missing_stable_client_identifier',
+        portalKey,
+      })
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: details,
+          manualReviewRequired: true,
+          candidatePortalKeys: [],
+        },
+        { status: 409 }
+      )
+    }
+
+    const token = portalIntent?.token || generateToken()
+    const tokenExpiresAt = portalIntent?.tokenExpiresAt || Date.now() + 30 * 24 * 60 * 60 * 1000
+
+    if (!portalIntent) {
       const created = await createLeadgenIntentInConvex({
         portalKey,
         companyName,
@@ -290,29 +409,39 @@ export async function POST(request: NextRequest) {
       leadUnitPriceCents = Math.max(100, Math.round(initialChargeCentsOverride / prepaidLeadCreditsOverride))
     }
 
-    const upsertedOrg = await upsertOrganizationInConvex({
+    const purchaseApplication = await applyConfirmedPurchaseInConvex({
       portalKey,
-      name: companyName,
+      purchaseKey,
+      companyName,
       billingModel,
       prepaidLeadCredits,
       leadCommitmentTotal,
       initialChargeCents,
       leadChargeThreshold: defaults.leadChargeThreshold,
       leadUnitPriceCents,
-      isActive: true,
+      payloadJson: JSON.stringify({
+        billingEmail,
+        billingModel,
+        companyName,
+        initialChargeCents,
+        paymentProvider,
+        paymentReference,
+        prepaidLeadCredits,
+        leadCommitmentTotal,
+        source: cleanString(body.source) || `external-payment-${paymentProvider}`,
+      }),
     })
-    if (!upsertedOrg) {
+    if (!purchaseApplication) {
       return NextResponse.json(
-        { success: false, error: 'Failed to upsert organization defaults. Check Convex config.' },
+        { success: false, error: 'Failed to apply purchase to organization. Check Convex config.' },
         { status: 500 }
       )
     }
 
-    const sourceId = paymentReference || `${paymentProvider}:${portalKey}:${Date.now()}`
     const activation = await activateCustomer({
       candidate: {
         source: paymentProvider,
-        sourceId,
+        sourceId: purchaseKey,
         email: billingEmail,
         portalKey,
         companyName,
@@ -323,6 +452,17 @@ export async function POST(request: NextRequest) {
       forceResendInvitation,
     })
 
+    logPaymentConfirmation('purchase_applied', {
+      paymentEventId: purchaseKey,
+      portalKey,
+      existingClientFound: clientDecision.kind === 'reuse_existing',
+      clientResolutionSource: clientDecision.kind === 'reuse_existing' ? clientDecision.source : 'new_client',
+      organizationCreated: purchaseApplication.organizationCreated,
+      purchaseRowCreated: !purchaseApplication.alreadyApplied,
+      prepaidLeadCredits: purchaseApplication.prepaidLeadCredits,
+      leadCommitmentTotal: purchaseApplication.leadCommitmentTotal,
+    })
+
     const onboardingUrl = `${getAppBaseUrl()}/onboarding?token=${encodeURIComponent(token)}`
 
     return NextResponse.json({
@@ -331,9 +471,10 @@ export async function POST(request: NextRequest) {
       status: paidIntent.status,
       tokenExpiresAt,
       paymentProvider,
-      paymentReference: paymentReference || null,
+      paymentReference,
       onboardingUrl,
       activation,
+      purchaseRecorded: !purchaseApplication.alreadyApplied,
     })
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
