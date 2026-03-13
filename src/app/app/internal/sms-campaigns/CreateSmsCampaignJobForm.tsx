@@ -57,7 +57,7 @@ export default function CreateSmsCampaignJobForm({
       if (!response.ok || !data.success || !data.jobKey) {
         throw new Error(data.error || 'Failed to create campaign job.')
       }
-      router.push(`/internal/sms-campaigns/${data.jobKey}`)
+      router.push(`/app/internal/sms-campaigns/${data.jobKey}`)
       router.refresh()
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Failed to create campaign job.')
@@ -153,4 +153,3 @@ export default function CreateSmsCampaignJobForm({
     </form>
   )
 }
-

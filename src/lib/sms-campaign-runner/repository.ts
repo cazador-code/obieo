@@ -120,6 +120,22 @@ function latestRun(
   return runs.find(predicate) || null
 }
 
+function markRunLaunchFailed(runId: number, jobKey: string, message: string) {
+  const db = getSmsCampaignRunnerDb()
+  const failedAt = nowIso()
+  db.prepare(`
+    UPDATE campaign_runs
+    SET state = 'failed', error_text = ?, ended_at = ?
+    WHERE id = ?
+      AND state = 'queued'
+  `).run(message, failedAt, runId)
+  db.prepare('UPDATE campaign_jobs SET blocked_reason = ?, updated_at = ? WHERE job_key = ?').run(
+    message,
+    failedAt,
+    jobKey,
+  )
+}
+
 function readSummary(relativePath: string | null): Record<string, unknown> | null {
   if (!relativePath) return null
   const absolutePath = path.join(SMS_CAMPAIGN_RUNNER_ROOT, relativePath)
@@ -138,8 +154,24 @@ function deriveState(
   const latest: SmsCampaignRunRow | null = runs[0] || null
   const active = latestRun(runs, (run) => run.state === 'queued' || run.state === 'running')
   const extract = latestRun(runs, (run) => run.action === 'extract_raw' && run.state === 'succeeded')
-  const format = latestRun(runs, (run) => run.action === 'format_batches' && run.state === 'succeeded')
-  const validate = latestRun(runs, (run) => run.action === 'validate_lr_ready' && run.state === 'succeeded')
+  const format = extract
+    ? latestRun(
+        runs,
+        (run) =>
+          run.action === 'format_batches' &&
+          run.state === 'succeeded' &&
+          run.input_run_id === extract.id,
+      )
+    : null
+  const validate = format
+    ? latestRun(
+        runs,
+        (run) =>
+          run.action === 'validate_lr_ready' &&
+          run.state === 'succeeded' &&
+          run.input_run_id === format.id,
+      )
+    : null
 
   const latestRuns: SmsCampaignLatestRuns = {
     extract,
@@ -221,7 +253,7 @@ function nextJobKey(db: BetterSqlite3, baseKey: string): string {
   return candidate
 }
 
-function spawnWorker(runId: number) {
+function spawnWorker(runId: number, jobKey: string) {
   const workerPath = path.join(process.cwd(), 'scripts', 'sms_campaign_runner_worker.py')
   const child = spawn('python3', [workerPath, '--run-id', String(runId)], {
     cwd: process.cwd(),
@@ -234,6 +266,13 @@ function spawnWorker(runId: number) {
       SMS_CAMPAIGN_RUNNER_ROOT: SMS_CAMPAIGN_RUNNER_ROOT,
     },
   })
+
+  child.once('error', (error) => {
+    const message = error instanceof Error ? error.message : 'Failed to spawn worker.'
+    console.error(`[sms-campaign-runner] worker launch failed for run ${runId}: ${message}`)
+    markRunLaunchFailed(runId, jobKey, message)
+  })
+
   child.unref()
 }
 
@@ -498,7 +537,7 @@ export function enqueueSmsCampaignRun(jobKey: string, action: SmsCampaignRunActi
   }
 
   try {
-    spawnWorker(runId)
+    spawnWorker(runId, jobKey)
   } catch (error) {
     db.prepare(`
       UPDATE campaign_runs

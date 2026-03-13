@@ -81,7 +81,7 @@ export default function SmsCampaignsPage() {
                     <tr key={view.job.job_key} className="align-top">
                       <td className="border-b border-[var(--border)] px-3 py-3">
                         <Link
-                          href={`/internal/sms-campaigns/${view.job.job_key}`}
+                          href={`/app/internal/sms-campaigns/${view.job.job_key}`}
                           className="font-semibold text-[var(--text-primary)] hover:text-[var(--accent)]"
                         >
                           {view.job.client_name}
@@ -119,4 +119,3 @@ export default function SmsCampaignsPage() {
     </main>
   )
 }
-

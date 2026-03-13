@@ -161,7 +161,10 @@ export default async function SmsCampaignJobDetailPage({
     detail.latestRuns.format &&
       (!detail.latestRuns.extract || detail.latestRuns.format.input_run_id === detail.latestRuns.extract.id),
   )
-  const latestFailedRun = detail.runs.find((run) => run.state === 'failed') || null
+  const currentBlockerRun =
+    detail.status === 'blocked' && detail.latestRuns.latest?.state === 'failed'
+      ? detail.latestRuns.latest
+      : null
   const historicalBatchSets = groupHistoricalBatchSets(detail)
 
   return (
@@ -169,7 +172,7 @@ export default async function SmsCampaignJobDetailPage({
       <ActiveRunPoller enabled={Boolean(detail.latestRuns.active)} />
       <div className="mx-auto max-w-7xl">
         <header className="rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-lg">
-          <Link href="/internal/sms-campaigns" className="text-sm text-[var(--accent)] hover:underline">
+          <Link href="/app/internal/sms-campaigns" className="text-sm text-[var(--accent)] hover:underline">
             ← Back to SMS Campaign Runner
           </Link>
           <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
@@ -186,13 +189,13 @@ export default async function SmsCampaignJobDetailPage({
           </div>
         </header>
 
-        {latestFailedRun ? (
+        {currentBlockerRun ? (
           <section className="mt-6 rounded-3xl border border-red-200 bg-red-50 p-6 shadow-lg">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <h2 className="text-xl font-semibold text-red-800">Latest blocker</h2>
                 <p className="mt-1 text-sm text-red-700">
-                  {latestFailedRun.run_key} failed during {actionLabel(latestFailedRun.action).toLowerCase()}.
+                  {currentBlockerRun.run_key} failed during {actionLabel(currentBlockerRun.action).toLowerCase()}.
                 </p>
               </div>
               <span className="inline-flex rounded-full border border-red-300 bg-white px-3 py-1 text-sm font-semibold text-red-700">
@@ -200,17 +203,17 @@ export default async function SmsCampaignJobDetailPage({
               </span>
             </div>
             <div className="mt-4 rounded-2xl border border-red-200 bg-white p-4 text-sm text-red-800">
-              {latestFailedRun.error_text || detail.blockedReason || 'Run failed without an error message.'}
+              {currentBlockerRun.error_text || detail.blockedReason || 'Run failed without an error message.'}
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <DetailStat label="Failed Run" value={latestFailedRun.run_key} />
-              <DetailStat label="Action" value={actionLabel(latestFailedRun.action)} />
-              <DetailStat label="Started" value={formatDate(latestFailedRun.started_at)} />
-              <DetailStat label="Ended" value={formatDate(latestFailedRun.ended_at)} />
-              <DetailStat label="Artifact Folder" value={latestFailedRun.artifact_dir_rel_path} />
-              <DetailStat label="Stdout Log" value={latestFailedRun.stdout_rel_path || 'Not written'} />
-              <DetailStat label="Stderr Log" value={latestFailedRun.stderr_rel_path || 'Not written'} />
-              <DetailStat label="Summary" value={latestFailedRun.summary_rel_path || 'Not written'} />
+              <DetailStat label="Failed Run" value={currentBlockerRun.run_key} />
+              <DetailStat label="Action" value={actionLabel(currentBlockerRun.action)} />
+              <DetailStat label="Started" value={formatDate(currentBlockerRun.started_at)} />
+              <DetailStat label="Ended" value={formatDate(currentBlockerRun.ended_at)} />
+              <DetailStat label="Artifact Folder" value={currentBlockerRun.artifact_dir_rel_path} />
+              <DetailStat label="Stdout Log" value={currentBlockerRun.stdout_rel_path || 'Not written'} />
+              <DetailStat label="Stderr Log" value={currentBlockerRun.stderr_rel_path || 'Not written'} />
+              <DetailStat label="Summary" value={currentBlockerRun.summary_rel_path || 'Not written'} />
             </div>
           </section>
         ) : null}

@@ -122,6 +122,20 @@ async function main() {
   assert.equal(validateResult.detail.status, 'lr_ready')
   logProof('validate_status', `${firstValidate.run.run_key} -> ${validateResult.detail.status}`)
 
+  const secondExtract = enqueueSmsCampaignRun(created.jobKey, 'extract_raw')
+  const secondExtractResult = await waitForRun(created.jobKey, 'extract_raw', secondExtract.run.id)
+  assert.equal(secondExtractResult.run.state, 'succeeded')
+  assert.equal(secondExtractResult.detail.status, 'raw_exported')
+  assert.equal(secondExtractResult.detail.nextAction, 'Format batches')
+  assert.equal(secondExtractResult.detail.latestRuns.extract?.id, secondExtract.run.id)
+  assert.equal(secondExtractResult.detail.latestRuns.format, null)
+  assert.equal(secondExtractResult.detail.latestRuns.validate, null)
+  assert.equal(secondExtractResult.detail.currentBatches.length, 0)
+  logProof(
+    'extract_lineage_fallback',
+    `${secondExtract.run.run_key} is current; stale format/validate were dropped from authoritative state`,
+  )
+
   const secondFormat = enqueueSmsCampaignRun(created.jobKey, 'format_batches')
   const secondFormatResult = await waitForRun(created.jobKey, 'format_batches', secondFormat.run.id)
   assert.equal(secondFormatResult.run.state, 'succeeded')
@@ -144,6 +158,32 @@ async function main() {
   assert.equal(secondValidateResult.detail.status, 'lr_ready')
   logProof('revalidated_status', `${secondValidate.run.run_key} -> ${secondValidateResult.detail.status}`)
 
+  const originalPath = process.env.PATH
+  const spawnFailureJob = createOrFindSmsCampaignJob({
+    clientName: `${clientName} Spawn Failure`,
+    sourceCsvPath,
+    desiredLeadsPerDay: 1,
+    textsPerLead: 500,
+    selectedZipCodes: ['77001'],
+    chunkStrategy: 'zip',
+    chunkSizeOverride: 2,
+  })
+  let spawnFailureExtract: ReturnType<typeof enqueueSmsCampaignRun>
+  try {
+    process.env.PATH = ''
+    spawnFailureExtract = enqueueSmsCampaignRun(spawnFailureJob.jobKey, 'extract_raw')
+  } finally {
+    process.env.PATH = originalPath
+  }
+  const spawnFailureResult = await waitForRun(spawnFailureJob.jobKey, 'extract_raw', spawnFailureExtract.run.id)
+  assert.equal(spawnFailureResult.run.state, 'failed')
+  assert.equal(spawnFailureResult.detail.status, 'blocked')
+  assert.match(spawnFailureResult.detail.blockedReason || '', /python3|spawn|enoent/i)
+  logProof(
+    'spawn_failure_guard',
+    `${spawnFailureExtract.run.run_key} failed cleanly instead of staying queued: ${spawnFailureResult.detail.blockedReason}`,
+  )
+
   const blockedJob = createOrFindSmsCampaignJob({
     clientName: `${clientName} Blocked`,
     sourceCsvPath: brokenSourceCsvPath,
@@ -160,14 +200,26 @@ async function main() {
   assert(blockedResult.detail.blockedReason, 'Blocked job should surface a blocked reason.')
   logProof('blocked_run_visibility', `${blockedExtract.run.run_key} failed with blocker: ${blockedResult.detail.blockedReason}`)
 
+  const createFormSource = fs.readFileSync(
+    path.join(process.cwd(), 'src/app/app/internal/sms-campaigns/CreateSmsCampaignJobForm.tsx'),
+    'utf8',
+  )
+  const listPageSource = fs.readFileSync(
+    path.join(process.cwd(), 'src/app/app/internal/sms-campaigns/page.tsx'),
+    'utf8',
+  )
   const detailPageSource = fs.readFileSync(
     path.join(process.cwd(), 'src/app/app/internal/sms-campaigns/[jobKey]/page.tsx'),
     'utf8',
   )
+  assert(createFormSource.includes('router.push(`/app/internal/sms-campaigns/${data.jobKey}`)'))
+  assert(listPageSource.includes('href={`/app/internal/sms-campaigns/${view.job.job_key}`}'))
+  assert(detailPageSource.includes('detail.status === \'blocked\''))
+  assert(!detailPageSource.includes('detail.runs.find((run) => run.state === \'failed\')'))
   for (const marker of ['Current authoritative results', 'Current authoritative batch set', 'Historical batch sets', 'Latest blocker']) {
     assert(detailPageSource.includes(marker), `Expected page source to include ${marker}.`)
   }
-  logProof('job_detail_markers', 'page source contains authoritative, historical, and blocker sections')
+  logProof('ui_truth_guards', 'route links use /app/internal and blocker banner is gated by derived blocked state')
 }
 
 main().catch((error) => {
