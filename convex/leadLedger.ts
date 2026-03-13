@@ -1064,6 +1064,10 @@ export const recordPurchaseEvent = mutation({
     assertAuthorized(args.authSecret)
     const organization = await getOrganizationByPortalKey(ctx, args.portalKey)
 
+    // This recorder stays portal-scoped on `by_portal_and_kind` so ops can log the same
+    // external purchase reference under different portal keys while investigating. The
+    // stricter confirmation path (`applyConfirmedPurchase`) uses `by_referenceId_and_kind`
+    // to enforce global purchase uniqueness before rolling totals forward.
     const prior = await ctx.db
       .query('billingEvents')
       .withIndex('by_portal_and_kind', (q) => q.eq('portalKey', args.portalKey).eq('kind', args.kind))

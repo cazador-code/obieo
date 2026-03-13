@@ -349,8 +349,11 @@ function buildFieldUpdates(
     updatedFields.push(config.nameFieldId)
   }
 
-  fieldUpdates[config.userIdFieldId] = cleanString(input.portalKey) || null
-  updatedFields.push(config.userIdFieldId)
+  const normalizedPortalKey = cleanString(input.portalKey)
+  if (normalizedPortalKey) {
+    fieldUpdates[config.userIdFieldId] = normalizedPortalKey
+    updatedFields.push(config.userIdFieldId)
+  }
 
   if (hasOwn(input, 'contractorName')) {
     fieldUpdates[config.contractorNameFieldId] = cleanString(input.contractorName) || null
