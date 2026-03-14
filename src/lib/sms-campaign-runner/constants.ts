@@ -3,6 +3,8 @@ import path from 'node:path'
 export const SMS_CAMPAIGN_RUNNER_ROOT = path.join(process.cwd(), '.tools', 'sms-campaign-runner')
 export const SMS_CAMPAIGN_RUNNER_DB_PATH = path.join(SMS_CAMPAIGN_RUNNER_ROOT, 'runner.db')
 export const SMS_CAMPAIGN_RUNNER_JOBS_DIR = path.join(SMS_CAMPAIGN_RUNNER_ROOT, 'jobs')
+export const SMS_CAMPAIGN_RUNNER_UPLOADS_DIR = path.join(SMS_CAMPAIGN_RUNNER_ROOT, 'uploads')
+export const SMS_CAMPAIGN_RUNNER_UPLOAD_MAX_BYTES = 100 * 1024 * 1024
 export const SMS_CAMPAIGN_RUNNER_DEFAULT_SOURCE_PATH = '/Users/hunterlapeyre/Downloads/merged.csv'
 
 export const SMS_CAMPAIGN_REQUIRED_HEADERS = [
@@ -33,4 +35,4 @@ export const SMS_CAMPAIGN_MAX_CHUNK_SIZE = 15000
 export const SMS_CAMPAIGN_TEXTS_PER_LEAD_OPTIONS = [500, 750, 1000] as const
 
 export const SMS_CAMPAIGN_SOURCE_PROFILE = 'merged_master_v1' as const
-
+export const SMS_CAMPAIGN_UPLOADED_SOURCE_PROFILE = 'uploaded_csv_v1' as const

@@ -5,6 +5,7 @@ import {
   SMS_CAMPAIGN_RUNNER_DB_PATH,
   SMS_CAMPAIGN_RUNNER_JOBS_DIR,
   SMS_CAMPAIGN_RUNNER_ROOT,
+  SMS_CAMPAIGN_RUNNER_UPLOADS_DIR,
 } from '@/lib/sms-campaign-runner/constants'
 
 const SCHEMA_SQL = `
@@ -105,6 +106,7 @@ declare global {
 function ensureRunnerDirectories() {
   fs.mkdirSync(SMS_CAMPAIGN_RUNNER_ROOT, { recursive: true })
   fs.mkdirSync(SMS_CAMPAIGN_RUNNER_JOBS_DIR, { recursive: true })
+  fs.mkdirSync(SMS_CAMPAIGN_RUNNER_UPLOADS_DIR, { recursive: true })
   fs.mkdirSync(path.dirname(SMS_CAMPAIGN_RUNNER_DB_PATH), { recursive: true })
 }
 

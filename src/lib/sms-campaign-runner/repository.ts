@@ -9,6 +9,8 @@ import {
   SMS_CAMPAIGN_RUNNER_DB_PATH,
   SMS_CAMPAIGN_RUNNER_DEFAULT_SOURCE_PATH,
   SMS_CAMPAIGN_RUNNER_ROOT,
+  SMS_CAMPAIGN_RUNNER_UPLOAD_MAX_BYTES,
+  SMS_CAMPAIGN_RUNNER_UPLOADS_DIR,
   SMS_CAMPAIGN_SOURCE_PROFILE,
   SMS_CAMPAIGN_TEXTS_PER_LEAD_OPTIONS,
 } from '@/lib/sms-campaign-runner/constants'
@@ -66,6 +68,14 @@ function buildJobFingerprint(input: {
 function buildJobKeyBase(clientSlug: string, zipCodes: string[]): string {
   const dateKey = new Date().toISOString().slice(0, 10).replace(/-/g, '')
   return `${dateKey}__${clientSlug}__duckdb__${buildZipScope(zipCodes)}`
+}
+
+function sanitizeUploadFileName(value: string): string {
+  return path
+    .basename(value.trim())
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
 }
 
 function clampChunkSize(value: number): number {
@@ -276,6 +286,42 @@ function spawnWorker(runId: number, jobKey: string) {
   child.unref()
 }
 
+export function storeUploadedSmsCampaignSourceCsv(input: {
+  fileName: string
+  bytes: Uint8Array
+}) {
+  const safeFileName = sanitizeUploadFileName(input.fileName)
+  if (!safeFileName) {
+    throw new Error('Uploaded source CSV must include a file name.')
+  }
+  if (path.extname(safeFileName).toLowerCase() !== '.csv') {
+    throw new Error('Uploaded source must be a .csv file.')
+  }
+  if (input.bytes.byteLength === 0) {
+    throw new Error('Uploaded source CSV is empty.')
+  }
+  if (input.bytes.byteLength > SMS_CAMPAIGN_RUNNER_UPLOAD_MAX_BYTES) {
+    throw new Error('Uploaded source CSV is too large. Export a smaller filtered CSV first.')
+  }
+
+  fs.mkdirSync(SMS_CAMPAIGN_RUNNER_UPLOADS_DIR, { recursive: true })
+
+  const uploadDate = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+  const fileHash = createHash('sha256').update(input.bytes).digest('hex').slice(0, 12)
+  const stem = path.basename(safeFileName, '.csv').slice(0, 64) || 'source'
+  const storedFileName = `${uploadDate}__${stem}__${fileHash}.csv`
+  const sourceCsvPath = path.join(SMS_CAMPAIGN_RUNNER_UPLOADS_DIR, storedFileName)
+
+  if (!fs.existsSync(sourceCsvPath)) {
+    fs.writeFileSync(sourceCsvPath, Buffer.from(input.bytes))
+  }
+
+  return {
+    sourceCsvPath,
+    storedFileName,
+  }
+}
+
 export function getSmsCampaignDefaults() {
   return {
     sourceCsvPath: SMS_CAMPAIGN_RUNNER_DEFAULT_SOURCE_PATH,
@@ -303,6 +349,11 @@ export function createOrFindSmsCampaignJob(input: CreateSmsCampaignJobInput) {
 
   const clientSlug = slugify(clientName)
   const sourceCsvPath = input.sourceCsvPath.trim() || SMS_CAMPAIGN_RUNNER_DEFAULT_SOURCE_PATH
+  if (!sourceCsvPath) {
+    throw new Error('Provide a source CSV path or upload a source CSV.')
+  }
+  const sourceType = input.sourceType?.trim() || 'duckdb'
+  const sourceProfile = input.sourceProfile?.trim() || SMS_CAMPAIGN_SOURCE_PROFILE
   const chunkSize = resolveChunkSize(input)
   const fingerprint = buildJobFingerprint({
     clientSlug,
@@ -346,8 +397,8 @@ export function createOrFindSmsCampaignJob(input: CreateSmsCampaignJobInput) {
       fingerprint,
       client_name: clientName,
       client_slug: clientSlug,
-      source_type: 'duckdb',
-      source_profile: SMS_CAMPAIGN_SOURCE_PROFILE,
+      source_type: sourceType,
+      source_profile: sourceProfile,
       source_csv_path: sourceCsvPath,
       desired_leads_per_day: input.desiredLeadsPerDay,
       texts_per_lead: input.textsPerLead,

@@ -77,6 +77,8 @@ export interface SmsCampaignBatchRow {
 export interface CreateSmsCampaignJobInput {
   clientName: string
   sourceCsvPath: string
+  sourceType?: string
+  sourceProfile?: string
   desiredLeadsPerDay: number
   textsPerLead: number
   selectedZipCodes: string[]
@@ -110,4 +112,3 @@ export interface SmsCampaignJobDetail extends SmsCampaignJobView {
   batches: SmsCampaignBatchRow[]
   latestValidationSummary: Record<string, unknown> | null
 }
-

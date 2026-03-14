@@ -6,6 +6,7 @@ import {
   createOrFindSmsCampaignJob,
   enqueueSmsCampaignRun,
   getSmsCampaignJobDetail,
+  storeUploadedSmsCampaignSourceCsv,
 } from '@/lib/sms-campaign-runner/repository'
 import type { SmsCampaignRunAction } from '@/lib/sms-campaign-runner/types'
 
@@ -67,11 +68,24 @@ async function main() {
   const brokenSourceCsvPath = path.join(fixtureDir, 'merged_master_v1_broken_fixture.csv')
   writeFixtureCsv(sourceCsvPath)
   writeFixtureCsv(brokenSourceCsvPath, true)
+  const uploadedSource = storeUploadedSmsCampaignSourceCsv({
+    fileName: 'rowzero-filtered-export.csv',
+    bytes: fs.readFileSync(sourceCsvPath),
+  })
+  const uploadedSourceAgain = storeUploadedSmsCampaignSourceCsv({
+    fileName: 'rowzero-filtered-export.csv',
+    bytes: fs.readFileSync(sourceCsvPath),
+  })
+  assert.equal(uploadedSourceAgain.sourceCsvPath, uploadedSource.sourceCsvPath)
+  assert(fs.existsSync(uploadedSource.sourceCsvPath), 'Uploaded source CSV should be stored in runner uploads.')
+  logProof('uploaded_source_store', uploadedSource.sourceCsvPath)
 
   const clientName = `Runner Test ${Date.now()}`
   const created = createOrFindSmsCampaignJob({
     clientName,
-    sourceCsvPath,
+    sourceCsvPath: uploadedSource.sourceCsvPath,
+    sourceType: 'upload',
+    sourceProfile: 'uploaded_csv_v1',
     desiredLeadsPerDay: 1,
     textsPerLead: 500,
     selectedZipCodes: ['77001', '77002'],
@@ -83,7 +97,9 @@ async function main() {
 
   const duplicateCreate = createOrFindSmsCampaignJob({
     clientName,
-    sourceCsvPath,
+    sourceCsvPath: uploadedSource.sourceCsvPath,
+    sourceType: 'upload',
+    sourceProfile: 'uploaded_csv_v1',
     desiredLeadsPerDay: 1,
     textsPerLead: 500,
     selectedZipCodes: ['77001', '77002'],
@@ -161,7 +177,9 @@ async function main() {
   const originalPath = process.env.PATH
   const spawnFailureJob = createOrFindSmsCampaignJob({
     clientName: `${clientName} Spawn Failure`,
-    sourceCsvPath,
+    sourceCsvPath: uploadedSource.sourceCsvPath,
+    sourceType: 'upload',
+    sourceProfile: 'uploaded_csv_v1',
     desiredLeadsPerDay: 1,
     textsPerLead: 500,
     selectedZipCodes: ['77001'],
@@ -213,6 +231,10 @@ async function main() {
     'utf8',
   )
   assert(createFormSource.includes('router.push(`/app/internal/sms-campaigns/${data.jobKey}`)'))
+  assert(createFormSource.includes('sourceCsvFile'))
+  assert(createFormSource.includes('Source CSV Path'))
+  assert(createFormSource.includes('Source CSV Upload (Optional)'))
+  assert(createFormSource.includes('Keep the path flow if you want.'))
   assert(listPageSource.includes('href={`/app/internal/sms-campaigns/${view.job.job_key}`}'))
   assert(detailPageSource.includes('detail.status === \'blocked\''))
   assert(!detailPageSource.includes('detail.runs.find((run) => run.state === \'failed\')'))

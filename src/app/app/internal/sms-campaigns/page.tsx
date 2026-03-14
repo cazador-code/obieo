@@ -37,15 +37,15 @@ export default function SmsCampaignsPage() {
         <header className="rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-lg">
           <h1 className="text-3xl font-bold text-[var(--text-primary)]">SMS Campaign Runner</h1>
           <p className="mt-2 max-w-3xl text-[var(--text-secondary)]">
-            Local-first operator tool for DuckDB extraction, batch formatting, LR-ready validation,
-            and deterministic run history.
+            Operator tool for DuckDB extraction, batch formatting, LR-ready validation, and
+            deterministic run history.
           </p>
         </header>
 
         <section className="mt-6 rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-lg">
           <h2 className="text-xl font-semibold text-[var(--text-primary)]">Create campaign job</h2>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            Canonical source of truth is local SQLite at `.tools/sms-campaign-runner/runner.db`.
+            Keep using the local CSV path you already know, or add an uploaded CSV as a second input method.
           </p>
           <div className="mt-6">
             <CreateSmsCampaignJobForm defaultSourceCsvPath={defaults.sourceCsvPath} />

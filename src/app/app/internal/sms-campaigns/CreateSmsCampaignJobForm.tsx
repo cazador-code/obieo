@@ -19,6 +19,7 @@ export default function CreateSmsCampaignJobForm({
   const [targetZipCodes, setTargetZipCodes] = useState('')
   const [desiredLeadsPerDay, setDesiredLeadsPerDay] = useState(String(SMS_CAMPAIGN_DEFAULT_FORM.desiredLeadsPerDay))
   const [textsPerLead, setTextsPerLead] = useState(String(SMS_CAMPAIGN_DEFAULT_FORM.textsPerLead))
+  const [sourceCsvFile, setSourceCsvFile] = useState<File | null>(null)
   const [sourceCsvPath, setSourceCsvPath] = useState(defaultSourceCsvPath)
   const [chunkStrategy, setChunkStrategy] = useState<SmsCampaignChunkStrategy>('daily')
   const [chunkSizeOverride, setChunkSizeOverride] = useState('')
@@ -40,18 +41,29 @@ export default function CreateSmsCampaignJobForm({
     setError(null)
 
     try {
+      if (!sourceCsvFile && !sourceCsvPath.trim()) {
+        throw new Error('Provide a local CSV path or upload a source CSV.')
+      }
+
+      const formData = new FormData()
+      formData.set('clientName', clientName)
+      formData.set('targetZipCodes', targetZipCodes)
+      formData.set('desiredLeadsPerDay', String(Number(desiredLeadsPerDay)))
+      formData.set('textsPerLead', String(Number(textsPerLead)))
+      formData.set('chunkStrategy', chunkStrategy)
+      if (chunkSizeOverride.trim()) {
+        formData.set('chunkSizeOverride', chunkSizeOverride.trim())
+      }
+      if (sourceCsvFile) {
+        formData.set('sourceCsvFile', sourceCsvFile)
+      }
+      if (sourceCsvPath.trim()) {
+        formData.set('sourceCsvPath', sourceCsvPath.trim())
+      }
+
       const response = await fetch('/api/internal/sms-campaigns/jobs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clientName,
-          targetZipCodes,
-          desiredLeadsPerDay: Number(desiredLeadsPerDay),
-          textsPerLead: Number(textsPerLead),
-          sourceCsvPath,
-          chunkStrategy,
-          chunkSizeOverride: chunkSizeOverride.trim() ? Number(chunkSizeOverride) : null,
-        }),
+        body: formData,
       })
       const data = (await response.json()) as { success: boolean; error?: string; jobKey?: string }
       if (!response.ok || !data.success || !data.jobKey) {
@@ -80,8 +92,23 @@ export default function CreateSmsCampaignJobForm({
         value={sourceCsvPath}
         onChange={(event) => setSourceCsvPath(event.target.value)}
         placeholder="/Users/hunterlapeyre/Downloads/merged.csv"
-        required
+        required={!sourceCsvFile}
       />
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="source-csv-file" className="text-sm font-medium text-[var(--text-primary)]">
+          Source CSV Upload (Optional)
+        </label>
+        <input
+          id="source-csv-file"
+          type="file"
+          accept=".csv,text/csv"
+          onChange={(event) => setSourceCsvFile(event.target.files?.[0] || null)}
+          className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 text-[var(--text-primary)] file:mr-4 file:rounded-md file:border-0 file:bg-[var(--accent)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
+        />
+        <p className="text-xs text-[var(--text-muted)]">
+          Keep the path flow if you want. Use upload when you have a smaller Row Zero export instead.
+        </p>
+      </div>
       <div className="flex flex-col gap-1.5 lg:col-span-2">
         <label className="text-sm font-medium text-[var(--text-primary)]">Target ZIP Codes</label>
         <textarea
@@ -138,6 +165,8 @@ export default function CreateSmsCampaignJobForm({
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] p-4 text-sm text-[var(--text-secondary)] lg:col-span-2">
         <div className="font-semibold text-[var(--text-primary)]">Pre-export plan snapshot</div>
         <div className="mt-2">Target contacts/day: {targetContacts?.toLocaleString() || 'N/A'}</div>
+        <div>Source path: {sourceCsvPath || 'None'}</div>
+        <div>Selected upload: {sourceCsvFile?.name || 'None'}</div>
         <div>Planned proven status after creation: `planned`</div>
       </div>
       {error ? (
