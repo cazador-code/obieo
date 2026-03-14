@@ -56,6 +56,40 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
 - E2E:
 
 ## Session Notes (append, newest first)
+### 2026-03-13 (KTL Airtable duplicate-row targeted repair)
+- What we did:
+  - Investigated the KTL duplicate Airtable client-row incident in a clean repo context and confirmed the exact pair: keep `rectcuXnY8DfITiCR`, retire-later `recbj7vbRoBF8cNoc`.
+  - Verified identifier semantics before touching Airtable: Convex `portalKey` is the stable client key, Airtable `User ID` is where current repo code expects that value, and production Airtable remains only partially normalized.
+  - Performed the guarded one-field repair/verification flow only: fetched both Airtable rows, confirmed the kept row resolved on `User ID = ktl-roofing-99e10c`, and left the retiring row untouched.
+  - Added reusable runbook `.codex/hunterlapeyre/runbooks/airtable-duplicate-client-row-targeted-repair.md` for future one-client repairs in the mixed Airtable identity model.
+  - Ran mandatory closure gates on the final tree:
+    - security-reviewer: `status=pass`, `summary=No scoped code changes found for security review.`, `findings=0`, `counts(high/medium/low)=0/0/0`, `scope(mode)=none`
+    - code-simplifier: `status=pass`, `summary=No scoped code changes found.`, `findings=0`, `counts(major/medium/minor)=0/0/0`, `scope(mode)=none`
+    - deterministic gate: `npm run verify` `pass`
+- Commands used:
+  - `git remote -v`
+  - `git branch --show-current`
+  - `git status --short`
+  - `git rev-parse --abbrev-ref --symbolic-full-name @{u}`
+  - `git rev-list --left-right --count HEAD...@{u}`
+  - `python3 "$HOME/.codex/skills/security-reviewer/scripts/run_security_review.py" --repo "$PWD" --pretty`
+  - `python3 "$HOME/.codex/skills/code-simplifier/scripts/run_code_simplifier.py" --repo "$PWD" --pretty`
+  - `npm run verify`
+  - `node --input-type=module ... ConvexHttpClient query(api.leadLedger.listOrganizationsForOps / listOnboardingSubmissionsForOps)`
+  - `node --input-type=module ... parse /Users/hunterlapeyre/Developer/obieo/.vercel/.env.production.local + Airtable REST fetch / PATCH / exact-match verification`
+- Patterns discovered:
+  - In this repo, Airtable `User ID` is the intended storage location for Convex `portalKey`, but production still operates in a partially migrated mixed-identity state.
+  - The safest duplicate-row fix is a targeted one-field repair on the kept row, followed by exact-match Airtable verification, then stop.
+  - Resolver proof matters more than cleanup speed: do not merge contact/status fields or retire the old row in the same pass.
+- Gotchas:
+  - Other clients can still function with blank Airtable `User ID`; do not assume one successful repair means global Airtable identity is normalized.
+  - `.vercel/.env.production.local` should be parsed, not sourced, because some values can break shell parsing.
+  - Airtable single-record GET requests reject `fields[]`; fetch the record with `returnFieldsByFieldId=true` and filter fields locally.
+- Next-time start:
+  - Open `.codex/hunterlapeyre/runbooks/airtable-duplicate-client-row-targeted-repair.md`.
+  - First confirm the duplicate pair plus Convex `portalKey`, then fetch pre-write snapshots before any Airtable mutation.
+  - Keep the repair scoped to one field on the kept row, verify exact-match resolution, and treat broader Airtable normalization as a separate project.
+
 ### 2026-03-13 (SMS runner PR merge + branch closeout)
 - What we did:
   - Merged PR #13 for the local-first SMS campaign runner into `main` after CodeRabbit follow-up fixes, green local proof, and green Vercel.
