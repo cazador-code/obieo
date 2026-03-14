@@ -18,6 +18,10 @@ const DEFAULT_CLIENT_NOTIFICATION_PHONE_FIELD_ID = 'fld2najORzjs3zdKE'
 const DEFAULT_CLIENT_NOTIFICATION_EMAIL_FIELD_ID = 'fldy7AUYFxf3vB1tL'
 const DEFAULT_CLIENT_PROSPECT_EMAIL_FIELD_ID = 'fldN6PVrSXozaE2JM'
 const DEFAULT_CLIENT_USER_ID_FIELD_ID = 'fld4AuvIhp4xjPgNM'
+const DEFAULT_CLIENT_BILLING_SUMMARY_FIELD_ID = 'fldcX0vYwjoiptXvW'
+const DEFAULT_CLIENT_CURRENT_COMMITMENT_FIELD_ID = 'fldkfN0LCSSuaX77A'
+const DEFAULT_CLIENT_REMAINING_LEADS_FIELD_ID = 'fldXbmNv8sDq8cRzG'
+const DEFAULT_CLIENT_PACKAGE_PURCHASE_COUNT_FIELD_ID = 'fldMMW5zZY791frwx'
 const DEFAULT_ACTIVE_STATUS_NAMES = ['3. Ready to Launch', '4. Launched']
 const AIRTABLE_LIST_MAX_PAGES = 200
 
@@ -78,6 +82,10 @@ type AirtableConfig = {
   notificationEmailFieldId: string
   prospectEmailFieldId: string
   userIdFieldId: string
+  billingSummaryFieldId: string
+  currentCommitmentFieldId: string
+  remainingLeadsFieldId: string
+  packagePurchaseCountFieldId: string
   activeStatusNames: Set<string>
 }
 
@@ -191,6 +199,15 @@ function getAirtableConfig(): AirtableConfig | null {
     process.env.AIRTABLE_CLIENT_PROSPECT_EMAIL_FIELD_ID?.trim() || DEFAULT_CLIENT_PROSPECT_EMAIL_FIELD_ID
   const userIdFieldId =
     process.env.AIRTABLE_CLIENT_USER_ID_FIELD_ID?.trim() || DEFAULT_CLIENT_USER_ID_FIELD_ID
+  const billingSummaryFieldId =
+    process.env.AIRTABLE_CLIENT_BILLING_SUMMARY_FIELD_ID?.trim() || DEFAULT_CLIENT_BILLING_SUMMARY_FIELD_ID
+  const currentCommitmentFieldId =
+    process.env.AIRTABLE_CLIENT_CURRENT_COMMITMENT_FIELD_ID?.trim() || DEFAULT_CLIENT_CURRENT_COMMITMENT_FIELD_ID
+  const remainingLeadsFieldId =
+    process.env.AIRTABLE_CLIENT_REMAINING_LEADS_FIELD_ID?.trim() || DEFAULT_CLIENT_REMAINING_LEADS_FIELD_ID
+  const packagePurchaseCountFieldId =
+    process.env.AIRTABLE_CLIENT_PACKAGE_PURCHASE_COUNT_FIELD_ID?.trim() ||
+    DEFAULT_CLIENT_PACKAGE_PURCHASE_COUNT_FIELD_ID
 
   if (
     !baseId ||
@@ -208,7 +225,11 @@ function getAirtableConfig(): AirtableConfig | null {
     !notificationPhoneFieldId ||
     !notificationEmailFieldId ||
     !prospectEmailFieldId ||
-    !userIdFieldId
+    !userIdFieldId ||
+    !billingSummaryFieldId ||
+    !currentCommitmentFieldId ||
+    !remainingLeadsFieldId ||
+    !packagePurchaseCountFieldId
   ) {
     return null
   }
@@ -231,6 +252,10 @@ function getAirtableConfig(): AirtableConfig | null {
     notificationEmailFieldId,
     prospectEmailFieldId,
     userIdFieldId,
+    billingSummaryFieldId,
+    currentCommitmentFieldId,
+    remainingLeadsFieldId,
+    packagePurchaseCountFieldId,
     activeStatusNames: getActiveStatusNames(),
   }
 }
@@ -336,11 +361,11 @@ function buildFieldUpdates(
   config: AirtableConfig,
   input: Parameters<typeof syncPortalProfileToAirtable>[0]
 ): {
-  fieldUpdates: Record<string, string | null>
+  fieldUpdates: Record<string, string | number | null>
   updatedFields: string[]
   normalizedTargetZipCodes: string[] | undefined
 } {
-  const fieldUpdates: Record<string, string | null> = {}
+  const fieldUpdates: Record<string, string | number | null> = {}
   const updatedFields: string[] = []
   let normalizedTargetZipCodes: string[] | undefined
 
@@ -413,6 +438,44 @@ function buildFieldUpdates(
     updatedFields.push(config.clientNotesFieldId)
   }
 
+  if (hasOwn(input, 'billingTermsSummary')) {
+    fieldUpdates[config.billingSummaryFieldId] = cleanString(input.billingTermsSummary) || null
+    updatedFields.push(config.billingSummaryFieldId)
+  }
+
+  if (hasOwn(input, 'currentLeadCommitment')) {
+    const currentLeadCommitment =
+      typeof input.currentLeadCommitment === 'number' &&
+      Number.isFinite(input.currentLeadCommitment) &&
+      input.currentLeadCommitment >= 0
+        ? Math.floor(input.currentLeadCommitment)
+        : null
+    fieldUpdates[config.currentCommitmentFieldId] = currentLeadCommitment
+    updatedFields.push(config.currentCommitmentFieldId)
+  }
+
+  if (hasOwn(input, 'remainingLeads')) {
+    const remainingLeads =
+      typeof input.remainingLeads === 'number' &&
+      Number.isFinite(input.remainingLeads) &&
+      input.remainingLeads >= 0
+        ? Math.floor(input.remainingLeads)
+        : null
+    fieldUpdates[config.remainingLeadsFieldId] = remainingLeads
+    updatedFields.push(config.remainingLeadsFieldId)
+  }
+
+  if (hasOwn(input, 'packagePurchaseCount')) {
+    const packagePurchaseCount =
+      typeof input.packagePurchaseCount === 'number' &&
+      Number.isFinite(input.packagePurchaseCount) &&
+      input.packagePurchaseCount >= 0
+        ? Math.floor(input.packagePurchaseCount)
+        : null
+    fieldUpdates[config.packagePurchaseCountFieldId] = packagePurchaseCount
+    updatedFields.push(config.packagePurchaseCountFieldId)
+  }
+
   if (hasOwn(input, 'servicesOffered')) {
     const services =
       typeof input.servicesOffered === 'string'
@@ -438,7 +501,7 @@ function buildFieldUpdates(
 
 async function createAirtableClientRecord(
   config: AirtableConfig,
-  fieldUpdates: Record<string, string | null>
+  fieldUpdates: Record<string, string | number | null>
 ): Promise<{ id: string } | { error: string }> {
   const createUrl = new URL(`https://api.airtable.com/v0/${config.baseId}/${config.tableId}`)
   createUrl.searchParams.set('returnFieldsByFieldId', 'true')
@@ -562,6 +625,10 @@ export async function syncPortalProfileToAirtable(input: {
   pricingTier?: string | null
   desiredLeadVolumeDaily?: number | null
   clientNotes?: string | null
+  billingTermsSummary?: string | null
+  currentLeadCommitment?: number | null
+  remainingLeads?: number | null
+  packagePurchaseCount?: number | null
   servicesOffered?: string[] | string | null
   clientCity?: string | null
   createIfMissing?: boolean

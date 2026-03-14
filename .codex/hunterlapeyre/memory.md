@@ -56,6 +56,73 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
 - E2E:
 
 ## Session Notes (append, newest first)
+### 2026-03-14 (Airtable billing model cleanup + Oz second package reconciliation)
+- What we did:
+  - Audited and cleaned the Airtable `Client Table` so billing state is more intuitive: renamed confusing fields, added `Custom Package`, and created live operator fields for `Current Lead Commitment`, `Remaining Leads`, and `Package Purchases`.
+  - Added repo support for Airtable billing-state sync in [src/lib/airtable-billing-sync.ts](/Users/hunterlapeyre/Developer/obieo/src/lib/airtable-billing-sync.ts), taught pricing sync to keep package type separate from cumulative package count, and updated production resync/payment paths to write the new Airtable fields.
+  - Recorded Oz Home Services' second 40-lead package in Convex with an idempotent manual purchase key, synced Airtable, and verified the row now carries hidden-field proof of the re-up (`Billing Terms Summary`, `Current Lead Commitment`, `Package Purchases`).
+  - Clarified a key operator rule: Airtable `Lead Sheet` is the source of truth for lead history and remaining-balance math, so future `Remaining Leads` work should be driven from Airtable-first counts instead of Convex-first counters.
+  - Ran mandatory closure gates on the final tree:
+    - security-reviewer: `status=pass`, `summary=No actionable security findings across 6 file(s) in scope mode staged+unstaged.`, `findings=0`, `counts(high/medium/low)=0/0/0`
+    - code-simplifier: `status=warn`, `summary=Simplifier reported warnings: 14 medium, 19 minor across 6 file(s) in scope mode staged+unstaged.`, `findings=33`, `counts(major/medium/minor)=0/14/19`
+    - deterministic gate: `npm run verify` `pass`
+- Commands used:
+  - `python3 "$HOME/.codex/skills/security-reviewer/scripts/run_security_review.py" --repo "$PWD" --pretty`
+  - `python3 "$HOME/.codex/skills/code-simplifier/scripts/run_code_simplifier.py" --repo "$PWD" --pretty`
+  - `npm run verify`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npx vercel deploy --prod --yes`
+  - `node scripts/record-convex-package-purchase.mjs --portal-key oz-home-services-d4f6e8 --company-name "Oz Home Services" --purchase-key "manual:oz-second-40-package-2026-03-14" --billing-model package_40_paid_in_full --prepaid-lead-credits 40 --lead-commitment-total 40 --initial-charge-cents 160000 --lead-charge-threshold 10 --lead-unit-price-cents 4000`
+  - `node scripts/airtable_cleanup_schema_and_sync.mjs`
+  - `curl -u "$USER:$PASS" -X POST "https://app.obieo.com/api/internal/clients/resync-airtable" -H "Content-Type: application/json" --data '{"portalKey":"oz-home-services-d4f6e8"}'`
+  - `git status --short`
+  - `git rev-parse --abbrev-ref --symbolic-full-name @{u}`
+  - `git rev-list --left-right --count HEAD...@{u}`
+- Patterns discovered:
+  - `Pricing Tier` should stay a plan-type label; repeat purchases need separate fields like `Package Purchases` and `Current Lead Commitment`.
+  - The safest repeat-purchase reconciliation flow is: verify portal key -> record idempotent purchase in Convex -> resync Airtable -> verify the visible/hidden operator fields.
+  - If Airtable views hide the billing-summary fields, a correctly reconciled re-up can still look wrong to operators.
+- Gotchas:
+  - In the current `All Client Types` view, Oz does not visibly look like a two-package client because the proof fields are hidden.
+  - The worktree is still dirty and nothing from this session is committed yet, even though upstream is fully synced (`HEAD...origin/main = 0 0`).
+  - code-simplifier warnings are non-blocking readability issues, not closure blockers.
+- Next-time start:
+  - Unhide `Billing Terms Summary`, `Package Purchases`, `Current Lead Commitment`, and `Remaining Leads` in the Airtable client view so repeat package history is visible.
+  - Rework `Remaining Leads` to use Airtable `Lead Sheet` as the math source of truth, not Convex-delivered counts.
+  - To save this work, run `git add .codex/hunterlapeyre/memory.md .codex/hunterlapeyre/runbooks/airtable-package-reup-reconciliation.md docs/airtable-ops-audit-2026-03-14.md scripts/airtable_cleanup_schema_and_sync.mjs scripts/record-convex-package-purchase.mjs src/lib/airtable-billing-sync.ts src/lib/airtable-client-mappers.ts src/lib/airtable-client-zips.ts src/lib/convex.ts src/app/api/internal/clients/resync-airtable/route.ts src/app/api/internal/leadgen/payment-confirmation/route.ts src/app/api/webhooks/stripe/route.ts && git commit -m "Add Airtable billing sync and package re-up reconciliation"` then `git push origin main`.
+
+### 2026-03-14 (SMS runner dual-input closure)
+- What we did:
+  - Added upload-backed CSV intake to the SMS campaign runner without removing the existing local-path workflow.
+  - Restored the default local source path (`/Users/hunterlapeyre/Downloads/merged.csv`) in the create-job form, kept path entry first, and made upload an optional second input path.
+  - Updated job creation to accept either a local path or an uploaded CSV, store uploads under `.tools/sms-campaign-runner/uploads`, and preserve existing runner extract/format/validate behavior.
+  - Verified the new path with the runner proof script and confirmed the app still passes deterministic local gates.
+  - Ran mandatory closure gates on the final tree:
+    - security-reviewer: `status=pass`, `summary=No actionable security findings across 7 file(s) in scope mode staged+unstaged.`, `findings=0`, `counts(high/medium/low)=0/0/0`
+    - code-simplifier: `status=warn`, `summary=Simplifier reported warnings: 3 medium, 39 minor across 8 file(s) in scope mode staged+unstaged.`, `findings=42`, `counts(major/medium/minor)=0/3/39`
+    - deterministic gate: `npm run verify` `pass`
+- Commands used:
+  - `node_modules/.bin/tsx scripts/test_sms_campaign_runner.ts`
+  - `npm run build`
+  - `python3 "$HOME/.codex/skills/security-reviewer/scripts/run_security_review.py" --repo "$PWD" --pretty`
+  - `python3 "$HOME/.codex/skills/code-simplifier/scripts/run_code_simplifier.py" --repo "$PWD" --pretty`
+  - `npm run verify`
+  - `git status --short`
+  - `git rev-parse --abbrev-ref --symbolic-full-name @{u}`
+  - `git rev-list --left-right --count HEAD...@{u}`
+- Patterns discovered:
+  - For travel-safe ops, treat upload as additive and never replace the known-good local path flow in the same change.
+  - Storing uploaded CSVs under `.tools/sms-campaign-runner/uploads` keeps the runner deterministic while removing dependence on one desktop-held master file.
+  - The existing runner proof script is the fastest confidence check for extract -> format -> validate when changing SMS intake behavior.
+- Gotchas:
+  - `npm run verify` passes, but the worktree is still dirty; nothing from this session is committed yet.
+  - Git upstream is in sync (`HEAD...origin/main = 0 0`), so the missing step is commit/push hygiene, not remote sync.
+  - code-simplifier warnings are non-blocking style/readability items, not closure blockers.
+- Next-time start:
+  - Manually test both inputs in the UI at `/app/internal/sms-campaigns`: first the default local path flow, then a small Row Zero export upload.
+  - If the manual UI check looks good, run `git add src/app/api/internal/sms-campaigns/jobs/route.ts src/app/app/internal/sms-campaigns/CreateSmsCampaignJobForm.tsx src/app/app/internal/sms-campaigns/page.tsx src/lib/sms-campaign-runner/constants.ts src/lib/sms-campaign-runner/db.ts src/lib/sms-campaign-runner/repository.ts src/lib/sms-campaign-runner/types.ts scripts/test_sms_campaign_runner.ts && git commit -m "Add optional CSV upload to SMS runner"` and push/open PR as needed.
+
 ### 2026-03-13 (KTL Airtable duplicate-row targeted repair)
 - What we did:
   - Investigated the KTL duplicate Airtable client-row incident in a clean repo context and confirmed the exact pair: keep `rectcuXnY8DfITiCR`, retire-later `recbj7vbRoBF8cNoc`.

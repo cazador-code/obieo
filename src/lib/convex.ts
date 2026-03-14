@@ -3,9 +3,8 @@ import type { BillingModel } from '@/lib/billing-models'
 import {
   buildContractorName,
   resolveAirtableClientCity,
-  resolveAirtablePricingTier,
+  resolveAirtableBillingState,
 } from '@/lib/airtable-client-mappers'
-import { formatBillingTermsSummary } from '@/lib/billing-models'
 import { syncPortalProfileToAirtable } from '@/lib/airtable-client-zips'
 import type { PortalEditableProfile } from '@/lib/portal-profile'
 import { api } from '../../convex/_generated/api'
@@ -733,26 +732,27 @@ export async function submitClientOnboardingInConvex(input: {
         accountLastName: input.accountLastName,
         billingContactName: input.billingContactName,
       })
-      const pricingTier = resolveAirtablePricingTier({
+      const billingState = resolveAirtableBillingState({
         billingModel: input.billingModel,
         leadUnitPriceCents: input.leadUnitPriceCents,
-        leadCommitmentTotal: input.leadCommitmentTotal,
-      })
-      const billingTermsSummary = formatBillingTermsSummary({
-        billingModel: input.billingModel,
         prepaidLeadCredits: input.prepaidLeadCredits,
         leadCommitmentTotal: input.leadCommitmentTotal,
         initialChargeCents: input.initialChargeCents,
         leadChargeThreshold: input.leadChargeThreshold,
-        leadUnitPriceCents: input.leadUnitPriceCents,
+        deliveredLeadCount: 0,
       })
       const clientCity = resolveAirtableClientCity({
         businessAddress: input.businessAddress,
         serviceAreas: input.serviceAreas,
       })
       const notesForAirtable = [input.notes]
-      if (billingTermsSummary && billingTermsSummary.toLowerCase().startsWith('custom ')) {
-        notesForAirtable.push(`Billing terms: ${billingTermsSummary}`)
+      const existingNotesLower = (input.notes || '').toLowerCase()
+      const shouldAppendBillingTerms =
+        Boolean(billingState.billingTermsSummary) &&
+        !existingNotesLower.includes((billingState.billingTermsSummary || '').toLowerCase()) &&
+        (billingState.pricingTier === 'Custom Package' || input.billingModel !== 'package_40_paid_in_full')
+      if (shouldAppendBillingTerms) {
+        notesForAirtable.push(`Billing terms: ${billingState.billingTermsSummary}`)
       }
       const mergedClientNotes = notesForAirtable.filter(Boolean).join('\n\n') || undefined
 
@@ -768,7 +768,17 @@ export async function submitClientOnboardingInConvex(input: {
         ...(input.leadNotificationEmail ? { leadNotificationEmail: input.leadNotificationEmail } : {}),
         ...(input.leadProspectEmail ? { leadProspectEmail: input.leadProspectEmail } : {}),
         ...(contractorName ? { contractorName } : {}),
-        ...(pricingTier ? { pricingTier } : {}),
+        ...(billingState.pricingTier ? { pricingTier: billingState.pricingTier } : {}),
+        ...(billingState.billingTermsSummary ? { billingTermsSummary: billingState.billingTermsSummary } : {}),
+        ...(typeof billingState.currentLeadCommitment === 'number'
+          ? { currentLeadCommitment: billingState.currentLeadCommitment }
+          : {}),
+        ...(typeof billingState.remainingLeads === 'number'
+          ? { remainingLeads: billingState.remainingLeads }
+          : {}),
+        ...(typeof billingState.packagePurchaseCount === 'number'
+          ? { packagePurchaseCount: billingState.packagePurchaseCount }
+          : {}),
         ...(input.desiredLeadVolumeDaily ? { desiredLeadVolumeDaily: input.desiredLeadVolumeDaily } : {}),
         ...(mergedClientNotes ? { clientNotes: mergedClientNotes } : {}),
         ...(input.serviceTypes && input.serviceTypes.length > 0 ? { servicesOffered: input.serviceTypes } : {}),

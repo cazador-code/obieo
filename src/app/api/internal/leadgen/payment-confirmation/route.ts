@@ -12,6 +12,7 @@ import {
   queueLeadgenManualReviewInConvex,
   resolveClientIdentityByBillingInConvex,
 } from '@/lib/convex'
+import { syncAirtableBillingSnapshotFromConvex } from '@/lib/airtable-billing-sync'
 import { resolveLeadgenClientDecision } from '@/lib/leadgen-repeat-purchase'
 import { activateCustomer } from '@/lib/stripe-activation'
 
@@ -538,6 +539,23 @@ export async function POST(request: NextRequest) {
       prepaidLeadCredits: purchaseApplication.prepaidLeadCredits,
       leadCommitmentTotal: purchaseApplication.leadCommitmentTotal,
     })
+
+    const airtableBillingSync = await syncAirtableBillingSnapshotFromConvex({ portalKey })
+    if (!airtableBillingSync.ok) {
+      logPaymentConfirmation('airtable_sync_after_purchase_failed', {
+        paymentEventId: purchaseKey,
+        portalKey,
+        status: airtableBillingSync.status,
+        error: airtableBillingSync.error,
+      })
+    } else if (!airtableBillingSync.syncResult.synced && airtableBillingSync.syncResult.reason !== 'not_configured') {
+      logPaymentConfirmation('airtable_sync_after_purchase_failed', {
+        paymentEventId: purchaseKey,
+        portalKey,
+        reason: airtableBillingSync.syncResult.reason,
+        error: airtableBillingSync.syncResult.message,
+      })
+    }
 
     const onboardingUrl = `${getAppBaseUrl()}/onboarding?token=${encodeURIComponent(token)}`
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { kv } from '@vercel/kv'
+import { syncAirtableBillingSnapshotFromConvex } from '@/lib/airtable-billing-sync'
 import { getStripeClient } from '@/lib/stripe'
 import {
   activateCustomer,
@@ -209,6 +210,23 @@ export async function POST(request: NextRequest) {
           prepaidLeadCredits: purchase.prepaidLeadCredits,
           leadCommitmentTotal: purchase.leadCommitmentTotal,
         })
+
+        const airtableBillingSync = await syncAirtableBillingSnapshotFromConvex({ portalKey })
+        if (!airtableBillingSync.ok) {
+          logStripeLeadgen('airtable_sync_after_purchase_failed', {
+            eventId: event.id,
+            portalKey,
+            status: airtableBillingSync.status,
+            error: airtableBillingSync.error,
+          })
+        } else if (!airtableBillingSync.syncResult.synced && airtableBillingSync.syncResult.reason !== 'not_configured') {
+          logStripeLeadgen('airtable_sync_after_purchase_failed', {
+            eventId: event.id,
+            portalKey,
+            reason: airtableBillingSync.syncResult.reason,
+            error: airtableBillingSync.syncResult.message,
+          })
+        }
       }
     }
 
@@ -250,6 +268,23 @@ export async function POST(request: NextRequest) {
           amountCents,
           invoiceUrl,
         })
+
+        const airtableBillingSync = await syncAirtableBillingSnapshotFromConvex({ portalKey })
+        if (!airtableBillingSync.ok) {
+          logStripeLeadgen('airtable_sync_after_invoice_failed', {
+            eventId: event.id,
+            portalKey,
+            status: airtableBillingSync.status,
+            error: airtableBillingSync.error,
+          })
+        } else if (!airtableBillingSync.syncResult.synced && airtableBillingSync.syncResult.reason !== 'not_configured') {
+          logStripeLeadgen('airtable_sync_after_invoice_failed', {
+            eventId: event.id,
+            portalKey,
+            reason: airtableBillingSync.syncResult.reason,
+            error: airtableBillingSync.syncResult.message,
+          })
+        }
       }
     }
   }
