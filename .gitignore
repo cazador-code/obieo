@@ -57,6 +57,9 @@ docs/claude-capabilities-map.md
 .opencode/
 .windsurf/
 
+# automation runner artifacts
+automation-review/
+
 # Claude Code generated artifacts
 .claude/audit-report-*.md
 # Local Claude planning notes (keep out of git)
