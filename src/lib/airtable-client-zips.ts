@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { syncClientMetricsExtension } from '@/lib/airtable-client-extensions'
+
 const ZIP_RE = /^\d{5}$/
 
 const DEFAULT_AIRTABLE_BASE_ID = 'appqsVEAHr4AaaBAt'
@@ -697,6 +699,12 @@ export async function syncPortalProfileToAirtable(input: {
       }
     }
 
+    try {
+      await syncClientMetricsExtension({ portalKey: input.portalKey })
+    } catch (error) {
+      console.error('Airtable metrics extension sync failed after client create:', error)
+    }
+
     return {
       synced: true,
       airtableRecordId: createdRecord.id,
@@ -746,6 +754,12 @@ export async function syncPortalProfileToAirtable(input: {
       reason: 'update_failed',
       message: `Airtable update failed (${response.status}): ${text.slice(0, 500)}`,
     }
+  }
+
+  try {
+    await syncClientMetricsExtension({ portalKey: input.portalKey })
+  } catch (error) {
+    console.error('Airtable metrics extension sync failed after client update:', error)
   }
 
   return {

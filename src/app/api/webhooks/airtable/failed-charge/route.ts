@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { syncClientMetricsExtension } from '@/lib/airtable-client-extensions'
 import { linkFailedChargeRecordToClient } from '@/lib/airtable-client-links'
 import { getClientIp, rateLimitResponse, webhookLimiter } from '@/lib/rate-limit'
 
@@ -113,6 +114,14 @@ export async function POST(request: NextRequest) {
       },
       { status: mapResultToStatus(linkResult.reason) }
     )
+  }
+
+  if (portalKey) {
+    try {
+      await syncClientMetricsExtension({ portalKey })
+    } catch (error) {
+      console.error('Airtable metrics extension sync failed after failed-charge link:', error)
+    }
   }
 
   return NextResponse.json({

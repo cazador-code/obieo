@@ -1,8 +1,9 @@
 import { createHash } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { kv } from '@vercel/kv'
-import { recordLeadDeliveryInConvex } from '@/lib/convex'
+import { syncClientMetricsExtension } from '@/lib/airtable-client-extensions'
 import { linkLeadSheetRecordToClient } from '@/lib/airtable-client-links'
+import { recordLeadDeliveryInConvex } from '@/lib/convex'
 import { getClientIp, rateLimitResponse, webhookLimiter } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
@@ -230,6 +231,12 @@ export async function POST(request: NextRequest) {
 
     if (!leadSheetLink.linked && leadSheetLink.reason !== 'client_not_found') {
       console.error('Airtable lead-sheet link sync failed:', leadSheetLink)
+    }
+
+    try {
+      await syncClientMetricsExtension({ portalKey })
+    } catch (error) {
+      console.error('Airtable metrics extension sync failed after lead delivery:', error)
     }
   }
 

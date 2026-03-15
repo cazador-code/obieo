@@ -159,13 +159,14 @@ export async function POST(request: NextRequest) {
   const defaults = getBillingModelDefaults(billingModel, 4000)
   const existingSnapshot = await getOrganizationSnapshotInConvex({ portalKey: resolvedPortalKey })
   const existingOrganization = existingSnapshot?.organization || {}
-  const prepaidLeadCredits = getPositiveNumber(existingOrganization.prepaidLeadCredits) || defaults.prepaidLeadCredits
-  const leadCommitmentTotal = getPositiveNumber(existingOrganization.leadCommitmentTotal) || defaults.leadCommitmentTotal || undefined
-  const initialChargeCents = getPositiveNumber(existingOrganization.initialChargeCents) || defaults.initialChargeCents
+  const prepaidLeadCredits = getPositiveNumber(existingOrganization.prepaidLeadCredits) || undefined
+  const leadCommitmentTotal = getPositiveNumber(existingOrganization.leadCommitmentTotal) || undefined
+  const initialChargeCents = getPositiveNumber(existingOrganization.initialChargeCents) || undefined
   const leadChargeThreshold = getPositiveNumber(existingOrganization.leadChargeThreshold) || defaults.leadChargeThreshold
   const leadUnitPriceCents = getPositiveNumber(existingOrganization.leadUnitPriceCents) || defaults.leadUnitPriceCents
 
-  // Preserve custom package terms already saved at payment confirmation; only fall back to billing-model defaults.
+  // Never mint prepaid balance from onboarding defaults. Only preserve package terms that
+  // already exist on the organization, which should come from confirmed payment handling.
   await upsertOrganizationInConvex({
     portalKey: resolvedPortalKey,
     name: intent.companyName,

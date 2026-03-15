@@ -56,6 +56,40 @@ Use this file as durable, repo-specific “muscle memory”. Keep it concise and
 - E2E:
 
 ## Session Notes (append, newest first)
+### 2026-03-14 (Whop -> Airtable -> Obieo onboarding automation closure)
+- What we did:
+  - Built and verified the first full payment-to-onboarding automation path: Whop webhook into Obieo, Airtable intake form on `Onboarding Submissions`, Airtable automation that updates `Client Table`, marks the submission processed, and posts the final payload back into Obieo.
+  - Added and deployed the Airtable handoff endpoint in [src/app/api/webhooks/airtable/onboarding-submitted/route.ts](/Users/hunterlapeyre/Developer/obieo/src/app/api/webhooks/airtable/onboarding-submitted/route.ts), documented the Airtable script in [docs/airtable-onboarding-submitted-webhook.md](/Users/hunterlapeyre/Developer/obieo/docs/airtable-onboarding-submitted-webhook.md), and added the env placeholder in [.env.example](/Users/hunterlapeyre/Developer/obieo/.env.example).
+  - Created a reusable runbook for the end-to-end setup in [.codex/hunterlapeyre/runbooks/whop-airtable-onboarding-automation.md](/Users/hunterlapeyre/Developer/obieo/.codex/hunterlapeyre/runbooks/whop-airtable-onboarding-automation.md).
+  - Closed with mandatory gates:
+    - closure mode: `code-change`
+    - security-reviewer: `status=pass`, `summary=No actionable security findings across 8 file(s) in scope mode staged+unstaged.`, `findings=0`, `counts(high/medium/low)=0/0/0`
+    - code-simplifier: `status=warn`, `summary=Simplifier reported warnings: 4 medium, 30 minor across 8 file(s) in scope mode staged+unstaged.`, `findings=34`, `counts(major/medium/minor)=0/4/30`
+    - deterministic gate: `npm run verify` `pass`
+- Commands used:
+  - `python3 "$HOME/.codex/skills/security-reviewer/scripts/run_security_review.py" --repo "$PWD" --pretty`
+  - `python3 "$HOME/.codex/skills/code-simplifier/scripts/run_code_simplifier.py" --repo "$PWD" --pretty`
+  - `npm run verify`
+  - `npx vercel deploy --prod -y`
+  - `curl -s https://app.obieo.com/api/webhooks/whop`
+  - `curl -s https://app.obieo.com/api/webhooks/airtable/onboarding-submitted`
+  - `git status --short`
+  - `git branch --show-current`
+  - `git rev-parse --abbrev-ref --symbolic-full-name @{u}`
+  - `git rev-list --left-right --count HEAD...@{u}`
+- Patterns discovered:
+  - The safest flow is Whop verifies payment first in Obieo, then Airtable collects operator-facing onboarding data, then Airtable posts the completed payload back to Obieo.
+  - Airtable script secrets must use `input.secret('webhookSecret')`; trying to read them from `input.config()` fails auth and looks like a webhook problem.
+  - The intake automation is testable with a temporary `Business Name = Legal Business Name` match, but the production-safe version must match on hidden/prefilled `Portal Key`.
+- Gotchas:
+  - Airtable test records without a populated `Portal Key` make the Obieo endpoint throw `portalKey and companyName are required`, even when the business-name input is correct.
+  - Airtable automation changes are not live until you click the blue `Update` button after a successful test.
+  - The analyzer scope was `staged+unstaged` tracked files only; new untracked files from this session were not part of those analyzer outputs.
+  - The worktree is still dirty and uncommitted, even though upstream is fully synced (`HEAD...origin/main = 0 0`).
+- Next-time start:
+  - Confirm the Airtable automation still uses the temporary business-name match, then switch it to `Portal Key (stable ID) = Portal Key` once the form link is being sent with hidden prefilled `Portal Key`.
+  - If you want to save this work, run `git add .env.example .codex/hunterlapeyre/memory.md .codex/hunterlapeyre/runbooks/whop-airtable-onboarding-automation.md docs/airtable-holistic-client-database-audit-2026-03-14.md docs/airtable-onboarding-submitted-webhook.md docs/airtable-split-execution-board-2026-03-14.md docs/whop-webhook-setup.md scripts/airtable_setup_client_extensions.mjs scripts/airtable_setup_onboarding_submissions.mjs scripts/airtable_split_client_table_backfill.mjs src/app/api/internal/leadgen/manual-onboarding/route.ts src/app/api/internal/leadgen/onboarding/route.ts src/app/api/internal/leadgen/payment-confirmation/route.ts src/app/api/onboarding/clients/route.ts src/app/api/public/leadgen/onboarding-complete/route.ts src/app/api/webhooks/airtable/failed-charge/route.ts src/app/api/webhooks/airtable/lead-delivered/route.ts src/app/api/webhooks/airtable/onboarding-submitted/route.ts src/app/api/webhooks/whop/route.ts src/lib/airtable-client-extensions.ts src/lib/airtable-client-zips.ts src/lib/leadgen-payment-confirmation.ts package.json package-lock.json && git commit -m "Automate Whop and Airtable onboarding handoff"` then `git push origin main`.
+
 ### 2026-03-14 (Airtable billing model cleanup + Oz second package reconciliation)
 - What we did:
   - Audited and cleaned the Airtable `Client Table` so billing state is more intuitive: renamed confusing fields, added `Custom Package`, and created live operator fields for `Current Lead Commitment`, `Remaining Leads`, and `Package Purchases`.
